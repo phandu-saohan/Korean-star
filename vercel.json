@@ -1,19 +1,13 @@
 {
+  "functions": {
+    "api/**/*.ts": {
+      "memory": 256,
+      "maxDuration": 15
+    }
+  },
   "rewrites": [
     {
-      "source": "/api/zalo/webhook",
-      "destination": "/api/zalo/webhook"
-    },
-    {
-      "source": "/api/zalo/set-webhook",
-      "destination": "/api/zalo/set-webhook"
-    },
-    {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]
