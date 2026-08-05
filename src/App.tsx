@@ -398,6 +398,19 @@ export default function App() {
     }
   }, [authUser]);
 
+  // Đăng ký nhận Event thông báo Realtime OneSignal để bật Toast góc phải màn hình
+  useEffect(() => {
+    const handleOsToast = (e: any) => {
+      const { title, message } = e.detail || {};
+      if (title || message) {
+        showToast(`${title}: ${message}`);
+      }
+    };
+
+    window.addEventListener("onesignal-notification-toast", handleOsToast);
+    return () => window.removeEventListener("onesignal-notification-toast", handleOsToast);
+  }, []);
+
   // Auto-polling: đồng bộ lịch hẹn từ Supabase mỗi 30 giây (realtime-like)
   useEffect(() => {
     const syncAppointments = async () => {

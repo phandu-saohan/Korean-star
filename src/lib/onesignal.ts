@@ -203,6 +203,15 @@ export const sendOneSignalNotification = async (params: SendPushNotificationPara
   const cfg = getOneSignalConfig();
   console.log(`[OneSignal Push] Sending: '${title}' - Target User: ${targetUserId || "ALL"} - Roles: ${targetRoles.join(", ")}`);
 
+  // Dispatch Custom Event để hiển thị Floating Corner Toast trực tiếp trên màn hình web
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("onesignal-notification-toast", {
+        detail: { title, message, url, data }
+      })
+    );
+  }
+
   // 1. Send via Browser Native Notification API for immediate local feedback
   if ("Notification" in window && Notification.permission === "granted") {
     try {
