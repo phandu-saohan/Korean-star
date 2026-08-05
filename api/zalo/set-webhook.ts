@@ -53,8 +53,9 @@ export default async function handler(
       return;
     }
 
+    // Zalo Bot API format: /bot{TOKEN}/setWebhook (no slash between bot and token)
     const cleanToken = String(botToken).replace(/^\//, "").trim();
-    const endpoint = `https://bot-api.zaloplatforms.com/bot/${cleanToken}/setWebhook`;
+    const endpoint = `https://bot-api.zaloplatforms.com/bot${cleanToken}/setWebhook`;
     const payload: any = { url: webhookUrl };
     if (secretToken && String(secretToken).trim()) {
       payload.secret_token = String(secretToken).trim();

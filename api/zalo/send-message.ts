@@ -56,8 +56,9 @@ export default async function handler(
       return;
     }
 
+    // Zalo Bot API format: /bot{TOKEN}/sendMessage
     const cleanToken = String(botToken).replace(/^\//, "").trim();
-    const endpoint = `https://bot-api.zaloplatforms.com/bot/${cleanToken}/sendMessage`;
+    const endpoint = `https://bot-api.zaloplatforms.com/bot${cleanToken}/sendMessage`;
 
     console.log(`[Zalo sendMessage Proxy] Sending to Chat ID: ${chatId}`);
 
