@@ -34,6 +34,7 @@ import {
   ShieldCheck
 } from "lucide-react";
 import { signInUser, signUpUser, resetUserPassword, fetchRolePermissionsFromSupabase, AuthUserProfile, saveRegisteredUserToLocalStorage } from "../lib/supabase";
+import { notifyUserSignedUp } from "../lib/onesignal";
 import { VIETNAM_BANKS, getBankLogo, BankInfo } from "../lib/banks";
 
 interface AuthPageProps {
@@ -363,6 +364,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
             totalCommission: 0
           };
           saveRegisteredUserToLocalStorage(authProfile);
+          notifyUserSignedUp({ fullName, email: userEmail, phone: signupPhone, role: signupRole });
           setTimeout(() => {
             onAuthSuccess(authProfile);
           }, 500);

@@ -312,3 +312,39 @@ export const notifyPayoutCompleted = (payoutData: {
     data: { type: "PAYOUT_COMPLETED", status: payoutData.status }
   });
 };
+
+/**
+ * Event Helper 5: Notify New CTV / User Registration to Admin
+ */
+export const notifyUserSignedUp = (user: { fullName: string; email: string; phone?: string; role?: string }) => {
+  sendOneSignalNotification({
+    title: `👤 Thành Viên Mới Đăng Ký`,
+    message: `Tài khoản ${user.fullName} (${user.email || user.phone}) vừa đăng ký tham gia hệ thống với vai trò ${user.role || "CTV"}.`,
+    targetRoles: ["admin"],
+    data: { type: "NEW_USER_SIGNUP", email: user.email }
+  });
+};
+
+/**
+ * Event Helper 6: Notify Post-Op Checkin Submitted to Admin & Doctors
+ */
+export const notifyPostOpCheckin = (checkin: { customerName?: string; serviceName: string; dayPostOp: number; aiHealthStatus: string }) => {
+  sendOneSignalNotification({
+    title: `🏥 Check-in Hậu Phẫu Ngày ${checkin.dayPostOp}`,
+    message: `Khách hàng ${checkin.customerName || "Bệnh nhân"} vừa gửi check-in ${checkin.serviceName}. Chỉ số AI: ${checkin.aiHealthStatus}.`,
+    targetRoles: ["admin", "accountant"],
+    data: { type: "POST_OP_CHECKIN", status: checkin.aiHealthStatus }
+  });
+};
+
+/**
+ * Event Helper 7: Notify New Customer Feedback Submitted to Admin
+ */
+export const notifyFeedbackSubmitted = (feedback: { customerName: string; serviceName: string; rating: number }) => {
+  sendOneSignalNotification({
+    title: `⭐ Feedback Mới: ${feedback.rating} Sao`,
+    message: `Khách hàng ${feedback.customerName} vừa gửi đánh giá cho dịch vụ ${feedback.serviceName}.`,
+    targetRoles: ["admin", "editor"],
+    data: { type: "NEW_FEEDBACK", rating: feedback.rating }
+  });
+};

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { notifyPostOpCheckin } from "../lib/onesignal";
 import { PostOpCheckin } from "../types";
 import { 
   HeartPulse, 
@@ -124,6 +125,11 @@ export const PostOpCare: React.FC = () => {
     };
 
     setCheckins([newCheckin, ...checkins]);
+    notifyPostOpCheckin({
+      serviceName: checkinService,
+      dayPostOp: Number(dayPostOp),
+      aiHealthStatus: status
+    });
   };
 
   return (
