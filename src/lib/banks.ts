@@ -11,114 +11,114 @@ export const VIETNAM_BANKS: BankInfo[] = [
     code: "VCB",
     shortName: "Vietcombank",
     fullName: "Ngân hàng TMCP Ngoại Thương Việt Nam",
-    logo: "https://img.vietqr.io/image/VCB-logo.png"
+    logo: "https://api.vietqr.io/img/VCB.png"
   },
   {
     code: "MB",
     shortName: "MB Bank",
     fullName: "Ngân hàng TMCP Quân Đội",
-    logo: "https://img.vietqr.io/image/MB-logo.png"
+    logo: "https://api.vietqr.io/img/MB.png"
   },
   {
     code: "TCB",
     shortName: "Techcombank",
     fullName: "Ngân hàng TMCP Kỹ Thương Việt Nam",
-    logo: "https://img.vietqr.io/image/TCB-logo.png"
+    logo: "https://api.vietqr.io/img/TCB.png"
   },
   {
     code: "VPB",
     shortName: "VPBank",
     fullName: "Ngân hàng TMCP Việt Nam Thịnh Vượng",
-    logo: "https://img.vietqr.io/image/VPB-logo.png"
+    logo: "https://api.vietqr.io/img/VPB.png"
   },
   {
     code: "ACB",
     shortName: "ACB",
     fullName: "Ngân hàng TMCP Á Châu",
-    logo: "https://img.vietqr.io/image/ACB-logo.png"
+    logo: "https://api.vietqr.io/img/ACB.png"
   },
   {
     code: "BIDV",
     shortName: "BIDV",
     fullName: "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam",
-    logo: "https://img.vietqr.io/image/BIDV-logo.png"
+    logo: "https://api.vietqr.io/img/BIDV.png"
   },
   {
     code: "VBA",
     shortName: "Agribank",
     fullName: "Ngân hàng Nông nghiệp và Phát triển Nông thôn VN",
-    logo: "https://img.vietqr.io/image/VBA-logo.png"
+    logo: "https://api.vietqr.io/img/VBA.png"
   },
   {
     code: "TPB",
     shortName: "TPBank",
     fullName: "Ngân hàng TMCP Tiên Phong",
-    logo: "https://img.vietqr.io/image/TPB-logo.png"
+    logo: "https://api.vietqr.io/img/TPB.png"
   },
   {
     code: "CTG",
     shortName: "VietinBank",
     fullName: "Ngân hàng TMCP Công Thương Việt Nam",
-    logo: "https://img.vietqr.io/image/CTG-logo.png"
+    logo: "https://api.vietqr.io/img/CTG.png"
   },
   {
     code: "STB",
     shortName: "Sacombank",
     fullName: "Ngân hàng TMCP Sài Gòn Thương Tín",
-    logo: "https://img.vietqr.io/image/STB-logo.png"
+    logo: "https://api.vietqr.io/img/STB.png"
   },
   {
     code: "HDB",
     shortName: "HDBank",
     fullName: "Ngân hàng TMCP Phát triển TP.HCM",
-    logo: "https://img.vietqr.io/image/HDB-logo.png"
+    logo: "https://api.vietqr.io/img/HDB.png"
   },
   {
     code: "VIB",
     shortName: "VIB",
     fullName: "Ngân hàng TMCP Quốc Tế Việt Nam",
-    logo: "https://img.vietqr.io/image/VIB-logo.png"
+    logo: "https://api.vietqr.io/img/VIB.png"
   },
   {
     code: "SEAB",
     shortName: "SeABank",
     fullName: "Ngân hàng TMCP Đông Nam Á",
-    logo: "https://img.vietqr.io/image/SEAB-logo.png"
+    logo: "https://api.vietqr.io/img/SEAB.png"
   },
   {
     code: "MSB",
     shortName: "MSB",
     fullName: "Ngân hàng TMCP Hàng Hải Việt Nam",
-    logo: "https://img.vietqr.io/image/MSB-logo.png"
+    logo: "https://api.vietqr.io/img/MSB.png"
   },
   {
     code: "SHB",
     shortName: "SHB",
     fullName: "Ngân hàng TMCP Sài Gòn - Hà Nội",
-    logo: "https://img.vietqr.io/image/SHB-logo.png"
+    logo: "https://api.vietqr.io/img/SHB.png"
   },
   {
     code: "OCB",
     shortName: "OCB",
     fullName: "Ngân hàng TMCP Phương Đông",
-    logo: "https://img.vietqr.io/image/OCB-logo.png"
+    logo: "https://api.vietqr.io/img/OCB.png"
   },
   {
     code: "LPB",
     shortName: "LPBank",
     fullName: "Ngân hàng TMCP Lộc Phát Việt Nam",
-    logo: "https://img.vietqr.io/image/LPB-logo.png"
+    logo: "https://api.vietqr.io/img/LPB.png"
   },
   {
     code: "EIB",
     shortName: "Eximbank",
     fullName: "Ngân hàng TMCP Xuất Nhập Khẩu Việt Nam",
-    logo: "https://img.vietqr.io/image/EIB-logo.png"
+    logo: "https://api.vietqr.io/img/EIB.png"
   }
 ];
 
 export const getBankLogo = (bankNameOrCode: string): string => {
-  if (!bankNameOrCode) return "https://img.vietqr.io/image/VCB-logo.png";
+  if (!bankNameOrCode) return "https://api.vietqr.io/img/VCB.png";
   const clean = bankNameOrCode.toLowerCase();
   const found = VIETNAM_BANKS.find(
     (b) =>
@@ -126,5 +126,5 @@ export const getBankLogo = (bankNameOrCode: string): string => {
       clean.includes(b.shortName.toLowerCase()) ||
       clean.includes(b.fullName.toLowerCase())
   );
-  return found ? found.logo : "https://img.vietqr.io/image/VCB-logo.png";
+  return found ? found.logo : "https://api.vietqr.io/img/VCB.png";
 };

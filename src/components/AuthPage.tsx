@@ -927,6 +927,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                             src={b.logo}
                             alt={b.shortName}
                             className="w-full h-full object-contain"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = `https://api.vietqr.io/img/${b.code}.png`;
+                            }}
                           />
                         </div>
                         <div className="min-w-0">
