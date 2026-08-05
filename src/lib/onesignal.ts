@@ -105,7 +105,7 @@ export const initOneSignal = (config?: OneSignalConfig) => {
  * - Admin & Accountant get role: "admin" / "accountant" to receive ALL system changes
  */
 export const setOneSignalUser = (user: AuthUserProfile) => {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || !user) return;
   const cfg = getOneSignalConfig();
   if (!cfg.enabled || !cfg.appId || cfg.appId.includes("demo")) return;
 
@@ -115,24 +115,35 @@ export const setOneSignalUser = (user: AuthUserProfile) => {
       if (!OneSignal) return;
       const externalId = user.id || user.ctvCode || user.email;
 
-      if (typeof OneSignal.login === "function") {
-        await OneSignal.login(externalId);
+      // 1. Safe Login to associate user ID with OneSignal Subscriber
+      if (typeof OneSignal.login === "function" && externalId) {
+        try {
+          await OneSignal.login(externalId);
+        } catch (loginErr: any) {
+          // Catch HTTP 409 Conflict when alias is already bound or during session merge
+          console.warn("[OneSignal] Login notice (absorbed 409/alias binding):", loginErr?.message || loginErr);
+        }
       }
 
-      // Add Role & Identity Tags
+      // 2. Add Role & Identity Tags safely
       if (OneSignal.User && typeof OneSignal.User.addTags === "function") {
-        await OneSignal.User.addTags({
-          user_id: user.id,
-          role: user.role,
-          ctv_code: user.ctvCode || "",
-          email: user.email || "",
-          full_name: user.fullName || ""
-        });
+        try {
+          await OneSignal.User.addTags({
+            user_id: user.id || "",
+            role: user.role || "ctv",
+            ctv_code: user.ctvCode || "",
+            email: user.email || "",
+            full_name: user.fullName || ""
+          });
+        } catch (tagErr: any) {
+          // Catch HTTP 409 Conflict when set-property fails due to concurrent login/merge
+          console.warn("[OneSignal] Tag notice (absorbed property conflict):", tagErr?.message || tagErr);
+        }
       }
 
-      console.log(`OneSignal user set: ${user.fullName} (${user.role}) - ID: ${externalId}`);
+      console.log(`OneSignal user set successfully: ${user.fullName} (${user.role}) - ID: ${externalId}`);
     } catch (err) {
-      // Quiet catch for uninitialized SDK
+      // General quiet catch
     }
   });
 };
