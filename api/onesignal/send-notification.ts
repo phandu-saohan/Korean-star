@@ -44,7 +44,9 @@ export default async function handler(
     const { appId, apiKey, title, message, filters, data, url } = body;
 
     const targetAppId = appId || process.env.ONESIGNAL_APP_ID || "6eeb3025-71f7-44af-9a85-f6c52a6da92b";
-    const targetApiKey = apiKey || process.env.ONESIGNAL_REST_API_KEY || "";
+    // API Key: ưu tiên từ body, sau đó từ env variable
+    const rawKey = apiKey || process.env.ONESIGNAL_REST_API_KEY || "";
+    const targetApiKey = rawKey.replace(/^Basic\s+/i, "").trim();
 
     if (!targetAppId || !title || !message) {
       res.statusCode = 400;
@@ -53,6 +55,20 @@ export default async function handler(
         JSON.stringify({
           ok: false,
           description: "Thiếu appId, title hoặc message",
+        })
+      );
+      return;
+    }
+
+    // Guard: nếu không có REST API Key → OneSignal sẽ trả 401 → báo lỗi ngay
+    if (!targetApiKey) {
+      res.statusCode = 400;
+      res.setHeader("Content-Type", "application/json");
+      res.end(
+        JSON.stringify({
+          ok: false,
+          description:
+            "Thiếu OneSignal REST API Key. Vui lòng cấu hình biến môi trường ONESIGNAL_REST_API_KEY trên Vercel, hoặc nhập API Key trong Phần Cài Đặt Hệ Thống.",
         })
       );
       return;
@@ -73,12 +89,9 @@ export default async function handler(
     }
 
     const headers: Record<string, string> = {
-      "Content-Type": "application/json; charset=utf-8"
+      "Content-Type": "application/json; charset=utf-8",
+      "Authorization": `Basic ${targetApiKey}`
     };
-
-    if (targetApiKey) {
-      headers["Authorization"] = `Basic ${targetApiKey.replace(/^Basic\s+/i, "")}`;
-    }
 
     console.log(`[OneSignal Proxy Push] AppID: ${targetAppId} - Title: ${title}`);
 

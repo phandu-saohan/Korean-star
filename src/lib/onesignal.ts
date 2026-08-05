@@ -98,9 +98,12 @@ export const initOneSignal = (config?: OneSignalConfig) => {
   }
 };
 
+// Session key để tránh gọi login + addTags nhiều lần
+const SESSION_KEY = "_os_user_init";
+
 /**
  * Set OneSignal External User ID and Role Tags
- * Rule: 
+ * CHỈ chạy MỘT LẦN mỗi session cho mỗi user ID.
  * - User gets tagged with their user_id, role, ctv_code
  * - Admin & Accountant get role: "admin" / "accountant" to receive ALL system changes
  */
@@ -109,13 +112,38 @@ export const setOneSignalUser = (user: AuthUserProfile) => {
   const cfg = getOneSignalConfig();
   if (!cfg.enabled || !cfg.appId || cfg.appId.includes("demo")) return;
 
+  const externalId = user.id || user.ctvCode || user.email;
+  if (!externalId) return;
+
+  // Guard: nếu đã init cho user này trong session này → bỏ qua
+  // Tránh việc useEffect gọi lại nhiều lần gây PATCH race condition → 409
+  const sessionKey = `${SESSION_KEY}_${externalId}`;
+  if (sessionStorage.getItem(sessionKey)) return;
+  sessionStorage.setItem(sessionKey, "1");
+
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async (OneSignal: any) => {
     try {
       if (!OneSignal || !OneSignal.User) return;
-      const externalId = user.id || user.ctvCode || user.email;
 
-      // 1. Gán thẻ Vai Trò & Thống Nhất Định Danh trực tiếp lên trình duyệt
+      // 1. Login External ID TRƯỚC để xác lập định danh thiết bị
+      //    409 = đã được linked trước đó → bỏ qua bình thường
+      if (typeof OneSignal.login === "function") {
+        try {
+          await OneSignal.login(externalId);
+        } catch (loginErr: any) {
+          const status = loginErr?.status || loginErr?.statusCode || 0;
+          if (status !== 409) {
+            console.warn("[OneSignal] login error:", loginErr?.message || loginErr);
+          }
+          // 409: device đã linked → tiếp tục gán tags, không throw
+        }
+      }
+
+      // 2. Chờ SDK settle sau login (tránh PATCH race condition → 409 trên addTags)
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // 3. Gán Role Tags
       if (typeof OneSignal.User.addTags === "function") {
         try {
           await OneSignal.User.addTags({
@@ -125,26 +153,11 @@ export const setOneSignalUser = (user: AuthUserProfile) => {
             email: user.email || "",
             full_name: user.fullName || ""
           });
+          console.log(`[OneSignal] Tags set: ${user.fullName} (${user.role})`);
         } catch (tagErr: any) {
-          // Quiet absorb
+          // SDK nội bộ có thể log 409 — đây là expected, không cần xử lý thêm
         }
       }
-
-      // 2. Login External ID (Bắt lỗi 409 Conflict nếu ID này đã từng được liên kết thiết bị khác)
-      if (typeof OneSignal.login === "function" && externalId) {
-        try {
-          await OneSignal.login(externalId);
-        } catch (loginErr: any) {
-          // Fallback: nếu login bị 409 Conflict, gắn tag user_id thủ công
-          if (typeof OneSignal.User.addTag === "function") {
-            try {
-              await OneSignal.User.addTag("user_id", externalId);
-            } catch (e) {}
-          }
-        }
-      }
-
-      console.log(`OneSignal user set successfully: ${user.fullName} (${user.role}) - ID: ${externalId}`);
     } catch (err) {
       // General quiet catch
     }
@@ -153,9 +166,16 @@ export const setOneSignalUser = (user: AuthUserProfile) => {
 
 /**
  * Logout OneSignal User on Sign out
+ * Xóa session guard để lần đăng nhập tiếp theo có thể init lại
  */
 export const logoutOneSignal = () => {
   if (typeof window === "undefined") return;
+
+  // Xóa tất cả session guards liên quan đến OneSignal
+  Object.keys(sessionStorage)
+    .filter((k) => k.startsWith(SESSION_KEY))
+    .forEach((k) => sessionStorage.removeItem(k));
+
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async (OneSignal: any) => {
     try {
@@ -234,7 +254,12 @@ export const sendOneSignalNotification = async (params: SendPushNotificationPara
       });
 
       const responseData = await res.json();
-      console.log("[OneSignal Notification Response]:", responseData);
+      // Log chi tiết lỗi nếu có
+      if (responseData?.errors?.length) {
+        console.warn("[OneSignal Notification Error]:", JSON.stringify(responseData.errors));
+      } else {
+        console.log("[OneSignal Notification Response]:", responseData);
+      }
       return responseData;
     } catch (err) {
       console.warn("OneSignal Notification Proxy call error:", err);
