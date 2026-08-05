@@ -112,21 +112,11 @@ export const setOneSignalUser = (user: AuthUserProfile) => {
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async (OneSignal: any) => {
     try {
-      if (!OneSignal) return;
+      if (!OneSignal || !OneSignal.User) return;
       const externalId = user.id || user.ctvCode || user.email;
 
-      // 1. Safe Login to associate user ID with OneSignal Subscriber
-      if (typeof OneSignal.login === "function" && externalId) {
-        try {
-          await OneSignal.login(externalId);
-        } catch (loginErr: any) {
-          // Catch HTTP 409 Conflict when alias is already bound or during session merge
-          console.warn("[OneSignal] Login notice (absorbed 409/alias binding):", loginErr?.message || loginErr);
-        }
-      }
-
-      // 2. Add Role & Identity Tags safely
-      if (OneSignal.User && typeof OneSignal.User.addTags === "function") {
+      // 1. Gán thẻ Vai Trò & Thống Nhất Định Danh trực tiếp lên trình duyệt
+      if (typeof OneSignal.User.addTags === "function") {
         try {
           await OneSignal.User.addTags({
             user_id: user.id || "",
@@ -136,8 +126,21 @@ export const setOneSignalUser = (user: AuthUserProfile) => {
             full_name: user.fullName || ""
           });
         } catch (tagErr: any) {
-          // Catch HTTP 409 Conflict when set-property fails due to concurrent login/merge
-          console.warn("[OneSignal] Tag notice (absorbed property conflict):", tagErr?.message || tagErr);
+          // Quiet absorb
+        }
+      }
+
+      // 2. Login External ID (Bắt lỗi 409 Conflict nếu ID này đã từng được liên kết thiết bị khác)
+      if (typeof OneSignal.login === "function" && externalId) {
+        try {
+          await OneSignal.login(externalId);
+        } catch (loginErr: any) {
+          // Fallback: nếu login bị 409 Conflict, gắn tag user_id thủ công
+          if (typeof OneSignal.User.addTag === "function") {
+            try {
+              await OneSignal.User.addTag("user_id", externalId);
+            } catch (e) {}
+          }
         }
       }
 
