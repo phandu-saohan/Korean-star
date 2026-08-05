@@ -750,3 +750,41 @@ export const saveAppointmentToSupabase = async (apt: any) => {
     console.error("[Supabase] Lỗi lưu appointment:", err);
   }
 };
+
+// 21. Update Appointment Status in Supabase DB Table (appointment_bookings)
+export const updateAppointmentStatusInSupabase = async (id: string, status: string) => {
+  if (!id) return;
+  try {
+    // Lần 1: Direct REST PATCH
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/appointment_bookings?id=eq.${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify({ status })
+      });
+      if (res.ok) {
+        console.log(`[Supabase] Cập nhật trạng thái appointment ${id} sang REST thành công: ${status}`);
+        return;
+      }
+      console.warn("[Supabase] Update status REST status:", res.status, await res.text());
+    } catch (directErr) {
+      console.warn("[Supabase Direct PATCH] Lỗi:", directErr);
+    }
+
+    // Lần 2: Supabase JS client
+    const { error } = await supabase.from("appointment_bookings").update({ status }).eq("id", id);
+    if (error) {
+      console.error("[Supabase] JS client update status error:", error);
+    } else {
+      console.log(`[Supabase] JS client cập nhật trạng thái appointment ${id} sang ${status} thành công`);
+    }
+  } catch (err) {
+    console.error("[Supabase] Lỗi cập nhật trạng thái appointment:", err);
+  }
+};
+

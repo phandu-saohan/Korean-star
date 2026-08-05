@@ -40,7 +40,8 @@ import {
   saveFeedbackToSupabase,
   deleteFeedbackFromSupabase,
   fetchAppointmentsFromSupabase,
-  saveAppointmentToSupabase
+  saveAppointmentToSupabase,
+  updateAppointmentStatusInSupabase
 } from "./lib/supabase";
 
 import {
@@ -717,9 +718,19 @@ export default function App() {
 
   // Helper: Update Appointment status in CRM
   const handleUpdateStatus = (id: string, newStatus: Appointment["status"]) => {
-    setAppointments(
-      appointments.map((apt) => (apt.id === id ? { ...apt, status: newStatus } : apt))
+    const updatedAppointments = appointments.map((apt) =>
+      apt.id === id ? { ...apt, status: newStatus } : apt
     );
+    setAppointments(updatedAppointments);
+    safeSetLocalStorage("saohan_appointments", JSON.stringify(updatedAppointments));
+
+    // Async sync to Supabase DB
+    updateAppointmentStatusInSupabase(id, newStatus);
+    const targetApt = updatedAppointments.find((a) => a.id === id);
+    if (targetApt) {
+      saveAppointmentToSupabase(targetApt);
+    }
+
     showToast(`Đã cập nhật trạng thái lịch hẹn sang: "${newStatus}"`);
   };
 
