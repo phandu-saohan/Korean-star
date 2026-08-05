@@ -5,6 +5,14 @@
       "destination": "/api/zalo/webhook"
     },
     {
+      "source": "/api/zalo/set-webhook",
+      "destination": "/api/zalo/set-webhook"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

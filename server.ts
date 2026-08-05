@@ -32,6 +32,45 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// API: Proxy Zalo Bot setWebhook (tránh lỗi CORS khi gọi từ trình duyệt)
+app.post("/api/zalo/set-webhook", async (req, res) => {
+  try {
+    const { botToken, webhookUrl, secretToken } = req.body;
+
+    if (!botToken || !webhookUrl) {
+      return res.status(400).json({ ok: false, description: "Thiếu botToken hoặc webhookUrl" });
+    }
+
+    const endpoint = `https://bot-api.zaloplatforms.com/bot${botToken}/setWebhook`;
+    const payload: any = { url: webhookUrl };
+    if (secretToken && secretToken.trim()) {
+      payload.secret_token = secretToken.trim();
+    }
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    // Zalo API có thể trả về non-JSON nếu token sai
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await response.json();
+      return res.json(data);
+    } else {
+      const text = await response.text();
+      return res.json({ ok: false, description: `Zalo API trả về lỗi không hợp lệ: ${text.slice(0, 200)}` });
+    }
+  } catch (err: any) {
+    console.error("[Zalo setWebhook Proxy Error]:", err);
+    return res.status(500).json({
+      ok: false,
+      description: err.message || "Lỗi kết nối server khi gọi Zalo Bot API setWebhook",
+    });
+  }
+});
+
 // API: AI Skin Analysis (Phân tích da AI thông minh & Đề xuất phác đồ điều trị)
 app.post("/api/skin-analysis", async (req, res) => {
   try {

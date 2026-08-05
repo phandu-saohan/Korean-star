@@ -50,27 +50,27 @@ export async function sendZaloMessage(
 }
 
 /**
- * Đăng ký Webhook URL trực tiếp với Zalo Bot API (setWebhook API)
+ * Đăng ký Webhook URL thông qua proxy server (tránh lỗi CORS khi gọi trực tiếp từ trình duyệt)
  */
 export async function registerZaloWebhook(
   botToken: string,
   webhookUrl: string,
   secretToken?: string
 ): Promise<ZaloApiResponse> {
-  const endpoint = `https://bot-api.zaloplatforms.com/bot${botToken}/setWebhook`;
+  // Gọi qua endpoint proxy server-side để tránh CORS
+  const proxyEndpoint = `/api/zalo/set-webhook`;
 
   try {
-    const payload: any = { url: webhookUrl };
-    if (secretToken && secretToken.trim()) {
-      payload.secret_token = secretToken.trim();
-    }
-
-    const response = await fetch(endpoint, {
+    const response = await fetch(proxyEndpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        botToken,
+        webhookUrl,
+        secretToken: secretToken?.trim() || undefined,
+      }),
     });
 
     const data: ZaloApiResponse = await response.json();
@@ -79,7 +79,7 @@ export async function registerZaloWebhook(
     return {
       ok: false,
       error_code: 500,
-      description: err.message || "Lỗi kết nối mạng khi gọi Zalo Bot API setWebhook",
+      description: err.message || "Lỗi kết nối đến server proxy khi gọi Zalo Bot API setWebhook",
     };
   }
 }
