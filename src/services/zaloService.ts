@@ -17,24 +17,26 @@ export interface ZaloApiResponse {
 }
 
 /**
- * Gửi tin nhắn Zalo thông qua API Zalo Bot Platform
+ * Gửi tin nhắn Zalo thông qua proxy server (tránh lỗi CORS khi gọi trực tiếp từ trình duyệt)
  */
 export async function sendZaloMessage(
   payload: SendMessagePayload,
   botToken: string
 ): Promise<ZaloApiResponse> {
-  const endpoint = `https://bot-api.zaloplatforms.com/bot${botToken}/sendMessage`;
-  
+  // Gọi qua endpoint proxy server-side để tránh CORS
+  const proxyEndpoint = `/api/zalo/send-message`;
+
   try {
-    const response = await fetch(endpoint, {
+    const response = await fetch(proxyEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        chat_id: payload.chatId,
+        botToken,
+        chatId: payload.chatId,
         text: payload.text,
-        parse_mode: payload.parseMode || 'markdown',
+        parseMode: payload.parseMode || 'markdown',
       }),
     });
 
@@ -44,7 +46,7 @@ export async function sendZaloMessage(
     return {
       ok: false,
       error_code: 500,
-      description: err.message || 'Lỗi kết nối mạng khi gọi Zalo Bot API'
+      description: err.message || 'Lỗi kết nối đến server proxy khi gọi Zalo Bot API sendMessage'
     };
   }
 }

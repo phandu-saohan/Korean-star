@@ -32,6 +32,44 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// API: Proxy Zalo Bot sendMessage (tránh lỗi CORS khi gọi từ trình duyệt)
+app.post("/api/zalo/send-message", async (req, res) => {
+  try {
+    const { botToken, chatId, text, parseMode } = req.body;
+
+    if (!botToken || !chatId || !text) {
+      return res.status(400).json({ ok: false, description: "Thiếu botToken, chatId hoặc text" });
+    }
+
+    const endpoint = `https://bot-api.zaloplatforms.com/bot${botToken}/sendMessage`;
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: String(chatId),
+        text: String(text),
+        parse_mode: parseMode || "markdown",
+      }),
+    });
+
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await response.json();
+      return res.json(data);
+    } else {
+      const rawText = await response.text();
+      return res.json({ ok: false, description: `Zalo API lỗi: ${rawText.slice(0, 300)}` });
+    }
+  } catch (err: any) {
+    console.error("[Zalo sendMessage Proxy Error]:", err);
+    return res.status(500).json({
+      ok: false,
+      description: err.message || "Lỗi server khi gọi Zalo Bot API sendMessage",
+    });
+  }
+});
+
 // API: Proxy Zalo Bot setWebhook (tránh lỗi CORS khi gọi từ trình duyệt)
 app.post("/api/zalo/set-webhook", async (req, res) => {
   try {
