@@ -14,7 +14,7 @@ export interface OneSignalConfig {
 }
 
 export const DEFAULT_ONESIGNAL_CONFIG: OneSignalConfig = {
-  appId: "b8a9101f-0e12-4f01-b345-onesignal-demo", // Can be replaced in Admin Settings
+  appId: "6eeb3025-71f7-44af-9a85-f6c52a6da92b",
   apiKey: "",
   enabled: true
 };
