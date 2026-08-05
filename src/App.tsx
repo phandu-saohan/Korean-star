@@ -202,14 +202,15 @@ export default function App() {
       phone: updates.phone || prev.phone,
       avatar: updates.avatarUrl || prev.avatar,
       bankName: updates.bankName || prev.bankName,
-      accountNumber: updates.accountNumber || prev.bankAccount
+      accountNumber: updates.accountNumber || prev.accountNumber,
+      zaloChatId: updates.zaloChatId !== undefined ? updates.zaloChatId : prev.zaloChatId
     }));
 
     if (authUser?.id) {
       await updateUserProfile(authUser.id, updates);
     }
 
-    showToast("Cập nhật thông tin cá nhân thành công trên Supabase!");
+    showToast("Cập nhật thông tin cá nhân & Zalo Chat ID thành công trên Supabase!");
   };
 
   const handleAuthSuccess = (userProfile: any) => {

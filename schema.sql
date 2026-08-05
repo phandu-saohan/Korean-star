@@ -23,10 +23,24 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
   account_holder TEXT,
   id_card_number TEXT,
   facility_name TEXT,
+  zalo_chat_id TEXT,
   status TEXT DEFAULT 'active',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Thêm cột zalo_chat_id nếu chưa có
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'user_profiles' 
+        AND column_name = 'zalo_chat_id'
+    ) THEN
+        ALTER TABLE public.user_profiles ADD COLUMN zalo_chat_id TEXT;
+    END IF;
+END $$;
 
 -- Tắt RLS hoặc Phân quyền công khai để tránh lỗi RLS khi đăng ký / cập nhật từ trình duyệt
 ALTER TABLE public.user_profiles DISABLE ROW LEVEL SECURITY;
