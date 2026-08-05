@@ -836,8 +836,14 @@ export default function App() {
         onTabChange={(tab) => setActiveTab(tab)}
         onOpenAuthModal={() => setAuthModalOpen(true)}
         onOpenProfileModal={() => setProfileModalOpen(true)}
-        onSignOut={handleSignOut}
         authUser={authUser}
+        onClearNotifications={() => setNotifications([])}
+        onMarkAllRead={() => setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))}
+        onNotificationClick={(notif) =>
+          setNotifications((prev) =>
+            prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
+          )
+        }
       />
 
       {/* Main WebApp Envelope Container */}

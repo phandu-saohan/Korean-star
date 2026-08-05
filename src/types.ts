@@ -173,9 +173,11 @@ export interface VideoGuide {
 
 export interface RealtimeNotification {
   id: string;
+  title?: string;
   time: string;
   text: string;
-  type: "commission" | "lead" | "postop" | "promo";
+  type: "commission" | "lead" | "postop" | "promo" | "system";
+  isRead?: boolean;
 }
 
 export type PayoutStatus = 

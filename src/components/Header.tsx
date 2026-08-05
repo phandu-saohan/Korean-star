@@ -16,7 +16,14 @@ import {
   KeyRound,
   LogOut,
   Mail,
-  X
+  X,
+  Coins,
+  Calendar,
+  Stethoscope,
+  Gift,
+  CheckCheck,
+  Trash2,
+  BellOff
 } from "lucide-react";
 
 interface HeaderProps {
@@ -31,6 +38,9 @@ interface HeaderProps {
   onOpenProfileModal?: () => void;
   onSignOut?: () => void;
   authUser?: any;
+  onClearNotifications?: () => void;
+  onMarkAllRead?: () => void;
+  onNotificationClick?: (notif: RealtimeNotification) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -42,7 +52,10 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAuthModal,
   onOpenProfileModal,
   onSignOut,
-  authUser
+  authUser,
+  onClearNotifications,
+  onMarkAllRead,
+  onNotificationClick
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -162,34 +175,132 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="relative" ref={notifRef}>
               <button
                 onClick={() => setNotifOpen(!notifOpen)}
-                className="relative p-2 sm:p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition"
+                className="relative p-2 sm:p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition cursor-pointer"
                 title="Thông báo hệ thống"
               >
                 <Bell className="w-4 h-4 text-amber-400" />
-                {notifications.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white font-mono text-[9px] font-extrabold flex items-center justify-center animate-pulse">
-                    {notifications.length}
+                {notifications.filter((n) => n.isRead === false || (n.isRead === undefined && notifications.length > 0)).length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white font-mono text-[9px] font-extrabold flex items-center justify-center animate-pulse shadow-xs">
+                    {notifications.filter((n) => n.isRead === false || (n.isRead === undefined && notifications.length > 0)).length}
                   </span>
                 )}
               </button>
 
               {notifOpen && (
-                <div className="absolute right-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-24px)] bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl z-50 p-3 space-y-2 animate-scaleUp text-xs">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                      <Bell className="w-3.5 h-3.5 text-amber-600" /> Thông Báo Thời Gian Thực
-                    </span>
-                    <span className="text-[10px] text-amber-600 font-mono font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                      {notifications.length} tin mới
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-24px)] bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl z-50 p-3.5 space-y-3 animate-scaleUp text-xs">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                        <Bell className="w-4 h-4 text-amber-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-slate-900 text-xs">Thông Báo Thời Gian Thực</h4>
+                        <span className="text-[10px] text-slate-500 font-medium">Cập nhật biến động CRM & Hoa hồng</span>
+                      </div>
+                    </div>
+
+                    <span className="text-[10px] text-amber-700 font-mono font-black bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 shrink-0">
+                      {notifications.filter((n) => !n.isRead).length} chưa đọc
                     </span>
                   </div>
-                  <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
-                    {notifications.map((n) => (
-                      <div key={n.id} className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
-                        <div className="text-[11px] font-semibold text-slate-800 leading-snug">{n.text}</div>
-                        <div className="text-[9px] text-slate-400 font-mono text-right">{n.time}</div>
+
+                  {/* Actions Header bar */}
+                  {notifications.length > 0 && (
+                    <div className="flex items-center justify-between px-1 text-[11px] text-slate-500 font-semibold border-b border-slate-100 pb-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onMarkAllRead) onMarkAllRead();
+                        }}
+                        className="hover:text-blue-600 transition flex items-center gap-1 cursor-pointer"
+                      >
+                        <CheckCheck className="w-3.5 h-3.5 text-blue-500" />
+                        <span>Đánh dấu đã đọc</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onClearNotifications) onClearNotifications();
+                        }}
+                        className="hover:text-rose-600 transition flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-slate-400 hover:text-rose-500" />
+                        <span>Xóa tất cả</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Notifications Scrollable List */}
+                  <div className="max-h-72 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                    {notifications.length > 0 ? (
+                      notifications.map((n) => {
+                        const isUnread = n.isRead === false || n.isRead === undefined;
+                        return (
+                          <div
+                            key={n.id}
+                            onClick={() => {
+                              if (onNotificationClick) onNotificationClick(n);
+                            }}
+                            className={`p-3 rounded-xl border transition cursor-pointer flex items-start gap-2.5 ${
+                              isUnread
+                                ? "bg-amber-50/60 border-amber-200/80 shadow-2xs hover:bg-amber-50"
+                                : "bg-slate-50/80 border-slate-200/60 hover:bg-white opacity-85"
+                            }`}
+                          >
+                            {/* Icon per type */}
+                            {n.type === "commission" ? (
+                              <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 shadow-2xs">
+                                <Coins className="w-3.5 h-3.5" />
+                              </div>
+                            ) : n.type === "lead" ? (
+                              <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 shadow-2xs">
+                                <Calendar className="w-3.5 h-3.5" />
+                              </div>
+                            ) : n.type === "postop" ? (
+                              <div className="w-7 h-7 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 shadow-2xs">
+                                <Stethoscope className="w-3.5 h-3.5" />
+                              </div>
+                            ) : n.type === "promo" ? (
+                              <div className="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 shadow-2xs">
+                                <Gift className="w-3.5 h-3.5" />
+                              </div>
+                            ) : (
+                              <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 shadow-2xs">
+                                <ShieldCheck className="w-3.5 h-3.5" />
+                              </div>
+                            )}
+
+                            <div className="min-w-0 flex-1 space-y-0.5">
+                              <div className="flex items-center justify-between gap-1">
+                                <h5 className={`text-[11px] font-extrabold truncate ${isUnread ? "text-slate-900" : "text-slate-700"}`}>
+                                  {n.title || "Thông Báo Thời Gian Thực"}
+                                </h5>
+                                {isUnread && (
+                                  <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0"></span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-slate-600 leading-snug font-medium line-clamp-2">
+                                {n.text}
+                              </p>
+                              <div className="text-[9px] text-slate-400 font-mono pt-0.5">
+                                {n.time}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="py-8 text-center space-y-2">
+                        <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                          <BellOff className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <h5 className="font-extrabold text-xs text-slate-700">Chưa có thông báo mới nào</h5>
+                          <p className="text-[10px] text-slate-400 font-medium">Tất cả thông báo biến động hệ thống thời gian thực sẽ xuất hiện tại đây.</p>
+                        </div>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               )}

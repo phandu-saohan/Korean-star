@@ -264,7 +264,48 @@ export const VIDEO_GUIDES: VideoGuide[] = [
   }
 ];
 
-export const REALTIME_NOTIFICATIONS_SEED: RealtimeNotification[] = [];
+export const REALTIME_NOTIFICATIONS_SEED: RealtimeNotification[] = [
+  {
+    id: "notif-01",
+    title: "Giải Ngân Hoa Hồng VietQR",
+    text: "Hệ thống vừa giải ngân 4.500.000 VNĐ hoa hồng dịch vụ Nâng Ngực Ergonomix Nano qua VietQR.",
+    time: "Vừa xong",
+    type: "commission",
+    isRead: false
+  },
+  {
+    id: "notif-02",
+    title: "Lịch Hẹn Khám CRM Mới",
+    text: "Khách hàng Trần Thanh Mai đã đặt lịch dịch vụ Căng Da Mặt Deep-SMAS vào 14:30 chiều nay.",
+    time: "15 phút trước",
+    type: "lead",
+    isRead: false
+  },
+  {
+    id: "notif-03",
+    title: "Khuyến Mãi Tri Ơn CTV VIP",
+    text: "Tặng thưởng thêm +5% hoa hồng cho tất cả lịch hẹn phẫu thuật hoàn tất trong tuần này!",
+    time: "1 giờ trước",
+    type: "promo",
+    isRead: false
+  },
+  {
+    id: "notif-04",
+    title: "Cảnh Báo Hậu Phẫu AI",
+    text: "Khách hàng Lê Thu Trâm đã gửi hình ảnh checkin ngày 3 hậu phẫu - Chỉ số an toàn 100%.",
+    time: "3 giờ trước",
+    type: "postop",
+    isRead: true
+  },
+  {
+    id: "notif-05",
+    title: "Kết Nối Zalo Bot & OneSignal",
+    text: "Hệ thống thông báo Realtime Zalo Bot API & OneSignal Web Push đã kích hoạt thành công.",
+    time: "5 giờ trước",
+    type: "system",
+    isRead: true
+  }
+];
 
 export const INITIAL_FEEDBACKS: ServiceFeedback[] = [
   {
