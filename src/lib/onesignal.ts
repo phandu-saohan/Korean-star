@@ -220,6 +220,8 @@ export const sendOneSignalNotification = async (params: SendPushNotificationPara
 
   if (targetUserId) {
     filters.push({ field: "tag", key: "user_id", relation: "=", value: targetUserId });
+    filters.push({ operator: "OR" });
+    filters.push({ field: "tag", key: "ctv_code", relation: "=", value: targetUserId });
   }
 
   // Admin and Accountant ALWAYS receive all notifications

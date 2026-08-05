@@ -95,13 +95,33 @@ export default async function handler(
 
     console.log(`[OneSignal Proxy Push] AppID: ${targetAppId} - Title: ${title}`);
 
-    const osResponse = await fetch("https://onesignal.com/api/v1/notifications", {
+    let osResponse = await fetch("https://onesignal.com/api/v1/notifications", {
       method: "POST",
       headers,
       body: JSON.stringify(payload)
     });
 
-    const responseData = await osResponse.json();
+    let responseData = await osResponse.json();
+
+    // Tự động Fallback sang segment 'Subscribed Users' (Tất cả người dùng)
+    // Nếu filter theo tag (ví dụ ctv-001 hoặc admin) không tìm thấy thiết bị nào đang đăng ký
+    if (
+      Array.isArray(responseData?.errors) &&
+      responseData.errors.some((e: string) => typeof e === "string" && e.includes("All included players are not subscribed")) &&
+      payload.filters
+    ) {
+      console.log("[OneSignal Proxy] No filter matches found. Retrying with 'Subscribed Users' segment...");
+      delete payload.filters;
+      payload.included_segments = ["Subscribed Users"];
+
+      osResponse = await fetch("https://onesignal.com/api/v1/notifications", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload)
+      });
+      responseData = await osResponse.json();
+    }
+
     console.log("[OneSignal Proxy Response]:", responseData);
 
     res.statusCode = osResponse.status || 200;
