@@ -125,20 +125,33 @@ export const setOneSignalUser = (user: AuthUserProfile) => {
     try {
       if (!OneSignal || !OneSignal.User) return;
 
+      const tagsPayload = {
+        user_id: user.id || "",
+        role: user.role || "ctv",
+        ctv_code: user.ctvCode || "",
+        email: user.email || "",
+        full_name: user.fullName || ""
+      };
+
       // Gán Role Tags trực tiếp lên OneSignal.User
-      // Không dùng OneSignal.login() vì login() gây 409 Identity Conflict khi external_id trùng lặp giữa các session/trình duyệt.
       if (typeof OneSignal.User.addTags === "function") {
         try {
-          await OneSignal.User.addTags({
-            user_id: user.id || "",
-            role: user.role || "ctv",
-            ctv_code: user.ctvCode || "",
-            email: user.email || "",
-            full_name: user.fullName || ""
-          });
+          await OneSignal.User.addTags(tagsPayload);
           console.log(`[OneSignal] Dynamic Tags set successfully: ${user.fullName} (${user.role}) - ID: ${user.id}`);
         } catch (tagErr: any) {
-          console.warn("[OneSignal] addTags warning:", tagErr);
+          // Tự động khôi phục nếu IndexedDB bị dính lỗi 409 Conflict từ session cũ:
+          // Logout để dọn dẹp IndexedDB queue bị hỏng, sau đó thử gán lại tag
+          console.warn("[OneSignal] addTags failed, resetting stale IndexedDB session...", tagErr);
+          if (typeof OneSignal.logout === "function") {
+            try {
+              await OneSignal.logout();
+              await new Promise((resolve) => setTimeout(resolve, 200));
+              await OneSignal.User.addTags(tagsPayload);
+              console.log(`[OneSignal] Dynamic Tags set successfully after session reset: ${user.fullName}`);
+            } catch (retryErr) {
+              // Absorbed
+            }
+          }
         }
       }
     } catch (err) {
