@@ -1,0 +1,6 @@
+{
+  "name": "Saohan DELUXE",
+  "description": "Hệ thống Quản lý Cộng tác viên & Giới thiệu Dịch vụ Thẩm mỹ Saohan DELUXE với hoa hồng thời gian thực, phân tích da AI, mô phỏng túi ngực 3D và CRM lịch hẹn.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

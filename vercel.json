@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/zalo/webhook",
+      "destination": "/api/zalo/webhook"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
