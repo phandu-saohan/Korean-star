@@ -215,37 +215,29 @@ export const sendOneSignalNotification = async (params: SendPushNotificationPara
     filters.push({ field: "tag", key: "role", relation: "=", value: role });
   });
 
-  // 3. Send REST API Request to OneSignal Endpoint
+  // 3. Send via Proxy Serverless Function (/api/onesignal/send-notification) to avoid CORS & 401
   if (cfg.enabled && cfg.appId) {
     try {
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json; charset=utf-8"
-      };
-
-      if (cfg.apiKey) {
-        headers["Authorization"] = `Basic ${cfg.apiKey}`;
-      }
-
-      const body: any = {
-        app_id: cfg.appId,
-        headings: { en: title, vi: title },
-        contents: { en: message, vi: message },
-        filters: filters,
-        data: data || {},
-        url: url || window.location.origin
-      };
-
-      const res = await fetch("https://onesignal.com/api/v1/notifications", {
+      const proxyEndpoint = "/api/onesignal/send-notification";
+      const res = await fetch(proxyEndpoint, {
         method: "POST",
-        headers,
-        body: JSON.stringify(body)
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          appId: cfg.appId,
+          apiKey: cfg.apiKey,
+          title,
+          message,
+          filters,
+          data: data || {},
+          url: url || window.location.origin
+        })
       });
 
       const responseData = await res.json();
-      console.log("[OneSignal REST API Response]:", responseData);
+      console.log("[OneSignal Notification Response]:", responseData);
       return responseData;
     } catch (err) {
-      console.warn("OneSignal REST API call error:", err);
+      console.warn("OneSignal Notification Proxy call error:", err);
     }
   }
 

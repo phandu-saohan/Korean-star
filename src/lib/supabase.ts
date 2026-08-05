@@ -263,12 +263,18 @@ export const fetchUserProfile = async (userId: string): Promise<AuthUserProfile 
 // 5b. Fetch All User Profiles from Supabase DB Table (user_profiles)
 export const fetchAllUserProfilesFromSupabase = async (): Promise<AuthUserProfile[]> => {
   try {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("user_profiles")
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (error || !data || !Array.isArray(data)) return [];
+    if (error || !data) {
+      // Fallback without ordering if created_at column is missing
+      const res = await supabase.from("user_profiles").select("*");
+      data = res.data;
+    }
+
+    if (!data || !Array.isArray(data)) return [];
 
     return data.map((d: any) => ({
       id: d.id,
