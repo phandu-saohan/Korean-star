@@ -116,7 +116,6 @@ export const setOneSignalUser = (user: AuthUserProfile) => {
   if (!externalId) return;
 
   // Guard: nếu đã init cho user này trong session này → bỏ qua
-  // Tránh việc useEffect gọi lại nhiều lần gây PATCH race condition → 409
   const sessionKey = `${SESSION_KEY}_${externalId}`;
   if (sessionStorage.getItem(sessionKey)) return;
   sessionStorage.setItem(sessionKey, "1");
@@ -126,24 +125,8 @@ export const setOneSignalUser = (user: AuthUserProfile) => {
     try {
       if (!OneSignal || !OneSignal.User) return;
 
-      // 1. Login External ID TRƯỚC để xác lập định danh thiết bị
-      //    409 = đã được linked trước đó → bỏ qua bình thường
-      if (typeof OneSignal.login === "function") {
-        try {
-          await OneSignal.login(externalId);
-        } catch (loginErr: any) {
-          const status = loginErr?.status || loginErr?.statusCode || 0;
-          if (status !== 409) {
-            console.warn("[OneSignal] login error:", loginErr?.message || loginErr);
-          }
-          // 409: device đã linked → tiếp tục gán tags, không throw
-        }
-      }
-
-      // 2. Chờ SDK settle sau login (tránh PATCH race condition → 409 trên addTags)
-      await new Promise((resolve) => setTimeout(resolve, 150));
-
-      // 3. Gán Role Tags
+      // Gán Role Tags trực tiếp lên OneSignal.User
+      // Không dùng OneSignal.login() vì login() gây 409 Identity Conflict khi external_id trùng lặp giữa các session/trình duyệt.
       if (typeof OneSignal.User.addTags === "function") {
         try {
           await OneSignal.User.addTags({
@@ -153,9 +136,9 @@ export const setOneSignalUser = (user: AuthUserProfile) => {
             email: user.email || "",
             full_name: user.fullName || ""
           });
-          console.log(`[OneSignal] Tags set: ${user.fullName} (${user.role})`);
+          console.log(`[OneSignal] Dynamic Tags set successfully: ${user.fullName} (${user.role}) - ID: ${user.id}`);
         } catch (tagErr: any) {
-          // SDK nội bộ có thể log 409 — đây là expected, không cần xử lý thêm
+          console.warn("[OneSignal] addTags warning:", tagErr);
         }
       }
     } catch (err) {
