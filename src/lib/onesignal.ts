@@ -64,6 +64,8 @@ export const initOneSignal = (config?: OneSignalConfig) => {
       if (OneSignal && OneSignal.init) {
         await OneSignal.init({
           appId: cfg.appId,
+          serviceWorkerPath: "/OneSignalSDKWorker.js",
+          serviceWorkerParam: { scope: "/" },
           safari_web_id: "web.onesignal.auto.koreanstar",
           notifyButton: {
             enable: true,
