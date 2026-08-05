@@ -103,16 +103,16 @@ export default async function handler(
 
     let responseData = await osResponse.json();
 
-    // Tự động Fallback sang segment 'Subscribed Users' (Tất cả người dùng)
+    // Tự động Fallback sang segment 'All' (Tất cả người dùng)
     // Nếu filter theo tag (ví dụ ctv-001 hoặc admin) không tìm thấy thiết bị nào đang đăng ký
     if (
       Array.isArray(responseData?.errors) &&
       responseData.errors.some((e: string) => typeof e === "string" && e.includes("All included players are not subscribed")) &&
       payload.filters
     ) {
-      console.log("[OneSignal Proxy] No filter matches found. Retrying with 'Subscribed Users' segment...");
+      console.log("[OneSignal Proxy] No filter matches found. Retrying with 'All' segment...");
       delete payload.filters;
-      payload.included_segments = ["Subscribed Users"];
+      payload.included_segments = ["All"];
 
       osResponse = await fetch("https://onesignal.com/api/v1/notifications", {
         method: "POST",
@@ -120,6 +120,23 @@ export default async function handler(
         body: JSON.stringify(payload)
       });
       responseData = await osResponse.json();
+    }
+
+    // Nếu cả segment 'All' cũng chưa có thiết bị nào đăng ký Push Notification -> Trả về thông báo nhẹ nhàng
+    if (
+      Array.isArray(responseData?.errors) &&
+      responseData.errors.some((e: string) => typeof e === "string" && e.includes("All included players are not subscribed"))
+    ) {
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "application/json");
+      res.end(
+        JSON.stringify({
+          ok: true,
+          noSubscribers: true,
+          description: "Chưa có thiết bị trình duyệt nào nhấn BẬT THÔNG BÁO (Allow Notifications) trên ứng dụng OneSignal này."
+        })
+      );
+      return;
     }
 
     console.log("[OneSignal Proxy Response]:", responseData);

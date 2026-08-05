@@ -252,8 +252,9 @@ export const sendOneSignalNotification = async (params: SendPushNotificationPara
       });
 
       const responseData = await res.json();
-      // Log chi tiết lỗi nếu có
-      if (responseData?.errors?.length) {
+      if (responseData?.noSubscribers) {
+        console.info("[OneSignal Push]:", responseData.description);
+      } else if (responseData?.errors?.length) {
         console.warn("[OneSignal Notification Error]:", JSON.stringify(responseData.errors));
       } else {
         console.log("[OneSignal Notification Response]:", responseData);
