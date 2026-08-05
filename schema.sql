@@ -194,10 +194,43 @@ CREATE TABLE IF NOT EXISTS public.appointment_bookings (
   appointment_date TEXT,
   status TEXT DEFAULT 'Chờ xác nhận',
   notes TEXT,
+  appointment_type TEXT DEFAULT 'Lịch tư vấn',
+  time TEXT,
+  ctv_code TEXT,
+  ctv_name TEXT,
+  ctv_phone TEXT,
+  customer_media TEXT,
+  customer_media_type TEXT DEFAULT 'image',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.appointment_bookings DISABLE ROW LEVEL SECURITY;
+
+-- Cập nhật cột mới cho bảng appointment_bookings nếu chưa có
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'appointment_bookings' AND column_name = 'appointment_type') THEN
+        ALTER TABLE public.appointment_bookings ADD COLUMN appointment_type TEXT DEFAULT 'Lịch tư vấn';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'appointment_bookings' AND column_name = 'time') THEN
+        ALTER TABLE public.appointment_bookings ADD COLUMN time TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'appointment_bookings' AND column_name = 'ctv_code') THEN
+        ALTER TABLE public.appointment_bookings ADD COLUMN ctv_code TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'appointment_bookings' AND column_name = 'ctv_name') THEN
+        ALTER TABLE public.appointment_bookings ADD COLUMN ctv_name TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'appointment_bookings' AND column_name = 'ctv_phone') THEN
+        ALTER TABLE public.appointment_bookings ADD COLUMN ctv_phone TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'appointment_bookings' AND column_name = 'customer_media') THEN
+        ALTER TABLE public.appointment_bookings ADD COLUMN customer_media TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'appointment_bookings' AND column_name = 'customer_media_type') THEN
+        ALTER TABLE public.appointment_bookings ADD COLUMN customer_media_type TEXT DEFAULT 'image';
+    END IF;
+END $$;
 
 -- 7. KHỞI TẠO TÀI KHOẢN ADMIN MẪU (admin@saohan.vn / Saohan@123)
 INSERT INTO public.user_profiles (
