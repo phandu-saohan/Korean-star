@@ -494,7 +494,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
   const fetchUsersFromSupabase = async () => {
     setLoadingUsers(true);
     try {
-      const remoteUsers = await fetchAllUserProfilesFromSupabase();
+      const remoteUsers = await fetchAllUserProfilesFromSupabase(true);
       const localSaved = localStorage.getItem("saohan_registered_users");
       const localUsers: AuthUserProfile[] = localSaved ? JSON.parse(localSaved) : [];
 
@@ -502,7 +502,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
 
       // 1. Seed fallback default admin user
       const defaultAdmin: AuthUserProfile = {
-        id: "user-admin",
+        id: "56496f7b-5b74-4282-83dc-eeb8f1df3dab",
         email: "admin@saohan.vn",
         fullName: "Nguyễn Thị B (Admin)",
         phone: "0901888999",
@@ -624,7 +624,9 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
 
       const cleanPhone = userFormData.phone.replace(/\D/g, "");
       const ctvCode = `SAOHAN-${userFormData.fullName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "").toUpperCase()}${cleanPhone.slice(-4) || "2026"}`;
-      const newUserId = `user-${Date.now()}`;
+      const newUserId = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `56496f7b-5b74-4282-83dc-${Date.now().toString().padStart(12, "0")}`;
 
       const newUser: AuthUserProfile = {
         id: newUserId,
