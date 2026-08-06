@@ -88,8 +88,10 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
     // Match theo User ID / CTV ID
     const matchesId = Boolean(currentUserId && aptCtvId && aptCtvId === currentUserId);
 
-    // Fallback: nếu lịch mới tạo chưa gắn mã CTV cụ thể hoặc để tên mặc định
-    const isGenericApt = !aptCode || aptName === "ctv" || aptName === "cộng tác viên" || aptName === "";
+    // Fallback: nếu không match bất kỳ điều kiện nào và CTV đã có lịch hẹn riêng, không hiển thị lịch chưa gán
+    // Chỉ fallback isGenericApt khi chưa match theo các tiêu chí rõ ràng
+    const hasPersonalMatch = matchesCode || matchesName || matchesPhone || matchesId;
+    const isGenericApt = !hasPersonalMatch && (!aptCode && !aptName);
 
     return matchesCode || matchesName || matchesPhone || matchesId || isGenericApt;
   });
@@ -159,10 +161,15 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
       customerMediaType: form.customerMediaType
     };
 
+    // Gán các trường extended (để notify đúng CTV qua Zalo và OneSignal)
+    const ctvUserId = authUser?.id || ctvUser?.id || "";
+    (newApt as any).ctvId = ctvUserId;
+    (newApt as any).userId = ctvUserId;
+
     onAddAppointment(newApt);
     notifyAppointmentCreated({
       ...newApt,
-      ctvId: authUser?.id || ctvUser?.id || ""
+      ctvId: ctvUserId
     });
 
     const userZaloChatId = authUser?.zaloChatId || ctvUser?.zaloChatId;
@@ -534,8 +541,14 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                         { ...apt, ctvId: authUser?.id || ctvUser?.id },
                         newStatus
                       );
+                      // Khi Admin đổi trạng thái: Zalo gửi đến cả CTV tạo lịch hẹn (tìm qua ctvCode)
+                      // và Admin (tìm qua defaultChatId + user profiles)
+                      const aptWithCtvInfo = {
+                        ...apt,
+                        ctvId: (apt as any).ctvId || (apt as any).userId || "",
+                      };
                       const targetChatId = authUser?.zaloChatId || ctvUser?.zaloChatId;
-                      notifyZaloAppointmentStatusChanged(apt, newStatus, targetChatId);
+                      notifyZaloAppointmentStatusChanged(aptWithCtvInfo, newStatus, targetChatId);
                       onUpdateStatus(apt.id, newStatus);
                     }}
                     className="bg-white border border-amber-300 rounded-xl px-2.5 py-1 text-xs font-black text-amber-900 focus:outline-none focus:border-amber-500 shadow-xs cursor-pointer"

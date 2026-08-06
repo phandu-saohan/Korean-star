@@ -1243,6 +1243,7 @@ export default function App() {
               services={services}
               feedbacks={feedbacks}
               payoutRequests={payoutRequests}
+              authUser={authUser}
               onApproveLead={handleApproveLead}
               onAddService={handleAddService}
               onUpdateService={handleUpdateService}

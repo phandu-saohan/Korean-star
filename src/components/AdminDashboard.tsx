@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { CTVUser, ReferralLead, Appointment, ServiceItem, ServiceFeedback, PayoutRequest } from "../types";
 import { formatCurrencyInput, parseCurrencyInput } from "../utils/formatters";
+import { AuthUserProfile } from "../lib/supabase";
 import { ServiceCatalog } from "./ServiceCatalog";
 import { BeforeAfterGallery } from "./BeforeAfterGallery";
 import { CRMAppointment } from "./CRMAppointment";
@@ -44,6 +45,7 @@ interface AdminDashboardProps {
   services?: ServiceItem[];
   feedbacks?: ServiceFeedback[];
   payoutRequests?: PayoutRequest[];
+  authUser?: AuthUserProfile;
   onApproveLead: (leadId: string) => void;
   onAddService?: (newService: ServiceItem) => void;
   onUpdateService?: (updatedService: ServiceItem) => void;
@@ -67,6 +69,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   services = [],
   feedbacks = [],
   payoutRequests = [],
+  authUser,
   onApproveLead,
   onAddService,
   onUpdateService,
@@ -187,6 +190,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             onAddAppointment={onAddAppointment || ((newApt) => alert(`Đã tạo lịch hẹn: ${newApt.customerName}`))}
             onUpdateStatus={onUpdateStatus || ((id, status) => alert(`Đã cập nhật trạng thái: ${status}`))}
             ctvUser={ctvUser}
+            authUser={authUser}
             isAdmin={true}
             onRefresh={onRefreshAppointments}
           />
