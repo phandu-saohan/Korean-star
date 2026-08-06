@@ -187,10 +187,17 @@ CREATE TABLE IF NOT EXISTS public.appointment_bookings (
   ctv_code TEXT,
   ctv_name TEXT,
   ctv_phone TEXT,
+  ctv_user_id UUID REFERENCES public.user_profiles(id) ON DELETE SET NULL,
   customer_media TEXT,
   customer_media_type TEXT DEFAULT 'image',
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Index để tìm kiếm nhanh theo ctv_user_id và status
+CREATE INDEX IF NOT EXISTS idx_appointment_bookings_ctv_user_id ON public.appointment_bookings(ctv_user_id);
+CREATE INDEX IF NOT EXISTS idx_appointment_bookings_status ON public.appointment_bookings(status);
+CREATE INDEX IF NOT EXISTS idx_appointment_bookings_ctv_code ON public.appointment_bookings(ctv_code);
 
 ALTER TABLE public.appointment_bookings DISABLE ROW LEVEL SECURITY;
 
@@ -212,11 +219,17 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'appointment_bookings' AND column_name = 'ctv_phone') THEN
         ALTER TABLE public.appointment_bookings ADD COLUMN ctv_phone TEXT;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'appointment_bookings' AND column_name = 'ctv_user_id') THEN
+        ALTER TABLE public.appointment_bookings ADD COLUMN ctv_user_id UUID REFERENCES public.user_profiles(id) ON DELETE SET NULL;
+    END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'appointment_bookings' AND column_name = 'customer_media') THEN
         ALTER TABLE public.appointment_bookings ADD COLUMN customer_media TEXT;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'appointment_bookings' AND column_name = 'customer_media_type') THEN
         ALTER TABLE public.appointment_bookings ADD COLUMN customer_media_type TEXT DEFAULT 'image';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'appointment_bookings' AND column_name = 'updated_at') THEN
+        ALTER TABLE public.appointment_bookings ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
     END IF;
 END $$;
 

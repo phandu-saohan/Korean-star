@@ -745,7 +745,10 @@ export const deleteFeedbackFromSupabase = async (feedbackId: string) => {
 // 19. Fetch All Appointments from Supabase DB Table (appointment_bookings)
 export const fetchAppointmentsFromSupabase = async (): Promise<any[] | null> => {
   try {
-    const { data, error } = await supabase.from("appointment_bookings").select("*");
+    const { data, error } = await supabase
+      .from("appointment_bookings")
+      .select("*")
+      .order("created_at", { ascending: false });
     if (error || !data) return null;
 
     return data.map((d: any) => ({
@@ -762,6 +765,7 @@ export const fetchAppointmentsFromSupabase = async (): Promise<any[] | null> => 
       ctvCode: d.ctv_code || "",
       ctvName: d.ctv_name || "",
       ctvPhone: d.ctv_phone || "",
+      ctvId: d.ctv_user_id || "",
       customerMedia: d.customer_media || "",
       customerMediaType: d.customer_media_type || "image"
     }));
@@ -774,7 +778,10 @@ export const fetchAppointmentsFromSupabase = async (): Promise<any[] | null> => 
 // 20. Save/Upsert Appointment to Supabase DB Table (appointment_bookings)
 export const saveAppointmentToSupabase = async (apt: any) => {
   try {
-    const payload = {
+    // ctv_user_id: lấy từ ctvId (UUID của người dùng) để liên kết với user_profiles
+    const ctvUserId = apt.ctvId || apt.userId || null;
+
+    const payload: any = {
       id: apt.id,
       customer_name: apt.customerName,
       customer_phone: apt.customerPhone,
@@ -789,10 +796,22 @@ export const saveAppointmentToSupabase = async (apt: any) => {
       ctv_name: apt.ctvName || "",
       ctv_phone: apt.ctvPhone || "",
       customer_media: apt.customerMedia || "",
-      customer_media_type: apt.customerMediaType || "image"
+      customer_media_type: apt.customerMediaType || "image",
+      updated_at: new Date().toISOString()
     };
 
-    await supabase.from("appointment_bookings").upsert(payload, { onConflict: "id" });
+    // Chỉ gán ctv_user_id nếu là UUID hợp lệ (tránh lưu string ID giả)
+    if (ctvUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ctvUserId)) {
+      payload.ctv_user_id = ctvUserId;
+    }
+
+    const { error } = await supabase
+      .from("appointment_bookings")
+      .upsert(payload, { onConflict: "id" });
+
+    if (error) {
+      console.error("[Supabase] Lỗi lưu appointment:", error.message);
+    }
   } catch (err) {
     console.error("[Supabase] Lỗi lưu appointment:", err);
   }
@@ -802,11 +821,14 @@ export const saveAppointmentToSupabase = async (apt: any) => {
 export const updateAppointmentStatusInSupabase = async (id: string, status: string) => {
   if (!id) return;
   try {
-    const { error } = await supabase.from("appointment_bookings").update({ status }).eq("id", id);
+    const { error } = await supabase
+      .from("appointment_bookings")
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq("id", id);
     if (error) {
       console.error("[Supabase] JS client update status error:", error);
     } else {
-      console.log(`[Supabase] JS client cập nhật trạng thái appointment ${id} sang ${status} thành công`);
+      console.log(`[Supabase] Cập nhật trạng thái appointment ${id} → ${status} thành công`);
     }
   } catch (err) {
     console.error("[Supabase] Lỗi cập nhật trạng thái appointment:", err);
