@@ -42,8 +42,14 @@ BEGIN
     END IF;
 END $$;
 
--- Tắt RLS hoặc Phân quyền công khai để tránh lỗi RLS khi đăng ký / cập nhật từ trình duyệt
-ALTER TABLE public.user_profiles DISABLE ROW LEVEL SECURITY;
+-- Bật RLS & Phân quyền công khai an toàn
+ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Read User Profiles" ON public.user_profiles;
+CREATE POLICY "Public Read User Profiles" ON public.user_profiles FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public Insert User Profiles" ON public.user_profiles;
+CREATE POLICY "Public Insert User Profiles" ON public.user_profiles FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public Update User Profiles" ON public.user_profiles;
+CREATE POLICY "Public Update User Profiles" ON public.user_profiles FOR UPDATE USING (true);
 
 -- 1b. BẢNG USERS_PROFILES (Bảng Alias đồng bộ cho users_profiles)
 CREATE TABLE IF NOT EXISTS public.users_profiles (
@@ -69,7 +75,13 @@ CREATE TABLE IF NOT EXISTS public.users_profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-ALTER TABLE public.users_profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.users_profiles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Read Users Profiles" ON public.users_profiles;
+CREATE POLICY "Public Read Users Profiles" ON public.users_profiles FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public Insert Users Profiles" ON public.users_profiles;
+CREATE POLICY "Public Insert Users Profiles" ON public.users_profiles FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public Update Users Profiles" ON public.users_profiles;
+CREATE POLICY "Public Update Users Profiles" ON public.users_profiles FOR UPDATE USING (true);
 
 -- 2. BẢNG CMS_SETTINGS (Cấu hình thương hiệu, Logo, Hotline, Địa chỉ & Tỷ lệ hoa hồng)
 CREATE TABLE IF NOT EXISTS public.cms_settings (
