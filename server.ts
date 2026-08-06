@@ -550,42 +550,73 @@ Hãy tư vấn chọn size túi ngực (cc), độ nhô (profile) và hình dán
 });
 
 // API: Zalo Bot Webhook Endpoint (Tự động nhận sự kiện nhắn tin & Phản hồi Chat ID)
+app.get("/api/zalo/webhook", (req, res) => {
+  const challenge = req.query.challenge || req.query["hub.challenge"];
+  if (challenge) {
+    return res.send(String(challenge));
+  }
+  return res.json({ ok: true, status: "Zalo Bot Webhook Endpoint Active" });
+});
+
 app.post("/api/zalo/webhook", async (req, res) => {
   try {
     const body = req.body || {};
     console.log("RECEIVED ZALO BOT WEBHOOK EVENT:", JSON.stringify(body));
 
-    // Structure check for Zalo Bot API Webhook payload
+    // Phân giải linh hoạt cấu trúc Webhook Payload từ Zalo Platform
     const message = body.message || body.data;
-    const chatId = message?.chat?.id || message?.from?.id || body.chat_id || body.chatId;
-    const senderName = message?.from?.display_name || message?.from?.first_name || message?.from?.name || "Khách hàng Zalo";
-    const text = (message?.text || body.text || "").trim();
+    const chatId =
+      body.sender?.id ||
+      message?.chat?.id ||
+      message?.from?.id ||
+      body.chat_id ||
+      body.chatId ||
+      body.from?.id;
+
+    const senderName =
+      body.sender?.display_name ||
+      body.sender?.name ||
+      message?.from?.display_name ||
+      message?.from?.first_name ||
+      message?.from?.name ||
+      "Người dùng Zalo";
+
+    const text = (typeof message === "string" ? message : message?.text || body.message?.text || body.text || "").trim();
 
     if (chatId) {
       console.log(`[Zalo Webhook] Message from ${senderName} (Chat ID: ${chatId}): "${text}"`);
 
-      // Determine bot token from env
-      const botToken = process.env.ZALO_BOT_TOKEN || process.env.VITE_ZALO_BOT_TOKEN || "";
+      // Lấy Bot Token từ env hoặc fallback sang Token chính thức hệ thống
+      const botToken =
+        (req.query.token as string) ||
+        process.env.ZALO_BOT_TOKEN ||
+        process.env.VITE_ZALO_BOT_TOKEN ||
+        "2870914868496435874:qKdbvBQIjBfWFbyRVDqPmYbtxQEbruiPirFbxncIDHgaXrJPyRXlnXKBFDPHoRgr";
 
-      if (botToken) {
+      const cleanToken = String(botToken).replace(/^\//, "").replace(/^bot/i, "").trim();
+
+      if (cleanToken) {
         const replyText =
-          `🤖 *XIN CHÀO! THÔNG TIN CHAT ID ZALO CỦA BẠN*\n\n` +
-          `👤 Tên Zalo: *${senderName}*\n` +
+          `🤖 *THÔNG TIN CHAT ID ZALO CỦA BẠN - KOREAN STAR*\n\n` +
+          `👤 Người dùng: *${senderName}*\n` +
           `🔑 Zalo Chat ID: \`${chatId}\`\n\n` +
-          `💡 Hãy sao chép chuỗi số Chat ID ở trên và nhập vào ô **Zalo Chat ID** trong Hồ Sơ Cá Nhân trên ứng dụng KOREAN STAR để nhận thông báo Lịch Hẹn & Hoa Hồng tự động!`;
+          `💡 Hãy sao chép chuỗi mã Chat ID trên (\`${chatId}\`) và dán vào ô **Zalo Chat ID** trong Hồ Sơ Cá Nhân trên web saohan.vn để nhận thông báo Lịch Hẹn tự động!`;
 
-        // Auto-reply back to user via Zalo Bot API sendMessage endpoint
+        // Tự động phản hồi trực tiếp cho người dùng qua Zalo Bot API sendMessage
         try {
-          await fetch(`https://bot-api.zaloplatforms.com/bot${botToken}/sendMessage`, {
+          const zaloRes = await fetch(`https://bot-api.zaloplatforms.com/bot${cleanToken}/sendMessage`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              "X-Bot-Api-Secret-Token": cleanToken
+            },
             body: JSON.stringify({
               chat_id: String(chatId),
               text: replyText,
               parse_mode: "markdown"
             })
           });
-          console.log(`[Zalo Webhook] Replied automatically to Chat ID ${chatId}`);
+          console.log(`[Zalo Webhook] Auto-replied Chat ID ${chatId} status: ${zaloRes.status}`);
         } catch (fetchErr) {
           console.error("[Zalo Webhook] Error sending reply:", fetchErr);
         }
