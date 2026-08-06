@@ -36,26 +36,34 @@ app.get("/api/health", (req, res) => {
 // API: Proxy Supabase REST API (giải quyết lỗi CORS trình duyệt)
 // Mọi request /api/supabase-proxy/* sẽ được chuyển tiếp tới Supabase server
 app.all("/api/supabase-proxy/*", async (req, res) => {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL
+  const rawSupabaseUrl = process.env.VITE_SUPABASE_URL
     || "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io";
+  const supabaseUrl = rawSupabaseUrl.replace(/\/+$/, "");
+
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY
     || process.env.SUPABASE_ANON_KEY
     || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE";
 
   // Express 4: lấy path sau /api/supabase-proxy/ qua req.params[0]
-  const proxyPath = (req.params as any)[0] || "";
+  const rawPath = (req.params as any)[0] || "";
+  const proxyPath = rawPath.replace(/^\/+/, "");
   const queryString = req.url.includes("?") ? req.url.substring(req.url.indexOf("?")) : "";
   const targetUrl = `${supabaseUrl}/${proxyPath}${queryString}`;
 
-  console.log(`[Supabase Proxy] ${req.method} ${targetUrl}`);
+  // Kiểm tra Authorization header: fallback sang anonKey nếu client gửi token rỗng/hỏng
+  let authHeader = req.headers.authorization as string | undefined;
+  if (!authHeader || !authHeader.startsWith("Bearer ") || authHeader.includes("undefined") || authHeader.includes("null") || authHeader.length < 20) {
+    authHeader = `Bearer ${anonKey}`;
+  }
 
   try {
     const headers: Record<string, string> = {
       "apikey": anonKey,
-      "Authorization": req.headers.authorization || `Bearer ${anonKey}`,
+      "Authorization": authHeader,
       "Content-Type": "application/json",
     };
 
+    if (req.headers.accept) headers["Accept"] = req.headers.accept as string;
     if (req.headers.prefer) headers["Prefer"] = req.headers.prefer as string;
     if (req.headers.range) headers["Range"] = req.headers.range as string;
 
@@ -64,21 +72,25 @@ app.all("/api/supabase-proxy/*", async (req, res) => {
       headers,
     };
 
-    if (req.method !== "GET" && req.method !== "HEAD" && req.body) {
+    if (req.method !== "GET" && req.method !== "HEAD" && req.body && Object.keys(req.body).length > 0) {
       fetchOptions.body = JSON.stringify(req.body);
     }
 
     const response = await fetch(targetUrl, fetchOptions);
     const text = await response.text();
 
+    if (response.status >= 400) {
+      console.warn(`[Supabase Proxy Warning ${response.status}] ${req.method} ${targetUrl} ->`, text.substring(0, 300));
+    }
+
     res.status(response.status);
     if (response.headers.get("content-range")) {
       res.setHeader("Content-Range", response.headers.get("content-range")!);
     }
-    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Content-Type", response.headers.get("content-type") || "application/json");
     res.send(text);
   } catch (err: any) {
-    console.error("[Supabase Proxy] Error:", err.message);
+    console.error("[Supabase Proxy Error]:", err.message);
     res.status(502).json({ error: "Proxy error", message: err.message });
   }
 });
