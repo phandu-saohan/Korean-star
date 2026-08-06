@@ -84,6 +84,13 @@ export const initOneSignal = (config?: OneSignalConfig) => {
           allowLocalhostAsSecureOrigin: true
         });
         console.log("OneSignal Web Push SDK Initialized successfully:", cfg.appId);
+
+        // Auto trigger Slidedown permission prompt if available
+        try {
+          if (OneSignal.Slidedown && typeof OneSignal.Slidedown.promptPush === "function") {
+            await OneSignal.Slidedown.promptPush();
+          }
+        } catch (e) {}
       }
     } catch (err) {
       // Quiet warning for custom or invalid app ID
