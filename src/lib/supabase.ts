@@ -745,10 +745,19 @@ export const deleteFeedbackFromSupabase = async (feedbackId: string) => {
 // 19. Fetch All Appointments from Supabase DB Table (appointment_bookings)
 export const fetchAppointmentsFromSupabase = async (): Promise<any[] | null> => {
   try {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("appointment_bookings")
       .select("*")
       .order("created_at", { ascending: false });
+
+    // Fallback nếu CSDL Supabase chưa chạy migration tạo cột created_at
+    if (error) {
+      console.warn("[Supabase] Retry fetch appointments without order:", error.message);
+      const res = await supabase.from("appointment_bookings").select("*");
+      data = res.data;
+      error = res.error;
+    }
+
     if (error || !data) return null;
 
     return data.map((d: any) => ({

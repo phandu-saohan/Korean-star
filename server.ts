@@ -60,8 +60,11 @@ app.all("/api/supabase-proxy/*", async (req, res) => {
     const headers: Record<string, string> = {
       "apikey": anonKey,
       "Authorization": authHeader,
-      "Content-Type": "application/json",
     };
+
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      headers["Content-Type"] = "application/json";
+    }
 
     if (req.headers.accept) headers["Accept"] = req.headers.accept as string;
     if (req.headers.prefer) headers["Prefer"] = req.headers.prefer as string;
