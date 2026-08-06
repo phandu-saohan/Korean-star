@@ -24,7 +24,7 @@ const SUPABASE_ANON_KEY = getValidSupabaseKey();
 
 // Dùng proxy nội bộ của Express server để tránh lỗi CORS trình duyệt
 // Server sẽ forward request sang Supabase thật phía server-to-server
-const SUPABASE_PROXY_URL = "/api/supabase-proxy";
+const SUPABASE_PROXY_URL = (typeof window !== "undefined" ? window.location.origin : SUPABASE_REAL_URL) + "/api/supabase-proxy";
 
 // SUPABASE_URL: dùng proxy URL trong trình duyệt, real URL giữ lại cho reference
 export const SUPABASE_URL = SUPABASE_REAL_URL;
