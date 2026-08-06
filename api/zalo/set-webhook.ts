@@ -53,45 +53,105 @@ export default async function handler(
       return;
     }
 
-    // Zalo Bot API format: /bot{TOKEN}/setWebhook (no slash between bot and token)
-    const cleanToken = String(botToken).replace(/^\//, "").trim();
-    const endpoint = `https://bot-api.zaloplatforms.com/bot${cleanToken}/setWebhook`;
-    const payload: any = { url: webhookUrl };
-    if (secretToken && String(secretToken).trim()) {
-      payload.secret_token = String(secretToken).trim();
+    // Chuẩn hóa token: loại bỏ khoảng trắng, dấu / đầu, prefix "bot"
+    const cleanToken = String(botToken)
+      .replace(/^\//, "")
+      .replace(/^bot/i, "")
+      .trim();
+
+    if (!cleanToken) {
+      res.statusCode = 400;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ ok: false, description: "Bot Token không hợp lệ" }));
+      return;
     }
 
-    console.log(`[Zalo setWebhook Proxy] Calling: ${endpoint}`);
-    console.log(`[Zalo setWebhook Proxy] Webhook URL: ${webhookUrl}`);
+    // Zalo Bot API endpoint: /bot{TOKEN}/setWebhook
+    const endpoint = `https://bot-api.zaloplatforms.com/bot${cleanToken}/setWebhook`;
+    const payload: any = { url: webhookUrl };
+
+    // Thêm secret_token nếu được cung cấp (dùng để Zalo xác thực khi gọi webhook về server)
+    const cleanSecretToken = secretToken ? String(secretToken).trim() : "";
+    if (cleanSecretToken && cleanSecretToken.length >= 8) {
+      payload.secret_token = cleanSecretToken;
+    }
+
+    console.log(`[Zalo setWebhook] Calling: ${endpoint}`);
+    console.log(`[Zalo setWebhook] Webhook URL: ${webhookUrl}`);
+    console.log(`[Zalo setWebhook] Payload:`, JSON.stringify(payload));
 
     const zaloResponse = await fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        // Zalo Bot API yêu cầu token trong header (theo tài liệu mới nhất)
+        "X-Bot-Api-Secret-Token": cleanToken,
+      },
       body: JSON.stringify(payload),
     });
 
-    // Zalo API trả về non-JSON nếu token sai
+    const statusCode = zaloResponse.status;
     const contentType = zaloResponse.headers.get("content-type") || "";
+
+    console.log(`[Zalo setWebhook] HTTP Status: ${statusCode}`);
+
     if (contentType.includes("application/json")) {
       const data = await zaloResponse.json();
-      console.log("[Zalo setWebhook Proxy] Response:", data);
-      res.statusCode = 200;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify(data));
+      console.log("[Zalo setWebhook] Response JSON:", data);
+
+      // Zalo trả về { ok: true } hoặc { ok: false, description: "..." }
+      if (data.ok === true || data.result !== undefined) {
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ ok: true, result: data.result || data, description: "Webhook đã kích hoạt thành công!" }));
+      } else {
+        const errMsg = data.description || data.error || data.message || JSON.stringify(data);
+        console.error(`[Zalo setWebhook] API Error: ${errMsg}`);
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({
+          ok: false,
+          description: `Zalo Bot API lỗi: ${errMsg}`,
+          httpStatus: statusCode,
+          debug: {
+            token_preview: `${cleanToken.slice(0, 10)}...`,
+            endpoint,
+            webhookUrl
+          }
+        }));
+      }
     } else {
       const text = await zaloResponse.text();
-      console.error("[Zalo setWebhook Proxy] Non-JSON response:", text);
+      console.error(`[Zalo setWebhook] Non-JSON response (HTTP ${statusCode}):`, text);
+
+      // Phân tích thông báo lỗi cụ thể
+      let userFriendlyError = "Lỗi không xác định từ Zalo Bot API";
+      if (statusCode === 401 || text.toLowerCase().includes("unauthorized")) {
+        userFriendlyError = "Zalo Bot Token không hợp lệ hoặc đã hết hạn. Vui lòng lấy token mới từ Zalo Bot Management.";
+      } else if (statusCode === 403 || text.toLowerCase().includes("forbidden")) {
+        userFriendlyError = "Token không có quyền truy cập. Đảm bảo bot đã được duyệt trên Zalo Platform.";
+      } else if (statusCode === 404) {
+        userFriendlyError = "Endpoint Zalo Bot API không tìm thấy. Token có thể sai format.";
+      } else if (text.trim()) {
+        userFriendlyError = text.slice(0, 300);
+      }
+
       res.statusCode = 200;
       res.setHeader("Content-Type", "application/json");
-      res.end(
-        JSON.stringify({
-          ok: false,
-          description: `Zalo API trả về lỗi: ${text.slice(0, 300)}`,
-        })
-      );
+      res.end(JSON.stringify({
+        ok: false,
+        description: userFriendlyError,
+        httpStatus: statusCode,
+        debug: {
+          token_preview: `${cleanToken.slice(0, 10)}...`,
+          endpoint,
+          webhookUrl,
+          rawResponse: text.slice(0, 200)
+        }
+      }));
     }
   } catch (err: any) {
-    console.error("[Zalo setWebhook Proxy Error]:", err);
+    console.error("[Zalo setWebhook Error]:", err);
     res.statusCode = 500;
     res.setHeader("Content-Type", "application/json");
     res.end(

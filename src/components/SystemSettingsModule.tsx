@@ -566,7 +566,12 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
     if (res.ok) {
       onToast("🎉 Kích hoạt Webhook Zalo Bot API thành công! Bot đã sẵn sàng nhận tin nhắn & phản hồi Chat ID!");
     } else {
-      alert(`Lỗi kích hoạt Webhook Zalo Bot API: ${res.description || "Vui lòng kiểm tra lại Bot Token"}`);
+      const debugInfo = (res as any).debug;
+      let errMsg = res.description || "Vui lòng kiểm tra lại Bot Token";
+      if (debugInfo) {
+        errMsg += `\n\n🔍 Debug:\n• Token (10 ký tự đầu): ${debugInfo.token_preview}\n• HTTP Status: ${(res as any).httpStatus || "N/A"}\n• Webhook URL: ${debugInfo.webhookUrl}`;
+      }
+      alert(`❌ Lỗi kích hoạt Webhook Zalo Bot API:\n\n${errMsg}`);
     }
   };
 
