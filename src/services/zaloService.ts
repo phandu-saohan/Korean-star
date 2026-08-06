@@ -152,13 +152,14 @@ export async function sendZaloAutoNotification(
  * - Thêm extraChatId truyền vào
  * - Thêm Default Admin Chat ID trong CMS Settings
  * - Thêm zaloChatId của Admin & Accountant từ Supabase
- * - Thêm zaloChatId của CTV liên quan (khớp ctvCode / ctvPhone / ctvId)
+ * - Thêm zaloChatId của CTV liên quan (khớp ctvCode / ctvPhone / ctvId / ctvName)
  */
 export async function getZaloRecipientChatIds(options?: {
   extraChatId?: string;
   ctvCode?: string;
   ctvPhone?: string;
   ctvId?: string;
+  ctvName?: string;
   notifyAdmins?: boolean;
 }): Promise<string[]> {
   const chatIds = new Set<string>();
@@ -186,17 +187,19 @@ export async function getZaloRecipientChatIds(options?: {
         admins.forEach((a) => chatIds.add(a.zaloChatId!.trim()));
       }
 
-      // 3b. Lấy Chat ID của CTV tạo lịch / nhận hoa hồng
+      // 3b. Lấy Chat ID của CTV tạo lịch / nhận hoa hồng (tìm qua ctvCode, ctvPhone, ctvId, ctvName)
       const targetCode = options?.ctvCode?.trim().toLowerCase();
       const targetPhone = options?.ctvPhone?.trim();
       const targetId = options?.ctvId?.trim();
+      const targetName = options?.ctvName?.trim().toLowerCase();
 
-      if (targetCode || targetPhone || targetId) {
+      if (targetCode || targetPhone || targetId || targetName) {
         const targetCtv = allProfiles.find(
           (u) =>
             (targetCode && u.ctvCode?.trim().toLowerCase() === targetCode) ||
             (targetPhone && u.phone?.trim() === targetPhone) ||
-            (targetId && u.id === targetId)
+            (targetId && u.id === targetId) ||
+            (targetName && u.fullName?.trim().toLowerCase() === targetName)
         );
         if (targetCtv?.zaloChatId && targetCtv.zaloChatId.trim()) {
           chatIds.add(targetCtv.zaloChatId.trim());
