@@ -160,7 +160,18 @@ export default function App() {
 
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
     const saved = localStorage.getItem("saohan_appointments");
-    return saved ? JSON.parse(saved) : INITIAL_APPOINTMENTS;
+    if (!saved) return INITIAL_APPOINTMENTS;
+    try {
+      const parsed: Appointment[] = JSON.parse(saved);
+      // Tự động làm sạch các lịch hẹn mẫu thử nghiệm trước đó trong trình duyệt
+      const clean = parsed.filter(a => a && a.id && !a.id.startsWith("apt-1785") && !a.id.startsWith("apt-0"));
+      if (clean.length !== parsed.length) {
+        localStorage.setItem("saohan_appointments", JSON.stringify(clean));
+      }
+      return clean;
+    } catch (e) {
+      return INITIAL_APPOINTMENTS;
+    }
   });
 
   const [promotions, setPromotions] = useState<Promotion[]>(() => {
@@ -1150,6 +1161,13 @@ export default function App() {
               ctvUser={ctvUser}
               authUser={authUser}
               isAdmin={currentRole === "admin"}
+              onRefresh={async () => {
+                localStorage.removeItem("saohan_appointments");
+                const remote = await fetchAppointmentsFromSupabase();
+                setAppointments(remote || []);
+                safeSetLocalStorage("saohan_appointments", JSON.stringify(remote || []));
+                showToast("Đã dọn dẹp bộ nhớ đệm & làm mới dữ liệu CSDL.");
+              }}
             />
           )}
 
