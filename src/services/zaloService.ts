@@ -176,7 +176,7 @@ export async function getZaloRecipientChatIds(options?: {
 
   // 3. Lấy tất cả user profiles từ Supabase để quét Chat ID của Admin và CTV
   try {
-    const allProfiles = await fetchAllUserProfilesFromSupabase();
+    const allProfiles = await fetchAllUserProfilesFromSupabase(true);
     if (allProfiles && allProfiles.length > 0) {
       // 3a. Lấy Chat ID của tất cả Admin & Accountant
       if (options?.notifyAdmins !== false) {

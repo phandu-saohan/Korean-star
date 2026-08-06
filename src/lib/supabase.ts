@@ -402,6 +402,10 @@ export const updateUserProfile = async (
   if (updates.zaloChatId !== undefined) payload.zalo_chat_id = updates.zaloChatId;
 
   await supabase.from("user_profiles").update(payload).eq("id", userId);
+
+  // Xóa cache để lượt truy vấn tiếp theo lấy trực tiếp zaloChatId mới từ Supabase
+  _lastProfilesFetchTime = 0;
+  _cachedProfiles = null;
 };
 
 // 7. Delete User Profile from Supabase DB (user_profiles)
