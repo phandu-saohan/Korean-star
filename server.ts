@@ -125,7 +125,8 @@ app.post("/api/onesignal/send-notification", async (req, res) => {
       "Authorization": `${authPrefix} ${targetApiKey}`
     };
 
-    console.log(`[OneSignal Proxy Push] AppID: ${targetAppId} - Title: ${title}`);
+    console.log(`[OneSignal Proxy Push] AppID: ${targetAppId}`);
+    console.log(`[OneSignal Proxy] Auth: ${authPrefix} | KeyFrom: ${apiKey ? "client" : "env"} | KeyStart: ${targetApiKey.substring(0, 20)}...`);
 
     let osResponse = await fetch("https://onesignal.com/api/v1/notifications", {
       method: "POST",
