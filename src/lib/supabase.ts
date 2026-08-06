@@ -288,38 +288,62 @@ export const fetchAllUserProfilesFromSupabase = async (): Promise<AuthUserProfil
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (error || !data) {
-      // Fallback without ordering if created_at column is missing
+    // Try fallback without order ONLY if created_at column error occurred (not network/CORS error)
+    if (error && error.message && error.message.toLowerCase().includes("created_at")) {
       const res = await supabase.from("user_profiles").select("*");
       data = res.data;
+      error = res.error;
     }
 
-    if (!data || !Array.isArray(data)) return [];
+    if (data && Array.isArray(data) && data.length > 0) {
+      const mappedProfiles: AuthUserProfile[] = data.map((d: any) => ({
+        id: d.id,
+        email: d.email || "",
+        fullName: d.full_name || "",
+        phone: d.phone || "",
+        role: d.role || "ctv",
+        ctvCode: d.ctv_code || "SAOHAN-CTV",
+        tier: d.tier || "Bạc",
+        availableBalance: Number(d.available_balance) || 0,
+        pendingBalance: Number(d.pending_balance) || 0,
+        totalRevenue: Number(d.total_revenue) || 0,
+        totalCommission: Number(d.total_commission) || 0,
+        avatarUrl: d.avatar_url,
+        bankName: d.bank_name,
+        accountNumber: d.account_number,
+        accountHolder: d.account_holder,
+        idCardNumber: d.id_card_number,
+        facilityName: d.facility_name,
+        zaloChatId: d.zalo_chat_id
+      }));
 
-    return data.map((d: any) => ({
-      id: d.id,
-      email: d.email || "",
-      fullName: d.full_name || "",
-      phone: d.phone || "",
-      role: d.role || "ctv",
-      ctvCode: d.ctv_code || "SAOHAN-CTV",
-      tier: d.tier || "Bạc",
-      availableBalance: Number(d.available_balance) || 0,
-      pendingBalance: Number(d.pending_balance) || 0,
-      totalRevenue: Number(d.total_revenue) || 0,
-      totalCommission: Number(d.total_commission) || 0,
-      avatarUrl: d.avatar_url,
-      bankName: d.bank_name,
-      accountNumber: d.account_number,
-      accountHolder: d.account_holder,
-      idCardNumber: d.id_card_number,
-      facilityName: d.facility_name,
-      zaloChatId: d.zalo_chat_id
-    }));
+      // Cache to localStorage
+      try {
+        localStorage.setItem("saohan_all_user_profiles", JSON.stringify(mappedProfiles));
+      } catch (e) {}
+
+      return mappedProfiles;
+    }
   } catch (err) {
-    console.error("Error fetching all user profiles:", err);
-    return [];
+    // Network / CORS / Paused Supabase Project Error
   }
+
+  // Local Storage Fallback when Supabase is unreachable/paused or CORS blocked
+  try {
+    const saved = localStorage.getItem("saohan_all_user_profiles");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+
+    const savedAuth = localStorage.getItem("saohan_auth_user");
+    if (savedAuth) {
+      const parsedAuth = JSON.parse(savedAuth);
+      if (parsedAuth && parsedAuth.id) return [parsedAuth];
+    }
+  } catch (e) {}
+
+  return [];
 };
 
 // 6. Update User Profile on Supabase DB Table (user_profiles)
@@ -420,29 +444,42 @@ export const fetchCmsSettingsFromSupabase = async () => {
       .eq("id", 1)
       .maybeSingle();
 
-    if (error || !data) return null;
+    if (data) {
+      const settings = {
+        hospitalName: data.hospital_name || "KOREAN STAR",
+        logoUrl: data.logo_url || "",
+        tagline: data.tagline || "",
+        hotline: data.hotline || "",
+        address: data.address || "",
+        baseCommissionRate: Number(data.base_commission_rate) || 15,
+        autoPayoutThreshold: Number(data.auto_payout_threshold) || 50000000,
+        systemCurrency: data.system_currency || "VNĐ",
+        oneSignalAppId: data.one_signal_app_id || "",
+        oneSignalApiKey: data.one_signal_api_key || "",
+        oneSignalEnabled: data.one_signal_enabled !== false,
+        zaloBotToken: data.zalo_bot_token || "",
+        zaloDefaultChatId: data.zalo_default_chat_id || "",
+        zaloWebhookSecret: data.zalo_webhook_secret || "",
+        ctvTiers: data.ctv_tiers || null
+      };
 
-    return {
-      hospitalName: data.hospital_name || "KOREAN STAR",
-      logoUrl: data.logo_url || "",
-      tagline: data.tagline || "",
-      hotline: data.hotline || "",
-      address: data.address || "",
-      baseCommissionRate: Number(data.base_commission_rate) || 15,
-      autoPayoutThreshold: Number(data.auto_payout_threshold) || 50000000,
-      systemCurrency: data.system_currency || "VNĐ",
-      oneSignalAppId: data.one_signal_app_id || "",
-      oneSignalApiKey: data.one_signal_api_key || "",
-      oneSignalEnabled: data.one_signal_enabled !== false,
-      zaloBotToken: data.zalo_bot_token || "",
-      zaloDefaultChatId: data.zalo_default_chat_id || "",
-      zaloWebhookSecret: data.zalo_webhook_secret || "",
-      ctvTiers: data.ctv_tiers || null
-    };
+      try {
+        localStorage.setItem("saohan_cms_settings", JSON.stringify(settings));
+      } catch (e) {}
+
+      return settings;
+    }
   } catch (err) {
-    console.error("Error fetching CMS settings:", err);
-    return null;
+    // Network / CORS / Paused Supabase Project Error
   }
+
+  // Fallback to localStorage when Supabase is unreachable/paused or CORS blocked
+  try {
+    const saved = localStorage.getItem("saohan_cms_settings");
+    if (saved) return JSON.parse(saved);
+  } catch (e) {}
+
+  return null;
 };
 
 // 12. Save CMS Brand Settings to Supabase DB
