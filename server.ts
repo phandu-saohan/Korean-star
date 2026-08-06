@@ -109,7 +109,7 @@ app.post("/api/onesignal/send-notification", async (req, res) => {
       headings: { en: title, vi: title },
       contents: { en: message, vi: message },
       data: data || {},
-      url: url || "https://korean-star-q9xy.vercel.app"
+      url: url || process.env.SITE_URL || "https://saohan.vn"
     };
 
     if (Array.isArray(filters) && filters.length > 0) {
@@ -118,9 +118,11 @@ app.post("/api/onesignal/send-notification", async (req, res) => {
       payload.included_segments = ["All"];
     }
 
+    // OneSignal v2 key (os_v2_app_...) dùng Bearer, v1 key dùng Basic
+    const authPrefix = targetApiKey.startsWith("os_v2_") ? "Bearer" : "Basic";
     const headers: Record<string, string> = {
       "Content-Type": "application/json; charset=utf-8",
-      "Authorization": `Basic ${targetApiKey}`
+      "Authorization": `${authPrefix} ${targetApiKey}`
     };
 
     console.log(`[OneSignal Proxy Push] AppID: ${targetAppId} - Title: ${title}`);
