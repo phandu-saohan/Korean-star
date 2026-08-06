@@ -458,6 +458,13 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
     fetchBrandConfigFromSupabase();
   }, []);
 
+  // Re-fetch users from Supabase immediately whenever Admin opens User Accounts subtab
+  useEffect(() => {
+    if (activeSubTab === "users") {
+      fetchUsersFromSupabase();
+    }
+  }, [activeSubTab]);
+
   const fetchBrandConfigFromSupabase = async () => {
     const remote = await fetchCmsSettingsFromSupabase();
     if (remote) {

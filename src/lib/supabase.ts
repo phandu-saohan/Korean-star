@@ -173,6 +173,23 @@ export const saveRegisteredUserToLocalStorage = (user: AuthUserProfile) => {
       existingUsers.unshift(user);
     }
     localStorage.setItem("saohan_registered_users", JSON.stringify(existingUsers));
+
+    // Sync to saohan_all_user_profiles cache as well
+    const allStr = localStorage.getItem("saohan_all_user_profiles");
+    const allUsers: AuthUserProfile[] = allStr ? JSON.parse(allStr) : [];
+    const idx = allUsers.findIndex(
+      (u) => (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase()) || u.id === user.id
+    );
+    if (idx >= 0) {
+      allUsers[idx] = { ...allUsers[idx], ...user };
+    } else {
+      allUsers.unshift(user);
+    }
+    localStorage.setItem("saohan_all_user_profiles", JSON.stringify(allUsers));
+
+    // Invalidate profile cache so next fetch gets fresh profiles
+    _lastProfilesFetchTime = 0;
+    _cachedProfiles = null;
   } catch (e) {
     console.error("Error saving user to localStorage:", e);
   }
