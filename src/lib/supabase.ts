@@ -787,10 +787,15 @@ export const fetchAppointmentsFromSupabase = async (): Promise<any[] | null> => 
 // 20. Save/Upsert Appointment to Supabase DB Table (appointment_bookings)
 export const saveAppointmentToSupabase = async (apt: any) => {
   try {
-    // ctv_user_id: lấy từ ctvId (UUID của người dùng) để liên kết với user_profiles
     const ctvUserId = apt.ctvId || apt.userId || null;
 
-    const payload: any = {
+    // Rút gọn base64 media quá lớn để tránh lỗi 400/413 từ PostgREST
+    let mediaUrl = apt.customerMedia || "";
+    if (mediaUrl.length > 200000) {
+      mediaUrl = mediaUrl.startsWith("data:") ? mediaUrl.slice(0, 100) + "..." : mediaUrl;
+    }
+
+    const fullPayload: any = {
       id: apt.id,
       customer_name: apt.customerName,
       customer_phone: apt.customerPhone,
@@ -804,22 +809,44 @@ export const saveAppointmentToSupabase = async (apt: any) => {
       ctv_code: apt.ctvCode || "",
       ctv_name: apt.ctvName || "",
       ctv_phone: apt.ctvPhone || "",
-      customer_media: apt.customerMedia || "",
+      customer_media: mediaUrl,
       customer_media_type: apt.customerMediaType || "image",
       updated_at: new Date().toISOString()
     };
 
-    // Chỉ gán ctv_user_id nếu là UUID hợp lệ (tránh lưu string ID giả)
     if (ctvUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ctvUserId)) {
-      payload.ctv_user_id = ctvUserId;
+      fullPayload.ctv_user_id = ctvUserId;
     }
 
-    const { error } = await supabase
+    let { error } = await supabase
       .from("appointment_bookings")
-      .upsert(payload, { onConflict: "id" });
+      .upsert(fullPayload, { onConflict: "id" });
 
+    // Fallback: Nếu CSDL Supabase thiếu các cột mở rộng, thử lại với payload cơ bản
     if (error) {
-      console.error("[Supabase] Lỗi lưu appointment:", error.message);
+      console.warn("[Supabase] Retry saving appointment with core payload:", error.message);
+      const corePayload: any = {
+        id: apt.id,
+        customer_name: apt.customerName,
+        customer_phone: apt.customerPhone,
+        service_name: apt.serviceName,
+        doctor_assigned: apt.doctorName,
+        appointment_date: apt.date,
+        status: apt.status,
+        notes: apt.notes || ""
+      };
+      if (apt.ctvCode) corePayload.ctv_code = apt.ctvCode;
+      if (apt.ctvName) corePayload.ctv_name = apt.ctvName;
+      if (apt.ctvPhone) corePayload.ctv_phone = apt.ctvPhone;
+
+      const res = await supabase.from("appointment_bookings").upsert(corePayload, { onConflict: "id" });
+      if (res.error) {
+        console.error("[Supabase] Lỗi lưu appointment core payload:", res.error.message);
+      } else {
+        console.log(`[Supabase] Đã lưu appointment ${apt.id} thành công (core payload)!`);
+      }
+    } else {
+      console.log(`[Supabase] Đã lưu appointment ${apt.id} thành công (full payload)!`);
     }
   } catch (err) {
     console.error("[Supabase] Lỗi lưu appointment:", err);
@@ -834,8 +861,10 @@ export const updateAppointmentStatusInSupabase = async (id: string, status: stri
       .from("appointment_bookings")
       .update({ status, updated_at: new Date().toISOString() })
       .eq("id", id);
+
     if (error) {
-      console.error("[Supabase] JS client update status error:", error);
+      console.warn("[Supabase] Retry update status without updated_at:", error.message);
+      await supabase.from("appointment_bookings").update({ status }).eq("id", id);
     } else {
       console.log(`[Supabase] Cập nhật trạng thái appointment ${id} → ${status} thành công`);
     }
