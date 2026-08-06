@@ -64,24 +64,24 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
   const currentPhone = (authUser?.phone || ctvUser?.phone || "").trim();
   const currentUserName = (authUser?.fullName || ctvUser?.name || "").trim().toLowerCase();
 
-  // Filter personal appointments for "Xem Riêng"
+  // CTV chỉ xem lịch hẹn do chính mình tạo (theo Mã CTV, Tên CTV hoặc SĐT CTV)
   const personalAppointments = appointments.filter((apt) => {
     const aptCode = (apt.ctvCode || "").trim().toLowerCase();
     const aptName = (apt.ctvName || "").trim().toLowerCase();
-    const aptPhone = (apt.customerPhone || "").trim();
+    const aptCtvPhone = (apt.ctvPhone || "").trim();
 
-    return (
-      (currentCtvCode && aptCode.includes(currentCtvCode)) ||
-      (currentPhone && aptPhone === currentPhone) ||
-      (currentUserName && aptName.includes(currentUserName))
-    );
+    const matchesCode = Boolean(currentCtvCode && aptCode && (aptCode === currentCtvCode || aptCode.includes(currentCtvCode) || currentCtvCode.includes(aptCode)));
+    const matchesName = Boolean(currentUserName && aptName && (aptName === currentUserName || aptName.includes(currentUserName) || currentUserName.includes(aptName)));
+    const matchesPhone = Boolean(currentPhone && aptCtvPhone && aptCtvPhone === currentPhone);
+
+    return matchesCode || matchesName || matchesPhone;
   });
 
+  // Admin & Kế toán có quyền xem toàn bộ Lịch Hẹn hệ thống
   const isUserAdmin = Boolean(
     isAdmin ||
     authUser?.role === "admin" ||
-    authUser?.role === "accountant" ||
-    authUser?.role === "editor"
+    authUser?.role === "accountant"
   );
 
   const activeSourceList = isUserAdmin ? appointments : personalAppointments;
