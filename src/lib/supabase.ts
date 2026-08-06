@@ -813,7 +813,7 @@ export const fetchAppointmentsFromSupabase = async (): Promise<any[] | null> => 
       }
     }
 
-    if (!data || data.length === 0) return null;
+    if (!data || data.length === 0) return [];
 
     return data.map((d: any) => ({
       id: d.id,

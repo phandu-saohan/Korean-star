@@ -361,30 +361,10 @@ export default function App() {
 
       // Fetch & Sync Appointments từ Supabase (đồng bộ giữa CTV và Admin)
       try {
-        const localRaw = localStorage.getItem("saohan_appointments");
-        const localAppointments: any[] = localRaw ? JSON.parse(localRaw) : [];
-
         const remoteAppointments = await fetchAppointmentsFromSupabase();
-
-        if (remoteAppointments && remoteAppointments.length > 0) {
-          // Supabase có data: merge với local, ưu tiên Supabase
-          const remoteIds = new Set(remoteAppointments.map((a: any) => a.id));
-          const localOnly = localAppointments.filter((a: any) => !remoteIds.has(a.id));
-
-          // Push các appointment chỉ có local lên Supabase
-          for (const apt of localOnly) {
-            await saveAppointmentToSupabase(apt);
-          }
-
-          const merged = [...remoteAppointments, ...localOnly];
-          setAppointments(merged);
-          safeSetLocalStorage("saohan_appointments", JSON.stringify(merged));
-        } else if (localAppointments.length > 0) {
-          // Supabase trống nhưng local có data: push hết lên Supabase
-          for (const apt of localAppointments) {
-            await saveAppointmentToSupabase(apt);
-          }
-          // Giữ nguyên state local (đã set từ useState init)
+        if (remoteAppointments !== null) {
+          setAppointments(remoteAppointments);
+          safeSetLocalStorage("saohan_appointments", JSON.stringify(remoteAppointments));
         }
       } catch (err) {
         console.warn("[Supabase] Không đồng bộ được appointments:", err);
@@ -424,19 +404,9 @@ export default function App() {
     const syncAppointments = async () => {
       try {
         const remote = await fetchAppointmentsFromSupabase();
-        if (remote && remote.length > 0) {
-          setAppointments((prev) => {
-            // Merge: Supabase làm nguồn chính, giữ local-only items
-            const remoteIds = new Set(remote.map((a: any) => a.id));
-            const localOnly = prev.filter((a) => !remoteIds.has(a.id));
-            const merged = [...remote, ...localOnly];
-            // Chỉ update nếu có thay đổi thực sự
-            if (merged.length !== prev.length) {
-              safeSetLocalStorage("saohan_appointments", JSON.stringify(merged));
-              return merged;
-            }
-            return prev;
-          });
+        if (remote !== null) {
+          setAppointments(remote);
+          safeSetLocalStorage("saohan_appointments", JSON.stringify(remote));
         }
       } catch (_) {
         // Silent fail - không làm gián đoạn UX
