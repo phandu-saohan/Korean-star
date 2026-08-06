@@ -96,13 +96,6 @@ export const initOneSignal = (config?: OneSignalConfig) => {
       // Quiet warning for custom or invalid app ID
     }
   });
-
-  // Request browser Notification permission if supported
-  if ("Notification" in window && Notification.permission === "default") {
-    try {
-      Notification.requestPermission();
-    } catch (e) {}
-  }
 };
 
 /**
@@ -184,8 +177,9 @@ export const setOneSignalUser = (user: AuthUserProfile) => {
     try {
       if (!OneSignal || !OneSignal.User) return;
 
-      // 1. Login user with external ID first if login method exists
-      if (typeof OneSignal.login === "function" && externalId) {
+      // 1. Chỉ login với external ID nếu chưa login với ID này
+      const currentExternalId = OneSignal.User?.externalId || OneSignal.User?.id;
+      if (typeof OneSignal.login === "function" && externalId && currentExternalId !== externalId) {
         try {
           await OneSignal.login(externalId);
         } catch (loginErr) {
