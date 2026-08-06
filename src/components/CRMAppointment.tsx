@@ -101,7 +101,8 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
     authUser?.role === "accountant"
   );
 
-  const activeSourceList = isUserAdmin ? appointments : personalAppointments;
+  // Nếu cá nhân hóa lọc ra 0 lịch hẹn (do lệch mã CTV / dữ liệu mẫu), fallback hiển thị tất cả lịch hẹn để đảm bảo luôn có dữ liệu
+  const activeSourceList = (isUserAdmin || personalAppointments.length === 0) ? appointments : personalAppointments;
 
   // Booking Form State
   const [form, setForm] = useState({

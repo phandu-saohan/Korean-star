@@ -114,20 +114,24 @@ export const CTVHub: React.FC<CTVHubProps> = ({
   const ctvCodeLower = (ctvUser?.code || "").trim().toLowerCase();
   const ctvNameLower = (ctvUser?.name || "").trim().toLowerCase();
 
-  const filteredLeads = leads.filter((lead) => {
+  const myLeads = leads.filter((lead) => {
     const leadCode = (lead.ctvCode || "").trim().toLowerCase();
     const leadName = (lead.ctvName || "").trim().toLowerCase();
 
     const matchesCode = !leadCode || leadCode === ctvCodeLower || (ctvCodeLower && ctvCodeLower.includes(leadCode)) || (leadCode && leadCode.includes(ctvCodeLower));
     const matchesName = !leadName || leadName === ctvNameLower || (ctvNameLower && ctvNameLower.includes(leadName)) || (leadName && leadName.includes(ctvNameLower));
-    const isMyLead = matchesCode || matchesName || leadCode === "ctv" || leadCode === "";
+    return matchesCode || matchesName || leadCode === "ctv" || leadCode === "";
+  });
 
+  const activeLeadsSource = myLeads.length > 0 ? myLeads : leads;
+
+  const filteredLeads = activeLeadsSource.filter((lead) => {
     const matchesSearch =
       lead.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.serviceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (lead.customerPhone && lead.customerPhone.includes(searchTerm));
     const matchesStatus = statusFilter === "ALL" || lead.status === statusFilter;
-    return isMyLead && matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus;
   });
 
   const totalPages = Math.ceil(filteredLeads.length / itemsPerPage) || 1;
