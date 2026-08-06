@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { signInUser, signUpUser, resetUserPassword, fetchRolePermissionsFromSupabase, AuthUserProfile, saveRegisteredUserToLocalStorage } from "../lib/supabase";
 import { notifyUserSignedUp } from "../lib/onesignal";
+import { notifyZaloUserSignedUp } from "../services/zaloService";
 import { VIETNAM_BANKS, getBankLogo, BankInfo } from "../lib/banks";
 
 interface AuthPageProps {
@@ -365,6 +366,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
           };
           saveRegisteredUserToLocalStorage(authProfile);
           notifyUserSignedUp({ fullName, email: userEmail, phone: signupPhone, role: signupRole });
+          notifyZaloUserSignedUp({ fullName, email: userEmail, phone: signupPhone, role: signupRole });
           setTimeout(() => {
             onAuthSuccess(authProfile);
           }, 500);

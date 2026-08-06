@@ -50,6 +50,8 @@ import {
   notifyPayoutCompleted
 } from "./lib/onesignal";
 
+import { notifyZaloPayoutCompleted } from "./services/zaloService";
+
 import { 
   Home,
   Users, 
@@ -531,6 +533,12 @@ export default function App() {
     if (target) {
       notifyPayoutCompleted({
         ctvUserId: target.ctvCode,
+        ctvName: target.ctvName,
+        amount: target.amount,
+        status: "Đã duyệt chi tiền VietQR"
+      });
+      notifyZaloPayoutCompleted({
+        ctvCode: target.ctvCode,
         ctvName: target.ctvName,
         amount: target.amount,
         status: "Đã duyệt chi tiền VietQR"

@@ -148,9 +148,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
     });
 
     const userZaloChatId = authUser?.zaloChatId || ctvUser?.zaloChatId;
-    if (userZaloChatId) {
-      notifyZaloAppointmentCreated(newApt, userZaloChatId);
-    }
+    notifyZaloAppointmentCreated(newApt, userZaloChatId);
 
     setShowModal(false);
     // Reset form
@@ -519,9 +517,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                         newStatus
                       );
                       const targetChatId = authUser?.zaloChatId || ctvUser?.zaloChatId;
-                      if (targetChatId) {
-                        notifyZaloAppointmentStatusChanged(apt, newStatus, targetChatId);
-                      }
+                      notifyZaloAppointmentStatusChanged(apt, newStatus, targetChatId);
                       onUpdateStatus(apt.id, newStatus);
                     }}
                     className="bg-white border border-amber-300 rounded-xl px-2.5 py-1 text-xs font-black text-amber-900 focus:outline-none focus:border-amber-500 shadow-xs cursor-pointer"

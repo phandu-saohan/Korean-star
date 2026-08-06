@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { notifyPayoutRequested } from "../lib/onesignal";
+import { notifyZaloPayoutRequested } from "../services/zaloService";
 
 interface PayoutModalProps {
   ctvUser: CTVUser;
@@ -47,6 +48,14 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
         bankName,
         accountNumber
       });
+      notifyZaloPayoutRequested({
+        ctvUserId: ctvUser.id,
+        ctvCode: ctvUser.code,
+        ctvName: ctvUser.name,
+        amount,
+        bankName,
+        accountNumber
+      }, ctvUser.zaloChatId);
       onConfirmPayout(amount);
     }, 1500);
   };
