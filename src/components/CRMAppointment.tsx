@@ -100,7 +100,11 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
   const isUserAdmin = Boolean(
     isAdmin ||
     authUser?.role === "admin" ||
-    authUser?.role === "accountant"
+    authUser?.role === "accountant" ||
+    ctvUser?.role === "admin" ||
+    ctvUser?.role === "accountant" ||
+    ctvUser?.code?.toLowerCase().includes("admin") ||
+    authUser?.ctvCode?.toLowerCase().includes("admin")
   );
 
   // Nếu cá nhân hóa lọc ra 0 lịch hẹn (do lệch mã CTV / dữ liệu mẫu), fallback hiển thị tất cả lịch hẹn để đảm bảo luôn có dữ liệu

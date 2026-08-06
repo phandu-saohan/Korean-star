@@ -465,15 +465,17 @@ export default function App() {
     });
   }, [appointments, ctvUser]);
 
-  // Fetch ngay khi Admin mở tab CRM (không cần đợi 30s)
+  // Fetch ngay khi Admin hoặc CTV mở tab CRM / Lịch Hẹn (không cần đợi 30s)
   useEffect(() => {
-    if (activeTab === "admin") {
+    if (activeTab === "admin" || activeTab === "crm-appointments") {
       fetchAppointmentsFromSupabase().then((remote) => {
         if (remote && remote.length > 0) {
           setAppointments((prev) => {
             const remoteIds = new Set(remote.map((a: any) => a.id));
             const localOnly = prev.filter((a) => !remoteIds.has(a.id));
-            return [...remote, ...localOnly];
+            const merged = [...remote, ...localOnly];
+            safeSetLocalStorage("saohan_appointments", JSON.stringify(merged));
+            return merged;
           });
         }
       }).catch(() => {});
@@ -726,6 +728,7 @@ export default function App() {
   const handleAddAppointment = (newApt: Appointment) => {
     const updatedAppointments = [newApt, ...appointments];
     setAppointments(updatedAppointments);
+    safeSetLocalStorage("saohan_appointments", JSON.stringify(updatedAppointments));
 
     // Lưu lên Supabase để đồng bộ giữa CTV và Admin
     saveAppointmentToSupabase(newApt).catch((err) =>
@@ -1197,7 +1200,7 @@ export default function App() {
               initialNotes={prefilledNotes}
               ctvUser={ctvUser}
               authUser={authUser}
-              isAdmin={currentRole === "admin"}
+              isAdmin={currentRole === "admin" || authUser?.role === "admin" || authUser?.role === "accountant" || ctvUser?.role === "admin" || ctvUser?.role === "accountant"}
               onRefresh={async () => {
                 try {
                   const remote = await fetchAppointmentsFromSupabase();
