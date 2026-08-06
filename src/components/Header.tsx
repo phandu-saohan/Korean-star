@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { UserRole, CTVUser, RealtimeNotification } from "../types";
 import { resetUserPassword } from "../lib/supabase";
+import { requestNotificationPermission } from "../lib/onesignal";
 import { 
   Sparkles, 
   Users, 
@@ -23,7 +24,8 @@ import {
   Gift,
   CheckCheck,
   Trash2,
-  BellOff
+  BellOff,
+  BellRing
 } from "lucide-react";
 
 interface HeaderProps {
@@ -63,6 +65,9 @@ export const Header: React.FC<HeaderProps> = ({
   const [resetEmail, setResetEmail] = useState("");
   const [resetStatus, setResetStatus] = useState<string | null>(null);
   const [resetLoading, setResetLoading] = useState(false);
+  const [pushPerm, setPushPerm] = useState<string>(
+    typeof window !== "undefined" && "Notification" in window ? Notification.permission : "granted"
+  );
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -203,6 +208,26 @@ export const Header: React.FC<HeaderProps> = ({
                       {notifications.filter((n) => !n.isRead).length} chưa đọc
                     </span>
                   </div>
+
+                  {/* Browser Push Permission Banner */}
+                  {pushPerm !== "granted" && (
+                    <div className="bg-amber-50 border border-amber-300 rounded-xl p-2.5 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-[11px] text-amber-900 font-semibold">
+                        <BellRing className="w-4 h-4 text-amber-600 animate-bounce shrink-0" />
+                        <span>Bật thông báo đẩy trình duyệt để nhận tin tức thời!</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const perm = await requestNotificationPermission();
+                          setPushPerm(perm);
+                        }}
+                        className="bg-amber-500 hover:bg-amber-600 text-slate-950 px-2.5 py-1 rounded-lg font-bold text-[10px] shrink-0 transition cursor-pointer shadow-xs"
+                      >
+                        BẬT NGAY
+                      </button>
+                    </div>
+                  )}
 
                   {/* Actions Header bar */}
                   {notifications.length > 0 && (

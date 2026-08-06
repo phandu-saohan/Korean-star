@@ -98,6 +98,30 @@ export const initOneSignal = (config?: OneSignalConfig) => {
   }
 };
 
+/**
+ * Manually request Notification permission on user interaction (button click)
+ */
+export const requestNotificationPermission = async (): Promise<NotificationPermission> => {
+  if (typeof window === "undefined" || !("Notification" in window)) return "denied";
+  try {
+    const permission = await Notification.requestPermission();
+    console.log("[OneSignal] Browser Notification Permission status:", permission);
+
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async (OneSignal: any) => {
+      try {
+        if (OneSignal?.Notifications?.requestPermission) {
+          await OneSignal.Notifications.requestPermission();
+        }
+      } catch (e) {}
+    });
+
+    return permission;
+  } catch (e) {
+    return "denied";
+  }
+};
+
 // Session key để tránh gọi login + addTags nhiều lần
 const SESSION_KEY = "_os_user_init";
 
