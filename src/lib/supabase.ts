@@ -750,15 +750,16 @@ export const fetchAppointmentsFromSupabase = async (): Promise<any[] | null> => 
       .select("*")
       .order("created_at", { ascending: false });
 
-    // Fallback nếu CSDL Supabase chưa chạy migration tạo cột created_at
+    // Fallback nếu CSDL Supabase chưa có cột created_at hoặc đang reload schema cache
     if (error) {
-      console.warn("[Supabase] Retry fetch appointments without order:", error.message);
       const res = await supabase.from("appointment_bookings").select("*");
       data = res.data;
       error = res.error;
     }
 
-    if (error || !data) return null;
+    if (error || !data) {
+      return null;
+    }
 
     return data.map((d: any) => ({
       id: d.id,
@@ -779,7 +780,6 @@ export const fetchAppointmentsFromSupabase = async (): Promise<any[] | null> => 
       customerMediaType: d.customer_media_type || "image"
     }));
   } catch (err) {
-    console.warn("[Supabase] Không fetch được appointments:", err);
     return null;
   }
 };
