@@ -87,7 +87,7 @@ app.post("/api/onesignal/send-notification", async (req, res) => {
   try {
     const { appId, apiKey, title, message, filters, data, url } = req.body || {};
 
-    const targetAppId = appId || process.env.ONESIGNAL_APP_ID || "6eeb3025-71f7-44af-9a85-f6c52a6da92b";
+    const targetAppId = appId || process.env.ONESIGNAL_APP_ID || "f1f45c7b-fe36-4640-b117-a64cc8fab436";
     const rawKey = (apiKey && typeof apiKey === "string" && apiKey.trim() && !apiKey.includes("demo"))
       ? apiKey.trim()
       : (process.env.ONESIGNAL_REST_API_KEY || "");
