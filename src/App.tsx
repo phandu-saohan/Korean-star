@@ -411,31 +411,42 @@ export default function App() {
     return () => window.removeEventListener("onesignal-notification-toast", handleOsToast);
   }, []);
 
-  // Supabase Realtime WebSocket Listener cho Lịch Hẹn CRM (Cập nhật tự động <100ms)
+  // Supabase Realtime WebSocket Listener cho Lịch Hẹn CRM (với tự động ngắt kết nối khi server 503)
   useEffect(() => {
-    const channel = realtimeSupabase
-      .channel("realtime-appointment-bookings")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "appointment_bookings" },
-        async (payload) => {
-          console.log("⚡ [Supabase Realtime Event]:", payload);
-          try {
-            const remote = await fetchAppointmentsFromSupabase();
-            if (remote !== null) {
-              setAppointments(remote);
-              safeSetLocalStorage("saohan_appointments", JSON.stringify(remote));
-              showToast("⚡ Hệ thống đã tự động cập nhật lịch hẹn mới nhất theo thời gian thực!");
-            }
-          } catch (_) {}
-        }
-      )
-      .subscribe((status) => {
-        console.log("[Supabase Realtime WebSocket Status]:", status);
-      });
+    let activeChannel: any = null;
+    try {
+      activeChannel = realtimeSupabase
+        .channel("realtime-appointment-bookings")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "appointment_bookings" },
+          async (payload) => {
+            console.log("⚡ [Supabase Realtime Event]:", payload);
+            try {
+              const remote = await fetchAppointmentsFromSupabase();
+              if (remote !== null) {
+                setAppointments(remote);
+                safeSetLocalStorage("saohan_appointments", JSON.stringify(remote));
+              }
+            } catch (_) {}
+          }
+        )
+        .subscribe((status) => {
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            // Ngắt channel tự động nếu self-hosted Supabase Realtime wss:// bị 503
+            try {
+              if (activeChannel) realtimeSupabase.removeChannel(activeChannel);
+            } catch (e) {}
+          }
+        });
+    } catch (e) {}
 
     return () => {
-      realtimeSupabase.removeChannel(channel);
+      if (activeChannel) {
+        try {
+          realtimeSupabase.removeChannel(activeChannel);
+        } catch (e) {}
+      }
     };
   }, []);
 

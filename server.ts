@@ -89,8 +89,21 @@ app.all("/api/supabase-proxy/*", async (req, res) => {
     }
 
     console.log(`[Supabase Proxy] ${req.method} ${targetUrl}`);
-    const response = await fetch(targetUrl, fetchOptions);
-    const text = await response.text();
+    let response = await fetch(targetUrl, fetchOptions);
+    let text = await response.text();
+
+    // Fallback: nếu Supabase trả về >= 400 do Token Auth của trình duyệt hết hạn/không hợp lệ, thử lại với anonKey chuẩn
+    if (response.status >= 400 && headers["Authorization"] !== `Bearer ${anonKey}`) {
+      const retryHeaders = { ...headers, Authorization: `Bearer ${anonKey}` };
+      const retryOptions = { ...fetchOptions, headers: retryHeaders };
+      const retryRes = await fetch(targetUrl, retryOptions);
+      const retryText = await retryRes.text();
+      if (retryRes.status < 400) {
+        console.log(`[Supabase Proxy] Fixed ${response.status} -> ${retryRes.status} via anonKey fallback!`);
+        response = retryRes;
+        text = retryText;
+      }
+    }
 
     if (response.status >= 400) {
       console.warn(`[Supabase Proxy Warning ${response.status}] ${req.method} ${targetUrl} ->`, text.substring(0, 300));
