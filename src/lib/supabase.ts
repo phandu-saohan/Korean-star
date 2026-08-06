@@ -211,8 +211,11 @@ export const signInUser = async (emailOrPhone: string, password: string) => {
 
 // 3. Sign Out (Đăng xuất khỏi Supabase Session)
 export const signOutUser = async () => {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  try {
+    await supabase.auth.signOut();
+  } catch (error) {
+    console.warn("[Supabase SignOut Warning]:", error);
+  }
 };
 
 // 4. Reset Password (Quên mật khẩu)

@@ -41,7 +41,8 @@ import {
   deleteFeedbackFromSupabase,
   fetchAppointmentsFromSupabase,
   saveAppointmentToSupabase,
-  updateAppointmentStatusInSupabase
+  updateAppointmentStatusInSupabase,
+  signOutUser
 } from "./lib/supabase";
 
 import {
@@ -305,7 +306,12 @@ export default function App() {
     }
   }, [activeTab, authUser]);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    try {
+      await signOutUser();
+    } catch (e) {
+      console.warn("[SignOut Notice]:", e);
+    }
     setAuthUser(null);
     localStorage.removeItem("saohan_auth_user");
     localStorage.removeItem("saohan_active_tab");
@@ -862,6 +868,7 @@ export default function App() {
           else if (role === "customer") setActiveTab("service-catalog");
           else setActiveTab("ctv-dashboard");
         }}
+        onSignOut={handleSignOut}
         ctvUser={ctvUser}
         notifications={notifications}
         onOpenPayout={() => setPayoutModalOpen(true)}
