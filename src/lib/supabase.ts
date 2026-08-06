@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL || "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io";
+const SUPABASE_REAL_URL = (import.meta as any).env?.VITE_SUPABASE_URL || "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io";
 
 const DEFAULT_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE";
 
@@ -22,7 +22,19 @@ const getValidSupabaseKey = (): string => {
 
 const SUPABASE_ANON_KEY = getValidSupabaseKey();
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Dùng proxy nội bộ của Express server để tránh lỗi CORS trình duyệt
+// Server sẽ forward request sang Supabase thật phía server-to-server
+const SUPABASE_PROXY_URL = "/api/supabase-proxy";
+
+// SUPABASE_URL: dùng proxy URL trong trình duyệt, real URL giữ lại cho reference
+export const SUPABASE_URL = SUPABASE_REAL_URL;
+export const supabase = createClient(SUPABASE_PROXY_URL, SUPABASE_ANON_KEY, {
+  global: {
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+    },
+  },
+});
 
 export interface AuthUserProfile {
   id: string;

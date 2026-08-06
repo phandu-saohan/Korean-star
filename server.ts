@@ -32,6 +32,55 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// API: Proxy Supabase REST API (giải quyết lỗi CORS trình duyệt)
+// Mọi request /api/supabase-proxy/* sẽ được chuyển tiếp tới Supabase server
+app.all("/api/supabase-proxy/*splat", async (req, res) => {
+  const supabaseUrl = process.env.VITE_SUPABASE_URL
+    || "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io";
+  const anonKey = process.env.VITE_SUPABASE_ANON_KEY
+    || process.env.SUPABASE_ANON_KEY
+    || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE";
+
+  // Lấy path sau /api/supabase-proxy/
+  const proxyPath = req.params.splat || "";
+  const targetUrl = `${supabaseUrl}/${proxyPath}${req.url.includes("?") ? req.url.substring(req.url.indexOf("?")) : ""}`;
+
+  try {
+    const headers: Record<string, string> = {
+      "apikey": anonKey,
+      "Authorization": req.headers.authorization || `Bearer ${anonKey}`,
+      "Content-Type": "application/json",
+    };
+
+    // Chuyển tiếp các headers quan trọng
+    if (req.headers.prefer) headers["Prefer"] = req.headers.prefer as string;
+    if (req.headers.range) headers["Range"] = req.headers.range as string;
+
+    const fetchOptions: RequestInit = {
+      method: req.method,
+      headers,
+    };
+
+    if (req.method !== "GET" && req.method !== "HEAD" && req.body) {
+      fetchOptions.body = JSON.stringify(req.body);
+    }
+
+    const response = await fetch(targetUrl, fetchOptions);
+    const text = await response.text();
+
+    // Chuyển tiếp response headers quan trọng
+    res.status(response.status);
+    if (response.headers.get("content-range")) {
+      res.setHeader("Content-Range", response.headers.get("content-range")!);
+    }
+    res.setHeader("Content-Type", "application/json");
+    res.send(text);
+  } catch (err: any) {
+    console.error("[Supabase Proxy] Error:", err.message);
+    res.status(502).json({ error: "Proxy error", message: err.message });
+  }
+});
+
 // API: Proxy OneSignal send-notification (tránh lỗi CORS & 401 khi gọi từ trình duyệt)
 app.post("/api/onesignal/send-notification", async (req, res) => {
   try {
