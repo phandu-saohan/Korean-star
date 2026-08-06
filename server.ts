@@ -34,16 +34,19 @@ app.get("/api/health", (req, res) => {
 
 // API: Proxy Supabase REST API (giải quyết lỗi CORS trình duyệt)
 // Mọi request /api/supabase-proxy/* sẽ được chuyển tiếp tới Supabase server
-app.all("/api/supabase-proxy/*splat", async (req, res) => {
+app.all("/api/supabase-proxy/*", async (req, res) => {
   const supabaseUrl = process.env.VITE_SUPABASE_URL
     || "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io";
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY
     || process.env.SUPABASE_ANON_KEY
     || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE";
 
-  // Lấy path sau /api/supabase-proxy/
-  const proxyPath = req.params.splat || "";
-  const targetUrl = `${supabaseUrl}/${proxyPath}${req.url.includes("?") ? req.url.substring(req.url.indexOf("?")) : ""}`;
+  // Express 4: lấy path sau /api/supabase-proxy/ qua req.params[0]
+  const proxyPath = (req.params as any)[0] || "";
+  const queryString = req.url.includes("?") ? req.url.substring(req.url.indexOf("?")) : "";
+  const targetUrl = `${supabaseUrl}/${proxyPath}${queryString}`;
+
+  console.log(`[Supabase Proxy] ${req.method} ${targetUrl}`);
 
   try {
     const headers: Record<string, string> = {
@@ -52,7 +55,6 @@ app.all("/api/supabase-proxy/*splat", async (req, res) => {
       "Content-Type": "application/json",
     };
 
-    // Chuyển tiếp các headers quan trọng
     if (req.headers.prefer) headers["Prefer"] = req.headers.prefer as string;
     if (req.headers.range) headers["Range"] = req.headers.range as string;
 
@@ -68,7 +70,6 @@ app.all("/api/supabase-proxy/*splat", async (req, res) => {
     const response = await fetch(targetUrl, fetchOptions);
     const text = await response.text();
 
-    // Chuyển tiếp response headers quan trọng
     res.status(response.status);
     if (response.headers.get("content-range")) {
       res.setHeader("Content-Range", response.headers.get("content-range")!);
