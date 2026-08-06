@@ -14,7 +14,7 @@ export interface OneSignalConfig {
 }
 
 export const DEFAULT_ONESIGNAL_CONFIG: OneSignalConfig = {
-  appId: "6eeb3025-71f7-44af-9a85-f6c52a6da92b",
+  appId: "f1f45c7b-fe36-4640-b117-a64cc8fab436",
   apiKey: "",
   enabled: true
 };
@@ -372,10 +372,29 @@ export const notifyAppointmentCreated = (appointment: any) => {
 export const notifyAppointmentStatusChanged = (appointment: any, newStatus: string) => {
   const ctvId = appointment.ctvId || appointment.userId;
   const customerName = appointment.customerName || "Khách hàng";
+  const serviceName = appointment.serviceName || appointment.service_name || "Dịch vụ Thẩm mỹ";
+  const dateStr = appointment.appointmentDate || appointment.date || "hôm nay";
+
+  let statusEmoji = "🔄";
+  let statusDetail = `chuyển sang trạng thái: '${newStatus}'`;
+
+  if (newStatus === "Đã xác nhận") {
+    statusEmoji = "✅";
+    statusDetail = `đã được XÁC NHẬN lịch khám vào ${dateStr}`;
+  } else if (newStatus === "Đang điều trị") {
+    statusEmoji = "🏥";
+    statusDetail = `đang trong quá trình ĐIỀU TRỊ / PHẪU THUẬT`;
+  } else if (newStatus === "Hoàn thành") {
+    statusEmoji = "🎉";
+    statusDetail = `đã HOÀN THÀNH thành công! Hoa hồng đã được ghi nhận`;
+  } else if (newStatus === "Đã hủy") {
+    statusEmoji = "❌";
+    statusDetail = `đã bị HỦY lịch khám`;
+  }
 
   sendOneSignalNotification({
-    title: `🔄 Cập Nhật Lịch Hẹn: ${customerName}`,
-    message: `Lịch hẹn khám bệnh của ${customerName} đã chuyển sang trạng thái: '${newStatus}'.`,
+    title: `${statusEmoji} Lịch Hẹn [${newStatus.toUpperCase()}]: ${customerName}`,
+    message: `Khách hàng ${customerName} (${serviceName}) ${statusDetail}.`,
     targetUserId: ctvId,
     targetRoles: ["admin", "accountant"],
     data: { appointmentId: appointment.id, newStatus, type: "APPOINTMENT_STATUS" }
