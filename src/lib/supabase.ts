@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL || "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io";
+const SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL || "http://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io";
 
-const DEFAULT_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1MDAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE";
+const DEFAULT_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE";
 
 // Tự động kiểm tra và lọc chỉ nhận key dạng JWT (bắt đầu bằng eyJ...)
 // Nếu env chứa key sai format (như sb_publishable_...), tự động fallback về JWT chuẩn.
