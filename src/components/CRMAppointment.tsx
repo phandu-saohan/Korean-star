@@ -66,7 +66,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
   const currentUserId = (authUser?.id || ctvUser?.id || "").trim().toLowerCase();
   const currentUserEmail = (authUser?.email || "").trim().toLowerCase();
 
-  // CTV xem lịch hẹn do chính mình tạo (khớp theo Mã CTV, Tên CTV, SĐT CTV, User ID hoặc lịch chưa gán)
+  // CTV CHỈ xem lịch hẹn do chính mình tạo (khớp theo Mã CTV, Tên CTV, SĐT CTV, hoặc User ID)
   const personalAppointments = appointments.filter((apt) => {
     const aptCode = (apt.ctvCode || "").trim().toLowerCase();
     const aptName = (apt.ctvName || "").trim().toLowerCase();
@@ -88,15 +88,10 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
     // Match theo User ID / CTV ID
     const matchesId = Boolean(currentUserId && aptCtvId && aptCtvId === currentUserId);
 
-    // Fallback: nếu không match bất kỳ điều kiện nào và CTV đã có lịch hẹn riêng, không hiển thị lịch chưa gán
-    // Chỉ fallback isGenericApt khi chưa match theo các tiêu chí rõ ràng
-    const hasPersonalMatch = matchesCode || matchesName || matchesPhone || matchesId;
-    const isGenericApt = !hasPersonalMatch && (!aptCode && !aptName);
-
-    return matchesCode || matchesName || matchesPhone || matchesId || isGenericApt;
+    return matchesCode || matchesName || matchesPhone || matchesId;
   });
 
-  // Admin & Kế toán có quyền xem toàn bộ Lịch Hẹn hệ thống
+  // Admin & Kế toán xem toàn bộ Lịch Hẹn hệ thống; CTV chỉ xem đúng lịch hẹn của chính mình
   const isUserAdmin = Boolean(
     isAdmin ||
     authUser?.role === "admin" ||
@@ -107,8 +102,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
     authUser?.ctvCode?.toLowerCase().includes("admin")
   );
 
-  // Nếu cá nhân hóa lọc ra 0 lịch hẹn (do lệch mã CTV / dữ liệu mẫu), fallback hiển thị tất cả lịch hẹn để đảm bảo luôn có dữ liệu
-  const activeSourceList = (isUserAdmin || personalAppointments.length === 0) ? appointments : personalAppointments;
+  const activeSourceList = isUserAdmin ? appointments : personalAppointments;
 
   // Booking Form State
   const [form, setForm] = useState({

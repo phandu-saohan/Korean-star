@@ -114,16 +114,22 @@ export const CTVHub: React.FC<CTVHubProps> = ({
   const ctvCodeLower = (ctvUser?.code || "").trim().toLowerCase();
   const ctvNameLower = (ctvUser?.name || "").trim().toLowerCase();
 
+  const isUserAdmin = Boolean(
+    ctvUser?.role === "admin" ||
+    ctvUser?.role === "accountant" ||
+    ctvUser?.code?.toLowerCase().includes("admin")
+  );
+
   const myLeads = leads.filter((lead) => {
     const leadCode = (lead.ctvCode || "").trim().toLowerCase();
     const leadName = (lead.ctvName || "").trim().toLowerCase();
 
-    const matchesCode = !leadCode || leadCode === ctvCodeLower || (ctvCodeLower && ctvCodeLower.includes(leadCode)) || (leadCode && leadCode.includes(ctvCodeLower));
-    const matchesName = !leadName || leadName === ctvNameLower || (ctvNameLower && ctvNameLower.includes(leadName)) || (leadName && leadName.includes(ctvNameLower));
-    return matchesCode || matchesName || leadCode === "ctv" || leadCode === "";
+    const matchesCode = Boolean(ctvCodeLower && leadCode && (leadCode === ctvCodeLower || ctvCodeLower.includes(leadCode) || leadCode.includes(ctvCodeLower)));
+    const matchesName = Boolean(ctvNameLower && leadName && (leadName === ctvNameLower || ctvNameLower.includes(leadName) || leadName.includes(ctvNameLower)));
+    return matchesCode || matchesName;
   });
 
-  const activeLeadsSource = myLeads.length > 0 ? myLeads : leads;
+  const activeLeadsSource = isUserAdmin ? leads : myLeads;
 
   const filteredLeads = activeLeadsSource.filter((lead) => {
     const matchesSearch =
