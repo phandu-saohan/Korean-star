@@ -94,6 +94,12 @@ CREATE TABLE IF NOT EXISTS public.cms_settings (
   base_commission_rate NUMERIC DEFAULT 15,
   auto_payout_threshold NUMERIC DEFAULT 50000000,
   system_currency TEXT DEFAULT 'VNĐ',
+  one_signal_app_id TEXT,
+  one_signal_api_key TEXT,
+  zalo_bot_token TEXT,
+  zalo_default_chat_id TEXT,
+  zalo_webhook_secret TEXT,
+  ctv_tiers JSONB,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
