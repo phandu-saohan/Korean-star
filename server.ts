@@ -36,19 +36,27 @@ app.get("/api/health", (req, res) => {
 // API: Proxy Supabase REST API (giải quyết lỗi CORS trình duyệt)
 // Mọi request /api/supabase-proxy/* sẽ được chuyển tiếp tới Supabase server
 app.all("/api/supabase-proxy/*", async (req, res) => {
-  const rawSupabaseUrl = process.env.VITE_SUPABASE_URL
-    || "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io";
+  const getCleanEnv = (key: string, fallback: string): string => {
+    const val = process.env[key];
+    if (!val || typeof val !== "string" || !val.trim()) return fallback;
+    return val.trim().replace(/^["']|["']$/g, "");
+  };
+
+  const rawSupabaseUrl = getCleanEnv("VITE_SUPABASE_URL", "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io");
   const supabaseUrl = rawSupabaseUrl.replace(/\/+$/, "");
 
-  const anonKey = process.env.VITE_SUPABASE_ANON_KEY
-    || process.env.SUPABASE_ANON_KEY
-    || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE";
+  const anonKey = getCleanEnv(
+    "VITE_SUPABASE_ANON_KEY",
+    getCleanEnv(
+      "SUPABASE_ANON_KEY",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE"
+    )
+  );
 
-  // Express 4: lấy path sau /api/supabase-proxy/ qua req.params[0]
-  const rawPath = (req.params as any)[0] || "";
-  const proxyPath = rawPath.replace(/^\/+/, "");
-  const queryString = req.url.includes("?") ? req.url.substring(req.url.indexOf("?")) : "";
-  const targetUrl = `${supabaseUrl}/${proxyPath}${queryString}`;
+  // Parse path chính xác bằng req.originalUrl hoặc req.url (giữ nguyên query params)
+  const fullReqUrl = req.originalUrl || req.url || "";
+  const proxySubPath = fullReqUrl.replace(/^.*?\/api\/supabase-proxy/, "").replace(/^\/+/, "");
+  const targetUrl = `${supabaseUrl}/${proxySubPath}`;
 
   // Kiểm tra Authorization header: fallback sang anonKey nếu client gửi token rỗng/hỏng
   let authHeader = req.headers.authorization as string | undefined;
@@ -69,6 +77,7 @@ app.all("/api/supabase-proxy/*", async (req, res) => {
     if (req.headers.accept) headers["Accept"] = req.headers.accept as string;
     if (req.headers.prefer) headers["Prefer"] = req.headers.prefer as string;
     if (req.headers.range) headers["Range"] = req.headers.range as string;
+    if (req.headers["x-client-info"]) headers["X-Client-Info"] = req.headers["x-client-info"] as string;
 
     const fetchOptions: RequestInit = {
       method: req.method,
@@ -79,6 +88,7 @@ app.all("/api/supabase-proxy/*", async (req, res) => {
       fetchOptions.body = JSON.stringify(req.body);
     }
 
+    console.log(`[Supabase Proxy] ${req.method} ${targetUrl}`);
     const response = await fetch(targetUrl, fetchOptions);
     const text = await response.text();
 

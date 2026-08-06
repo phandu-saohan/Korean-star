@@ -10,7 +10,7 @@ export default async function handler(
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
   res.setHeader(
     "Access-Control-Allow-Headers",
-    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, apikey, prefer, range"
+    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, apikey, prefer, range, x-client-info"
   );
 
   if (req.method === "OPTIONS") {
@@ -19,19 +19,27 @@ export default async function handler(
     return;
   }
 
-  const rawSupabaseUrl = process.env.VITE_SUPABASE_URL
-    || "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io";
+  const getCleanEnv = (key: string, fallback: string): string => {
+    const val = process.env[key];
+    if (!val || typeof val !== "string" || !val.trim()) return fallback;
+    return val.trim().replace(/^["']|["']$/g, "");
+  };
+
+  const rawSupabaseUrl = getCleanEnv("VITE_SUPABASE_URL", "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io");
   const supabaseUrl = rawSupabaseUrl.replace(/\/+$/, "");
 
-  const anonKey = process.env.VITE_SUPABASE_ANON_KEY
-    || process.env.SUPABASE_ANON_KEY
-    || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE";
+  const anonKey = getCleanEnv(
+    "VITE_SUPABASE_ANON_KEY",
+    getCleanEnv(
+      "SUPABASE_ANON_KEY",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE"
+    )
+  );
 
   // Extract path from req.url: /api/supabase-proxy/...
   const reqUrl = req.url || "";
-  const match = reqUrl.match(/\/api\/supabase-proxy\/(.*)/);
-  const subPathWithQuery = match ? match[1] : "";
-  const targetUrl = `${supabaseUrl}/${subPathWithQuery.replace(/^\/+/, "")}`;
+  const proxySubPath = reqUrl.replace(/^.*?\/api\/supabase-proxy/, "").replace(/^\/+/, "");
+  const targetUrl = `${supabaseUrl}/${proxySubPath}`;
 
   // Authorization header: fallback sang anonKey nếu client không gửi hoặc rỗng
   let authHeader = (req.headers.authorization as string) || (req.headers.Authorization as string) || "";
@@ -53,6 +61,7 @@ export default async function handler(
     if (req.headers.accept) headers["Accept"] = req.headers.accept as string;
     if (req.headers.prefer) headers["Prefer"] = req.headers.prefer as string;
     if (req.headers.range) headers["Range"] = req.headers.range as string;
+    if (req.headers["x-client-info"]) headers["X-Client-Info"] = req.headers["x-client-info"] as string;
 
     const fetchOptions: RequestInit = {
       method: req.method,
