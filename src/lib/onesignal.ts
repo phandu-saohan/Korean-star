@@ -102,6 +102,34 @@ export const initOneSignal = (config?: OneSignalConfig) => {
 const SESSION_KEY = "_os_user_init";
 
 /**
+ * Clear stale OneSignal IndexedDB databases to resolve 409 Conflict
+ * caused by orphaned operation queues from previous sessions.
+ */
+const clearOneSignalIndexedDB = async (): Promise<void> => {
+  if (typeof indexedDB === "undefined") return;
+  try {
+    const dbs = await indexedDB.databases?.();
+    if (dbs) {
+      const osDBs = dbs.filter((db) => db.name && db.name.toLowerCase().includes("onesignal"));
+      await Promise.all(
+        osDBs.map(
+          (db) =>
+            new Promise<void>((resolve) => {
+              if (!db.name) return resolve();
+              const req = indexedDB.deleteDatabase(db.name);
+              req.onsuccess = () => resolve();
+              req.onerror = () => resolve();
+              req.onblocked = () => resolve();
+            })
+        )
+      );
+    }
+  } catch (e) {
+    // Absorbed — IndexedDB cleanup is best-effort
+  }
+};
+
+/**
  * Set OneSignal External User ID and Role Tags
  * CHỈ chạy MỘT LẦN mỗi session cho mỗi user ID.
  * - User gets tagged with their user_id, role, ctv_code
@@ -139,18 +167,28 @@ export const setOneSignalUser = (user: AuthUserProfile) => {
           await OneSignal.User.addTags(tagsPayload);
           console.log(`[OneSignal] Dynamic Tags set successfully: ${user.fullName} (${user.role}) - ID: ${user.id}`);
         } catch (tagErr: any) {
-          // Tự động khôi phục nếu IndexedDB bị dính lỗi 409 Conflict từ session cũ:
-          // Logout để dọn dẹp IndexedDB queue bị hỏng, sau đó thử gán lại tag
-          console.warn("[OneSignal] addTags failed, resetting stale IndexedDB session...", tagErr);
-          if (typeof OneSignal.logout === "function") {
-            try {
+          // 409 Conflict: IndexedDB operation queue từ session cũ bị treo.
+          // Fix: logout() → xóa IndexedDB stale entries → chờ session settle → login() lại → addTags()
+          console.warn("[OneSignal] addTags 409 conflict, clearing stale session...", tagErr);
+          try {
+            // Bước 1: Logout để dọn queue
+            if (typeof OneSignal.logout === "function") {
               await OneSignal.logout();
-              await new Promise((resolve) => setTimeout(resolve, 200));
-              await OneSignal.User.addTags(tagsPayload);
-              console.log(`[OneSignal] Dynamic Tags set successfully after session reset: ${user.fullName}`);
-            } catch (retryErr) {
-              // Absorbed
             }
+            // Bước 2: Xóa IndexedDB stale caches
+            await clearOneSignalIndexedDB();
+            // Bước 3: Chờ session settle đủ lâu (800ms)
+            await new Promise((resolve) => setTimeout(resolve, 800));
+            // Bước 4: Re-login với external user ID
+            if (typeof OneSignal.login === "function") {
+              await OneSignal.login(externalId);
+              await new Promise((resolve) => setTimeout(resolve, 300));
+            }
+            // Bước 5: Retry addTags
+            await OneSignal.User.addTags(tagsPayload);
+            console.log(`[OneSignal] Tags set successfully after session reset: ${user.fullName}`);
+          } catch (retryErr) {
+            // Absorbed — non-critical, push notifications still work without tags
           }
         }
       }
