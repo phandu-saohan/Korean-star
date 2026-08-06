@@ -729,7 +729,7 @@ export const deleteFeedbackFromSupabase = async (feedbackId: string) => {
 export const fetchAppointmentsFromSupabase = async (): Promise<any[] | null> => {
   try {
     const { data, error } = await supabase.from("appointment_bookings").select("*");
-    if (error || !data || data.length === 0) return [];
+    if (error || !data) return null;
 
     return data.map((d: any) => ({
       id: d.id,
@@ -750,7 +750,7 @@ export const fetchAppointmentsFromSupabase = async (): Promise<any[] | null> => 
     }));
   } catch (err) {
     console.warn("[Supabase] Không fetch được appointments:", err);
-    return [];
+    return null;
   }
 };
 
