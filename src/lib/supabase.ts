@@ -795,6 +795,7 @@ export const saveAppointmentToSupabase = async (apt: any) => {
       mediaUrl = mediaUrl.startsWith("data:") ? mediaUrl.slice(0, 100) + "..." : mediaUrl;
     }
 
+    // 1. Full Payload: chứa đầy đủ thông tin CTV (bao gồm ctv_user_id UUID & updated_at)
     const fullPayload: any = {
       id: apt.id,
       customer_name: apt.customerName,
@@ -822,10 +823,10 @@ export const saveAppointmentToSupabase = async (apt: any) => {
       .from("appointment_bookings")
       .upsert(fullPayload, { onConflict: "id" });
 
-    // Fallback: Nếu CSDL Supabase thiếu các cột mở rộng, thử lại với payload cơ bản
+    // 2. Fallback Mid Payload: nếu CSDL chưa có ctv_user_id hoặc updated_at, lưu đầy đủ thông tin CTV dạng string
     if (error) {
-      console.warn("[Supabase] Retry saving appointment with core payload:", error.message);
-      const corePayload: any = {
+      console.warn("[Supabase] Retry saving appointment with mid payload (without ctv_user_id/updated_at):", error.message);
+      const midPayload: any = {
         id: apt.id,
         customer_name: apt.customerName,
         customer_phone: apt.customerPhone,
@@ -833,20 +834,44 @@ export const saveAppointmentToSupabase = async (apt: any) => {
         doctor_assigned: apt.doctorName,
         appointment_date: apt.date,
         status: apt.status,
-        notes: apt.notes || ""
+        appointment_type: apt.appointmentType || "Lịch tư vấn",
+        notes: apt.notes || "",
+        time: apt.time || "",
+        ctv_code: apt.ctvCode || "",
+        ctv_name: apt.ctvName || "",
+        ctv_phone: apt.ctvPhone || ""
       };
-      if (apt.ctvCode) corePayload.ctv_code = apt.ctvCode;
-      if (apt.ctvName) corePayload.ctv_name = apt.ctvName;
-      if (apt.ctvPhone) corePayload.ctv_phone = apt.ctvPhone;
 
-      const res = await supabase.from("appointment_bookings").upsert(corePayload, { onConflict: "id" });
-      if (res.error) {
-        console.error("[Supabase] Lỗi lưu appointment core payload:", res.error.message);
+      const resMid = await supabase.from("appointment_bookings").upsert(midPayload, { onConflict: "id" });
+      
+      // 3. Fallback Core Payload: nếu CSDL là bản rất cũ, lưu tối thiểu nhưng ĐẢM BẢO luôn gắn Mã & Tên CTV
+      if (resMid.error) {
+        console.warn("[Supabase] Retry saving appointment with core payload:", resMid.error.message);
+        const corePayload: any = {
+          id: apt.id,
+          customer_name: apt.customerName,
+          customer_phone: apt.customerPhone,
+          service_name: apt.serviceName,
+          doctor_assigned: apt.doctorName,
+          appointment_date: apt.date,
+          status: apt.status,
+          notes: apt.notes || "",
+          ctv_code: apt.ctvCode || "",
+          ctv_name: apt.ctvName || "",
+          ctv_phone: apt.ctvPhone || ""
+        };
+
+        const resCore = await supabase.from("appointment_bookings").upsert(corePayload, { onConflict: "id" });
+        if (resCore.error) {
+          console.error("[Supabase] Lỗi lưu appointment core payload:", resCore.error.message);
+        } else {
+          console.log(`[Supabase] Đã lưu appointment ${apt.id} kèm Mã/Tên CTV ${apt.ctvCode} thành công! (core payload)`);
+        }
       } else {
-        console.log(`[Supabase] Đã lưu appointment ${apt.id} thành công (core payload)!`);
+        console.log(`[Supabase] Đã lưu appointment ${apt.id} kèm Mã/Tên CTV ${apt.ctvCode} thành công! (mid payload)`);
       }
     } else {
-      console.log(`[Supabase] Đã lưu appointment ${apt.id} thành công (full payload)!`);
+      console.log(`[Supabase] Đã lưu appointment ${apt.id} kèm ctv_user_id thành công! (full payload)`);
     }
   } catch (err) {
     console.error("[Supabase] Lỗi lưu appointment:", err);
