@@ -1162,11 +1162,23 @@ export default function App() {
               authUser={authUser}
               isAdmin={currentRole === "admin"}
               onRefresh={async () => {
-                localStorage.removeItem("saohan_appointments");
-                const remote = await fetchAppointmentsFromSupabase();
-                setAppointments(remote || []);
-                safeSetLocalStorage("saohan_appointments", JSON.stringify(remote || []));
-                showToast("Đã dọn dẹp bộ nhớ đệm & làm mới dữ liệu CSDL.");
+                try {
+                  const remote = await fetchAppointmentsFromSupabase();
+                  if (remote && remote.length > 0) {
+                    setAppointments((prev) => {
+                      const remoteIds = new Set(remote.map((a: any) => a.id));
+                      const localOnly = prev.filter((a) => !remoteIds.has(a.id));
+                      const merged = [...remote, ...localOnly];
+                      safeSetLocalStorage("saohan_appointments", JSON.stringify(merged));
+                      return merged;
+                    });
+                    showToast(`Đã đồng bộ ${remote.length} lịch hẹn từ Supabase thành công!`);
+                  } else {
+                    showToast("Đã làm mới. Giữ nguyên danh sách lịch hẹn hiện tại.");
+                  }
+                } catch (err) {
+                  showToast("Không thể làm mới dữ liệu từ Supabase.");
+                }
               }}
             />
           )}
