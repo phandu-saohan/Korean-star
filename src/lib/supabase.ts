@@ -280,20 +280,27 @@ export const fetchUserProfile = async (userId: string): Promise<AuthUserProfile 
   }
 };
 
+// Memory Cache Variables to prevent repetitive network spam on 520 / CORS errors
+let _cachedProfiles: AuthUserProfile[] | null = null;
+let _lastProfilesFetchTime = 0;
+
+let _cachedCmsSettings: any = null;
+let _lastCmsFetchTime = 0;
+
+const FETCH_COOLDOWN_MS = 30000; // 30 seconds TTL cache
+
 // 5b. Fetch All User Profiles from Supabase DB Table (user_profiles)
-export const fetchAllUserProfilesFromSupabase = async (): Promise<AuthUserProfile[]> => {
+export const fetchAllUserProfilesFromSupabase = async (forceRefresh = false): Promise<AuthUserProfile[]> => {
+  const now = Date.now();
+  if (!forceRefresh && _cachedProfiles && (now - _lastProfilesFetchTime < FETCH_COOLDOWN_MS)) {
+    return _cachedProfiles;
+  }
+
   try {
-    let { data, error } = await supabase
+    const { data, error } = await supabase
       .from("user_profiles")
       .select("*")
       .order("created_at", { ascending: false });
-
-    // Try fallback without order ONLY if created_at column error occurred (not network/CORS error)
-    if (error && error.message && error.message.toLowerCase().includes("created_at")) {
-      const res = await supabase.from("user_profiles").select("*");
-      data = res.data;
-      error = res.error;
-    }
 
     if (data && Array.isArray(data) && data.length > 0) {
       const mappedProfiles: AuthUserProfile[] = data.map((d: any) => ({
@@ -317,6 +324,9 @@ export const fetchAllUserProfilesFromSupabase = async (): Promise<AuthUserProfil
         zaloChatId: d.zalo_chat_id
       }));
 
+      _cachedProfiles = mappedProfiles;
+      _lastProfilesFetchTime = now;
+
       // Cache to localStorage
       try {
         localStorage.setItem("saohan_all_user_profiles", JSON.stringify(mappedProfiles));
@@ -325,25 +335,33 @@ export const fetchAllUserProfilesFromSupabase = async (): Promise<AuthUserProfil
       return mappedProfiles;
     }
   } catch (err) {
-    // Network / CORS / Paused Supabase Project Error
+    // Network / CORS / HTTP 520 / Paused Supabase Project Error
   }
 
-  // Local Storage Fallback when Supabase is unreachable/paused or CORS blocked
+  _lastProfilesFetchTime = now; // Set cooldown on error so we don't spam network requests
+
+  // Local Storage Fallback when Supabase is unreachable/paused or returning 520
   try {
     const saved = localStorage.getItem("saohan_all_user_profiles");
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        _cachedProfiles = parsed;
+        return parsed;
+      }
     }
 
     const savedAuth = localStorage.getItem("saohan_auth_user");
     if (savedAuth) {
       const parsedAuth = JSON.parse(savedAuth);
-      if (parsedAuth && parsedAuth.id) return [parsedAuth];
+      if (parsedAuth && parsedAuth.id) {
+        _cachedProfiles = [parsedAuth];
+        return [parsedAuth];
+      }
     }
   } catch (e) {}
 
-  return [];
+  return _cachedProfiles || [];
 };
 
 // 6. Update User Profile on Supabase DB Table (user_profiles)
@@ -436,7 +454,12 @@ export const deleteRolePermissionFromSupabase = async (roleKey: string) => {
 };
 
 // 11. Fetch CMS Brand Settings from Supabase DB
-export const fetchCmsSettingsFromSupabase = async () => {
+export const fetchCmsSettingsFromSupabase = async (forceRefresh = false) => {
+  const now = Date.now();
+  if (!forceRefresh && _cachedCmsSettings && (now - _lastCmsFetchTime < FETCH_COOLDOWN_MS)) {
+    return _cachedCmsSettings;
+  }
+
   try {
     const { data, error } = await supabase
       .from("cms_settings")
@@ -463,6 +486,9 @@ export const fetchCmsSettingsFromSupabase = async () => {
         ctvTiers: data.ctv_tiers || null
       };
 
+      _cachedCmsSettings = settings;
+      _lastCmsFetchTime = now;
+
       try {
         localStorage.setItem("saohan_cms_settings", JSON.stringify(settings));
       } catch (e) {}
@@ -470,16 +496,22 @@ export const fetchCmsSettingsFromSupabase = async () => {
       return settings;
     }
   } catch (err) {
-    // Network / CORS / Paused Supabase Project Error
+    // Network / CORS / HTTP 520 / Paused Supabase Project Error
   }
+
+  _lastCmsFetchTime = now; // Set cooldown on error to stop repeating 520 calls
 
   // Fallback to localStorage when Supabase is unreachable/paused or CORS blocked
   try {
     const saved = localStorage.getItem("saohan_cms_settings");
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      _cachedCmsSettings = parsed;
+      return parsed;
+    }
   } catch (e) {}
 
-  return null;
+  return _cachedCmsSettings || null;
 };
 
 // 12. Save CMS Brand Settings to Supabase DB
