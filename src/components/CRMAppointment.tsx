@@ -61,20 +61,37 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
   const [showPatientDropdown, setShowPatientDropdown] = useState(false);
 
   const currentCtvCode = (ctvUser?.code || authUser?.ctvCode || "").trim().toLowerCase();
-  const currentPhone = (authUser?.phone || ctvUser?.phone || "").trim();
+  const currentPhone = (authUser?.phone || ctvUser?.phone || "").trim().replace(/\D/g, "");
   const currentUserName = (authUser?.fullName || ctvUser?.name || "").trim().toLowerCase();
+  const currentUserId = (authUser?.id || ctvUser?.id || "").trim().toLowerCase();
+  const currentUserEmail = (authUser?.email || "").trim().toLowerCase();
 
-  // CTV chỉ xem lịch hẹn do chính mình tạo (theo Mã CTV, Tên CTV hoặc SĐT CTV)
+  // CTV xem lịch hẹn do chính mình tạo (khớp theo Mã CTV, Tên CTV, SĐT CTV, User ID hoặc lịch chưa gán)
   const personalAppointments = appointments.filter((apt) => {
     const aptCode = (apt.ctvCode || "").trim().toLowerCase();
     const aptName = (apt.ctvName || "").trim().toLowerCase();
-    const aptCtvPhone = (apt.ctvPhone || "").trim();
+    const aptCtvPhone = (apt.ctvPhone || "").trim().replace(/\D/g, "");
+    const aptCtvId = ((apt as any).ctvId || (apt as any).userId || "").trim().toLowerCase();
 
+    // Match theo Mã CTV
     const matchesCode = Boolean(currentCtvCode && aptCode && (aptCode === currentCtvCode || aptCode.includes(currentCtvCode) || currentCtvCode.includes(aptCode)));
-    const matchesName = Boolean(currentUserName && aptName && (aptName === currentUserName || aptName.includes(currentUserName) || currentUserName.includes(aptName)));
-    const matchesPhone = Boolean(currentPhone && aptCtvPhone && aptCtvPhone === currentPhone);
+    
+    // Match theo Tên CTV hoặc Email
+    const matchesName = Boolean(
+      (currentUserName && aptName && (aptName === currentUserName || aptName.includes(currentUserName) || currentUserName.includes(aptName))) ||
+      (currentUserEmail && aptName && aptName.includes(currentUserEmail))
+    );
+    
+    // Match theo SĐT CTV
+    const matchesPhone = Boolean(currentPhone && aptCtvPhone && (aptCtvPhone === currentPhone || (currentPhone.length >= 9 && aptCtvPhone.endsWith(currentPhone.slice(-9)))));
+    
+    // Match theo User ID / CTV ID
+    const matchesId = Boolean(currentUserId && aptCtvId && aptCtvId === currentUserId);
 
-    return matchesCode || matchesName || matchesPhone;
+    // Fallback: nếu lịch mới tạo chưa gắn mã CTV cụ thể hoặc để tên mặc định
+    const isGenericApt = !aptCode || aptName === "ctv" || aptName === "cộng tác viên" || aptName === "";
+
+    return matchesCode || matchesName || matchesPhone || matchesId || isGenericApt;
   });
 
   // Admin & Kế toán có quyền xem toàn bộ Lịch Hẹn hệ thống
@@ -135,7 +152,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
       appointmentType: form.appointmentType,
       notes: form.notes,
       ctvCode: assignedCtvCode,
-      ctvName: authUser?.fullName || ctvUser?.name || "CTV",
+      ctvName: authUser?.fullName || ctvUser?.name || authUser?.email || "CTV",
       ctvPhone: authUser?.phone || ctvUser?.phone || "",
       customerMedia: form.customerMedia,
       customerMediaType: form.customerMediaType
