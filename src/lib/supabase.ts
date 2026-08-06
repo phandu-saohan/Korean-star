@@ -292,9 +292,11 @@ const FETCH_COOLDOWN_MS = 30000; // 30 seconds TTL cache
 // 5b. Fetch All User Profiles from Supabase DB Table (user_profiles)
 export const fetchAllUserProfilesFromSupabase = async (forceRefresh = false): Promise<AuthUserProfile[]> => {
   const now = Date.now();
-  if (!forceRefresh && _cachedProfiles && (now - _lastProfilesFetchTime < FETCH_COOLDOWN_MS)) {
-    return _cachedProfiles;
+  if (!forceRefresh && (now - _lastProfilesFetchTime < FETCH_COOLDOWN_MS)) {
+    return _cachedProfiles || [];
   }
+
+  _lastProfilesFetchTime = now; // Lock network requests for 30s
 
   try {
     const { data, error } = await supabase
@@ -325,7 +327,6 @@ export const fetchAllUserProfilesFromSupabase = async (forceRefresh = false): Pr
       }));
 
       _cachedProfiles = mappedProfiles;
-      _lastProfilesFetchTime = now;
 
       // Cache to localStorage
       try {
@@ -337,8 +338,6 @@ export const fetchAllUserProfilesFromSupabase = async (forceRefresh = false): Pr
   } catch (err) {
     // Network / CORS / HTTP 520 / Paused Supabase Project Error
   }
-
-  _lastProfilesFetchTime = now; // Set cooldown on error so we don't spam network requests
 
   // Local Storage Fallback when Supabase is unreachable/paused or returning 520
   try {
@@ -361,7 +360,8 @@ export const fetchAllUserProfilesFromSupabase = async (forceRefresh = false): Pr
     }
   } catch (e) {}
 
-  return _cachedProfiles || [];
+  if (!_cachedProfiles) _cachedProfiles = [];
+  return _cachedProfiles;
 };
 
 // 6. Update User Profile on Supabase DB Table (user_profiles)
@@ -456,9 +456,27 @@ export const deleteRolePermissionFromSupabase = async (roleKey: string) => {
 // 11. Fetch CMS Brand Settings from Supabase DB
 export const fetchCmsSettingsFromSupabase = async (forceRefresh = false) => {
   const now = Date.now();
-  if (!forceRefresh && _cachedCmsSettings && (now - _lastCmsFetchTime < FETCH_COOLDOWN_MS)) {
-    return _cachedCmsSettings;
+  if (!forceRefresh && (now - _lastCmsFetchTime < FETCH_COOLDOWN_MS)) {
+    return _cachedCmsSettings || {
+      hospitalName: "KOREAN STAR",
+      logoUrl: "",
+      tagline: "Hệ Thống Bệnh Viện Thẩm Mỹ Quốc Tế & Quản Lý CTV 24/7",
+      hotline: "1900 8888 - 0901 888 999",
+      address: "Số 88 Phố Huế, Q. Hai Bà Trưng, Hà Nội",
+      baseCommissionRate: 15,
+      autoPayoutThreshold: 50000000,
+      systemCurrency: "VNĐ",
+      oneSignalAppId: "6eeb3025-71f7-44af-9a85-f6c52a6da92b",
+      oneSignalApiKey: "",
+      oneSignalEnabled: true,
+      zaloBotToken: "",
+      zaloDefaultChatId: "",
+      zaloWebhookSecret: "",
+      ctvTiers: null
+    };
   }
+
+  _lastCmsFetchTime = now; // Lock network requests for 30s
 
   try {
     const { data, error } = await supabase
@@ -487,7 +505,6 @@ export const fetchCmsSettingsFromSupabase = async (forceRefresh = false) => {
       };
 
       _cachedCmsSettings = settings;
-      _lastCmsFetchTime = now;
 
       try {
         localStorage.setItem("saohan_cms_settings", JSON.stringify(settings));
@@ -499,8 +516,6 @@ export const fetchCmsSettingsFromSupabase = async (forceRefresh = false) => {
     // Network / CORS / HTTP 520 / Paused Supabase Project Error
   }
 
-  _lastCmsFetchTime = now; // Set cooldown on error to stop repeating 520 calls
-
   // Fallback to localStorage when Supabase is unreachable/paused or CORS blocked
   try {
     const saved = localStorage.getItem("saohan_cms_settings");
@@ -511,7 +526,27 @@ export const fetchCmsSettingsFromSupabase = async (forceRefresh = false) => {
     }
   } catch (e) {}
 
-  return _cachedCmsSettings || null;
+  if (!_cachedCmsSettings) {
+    _cachedCmsSettings = {
+      hospitalName: "KOREAN STAR",
+      logoUrl: "",
+      tagline: "Hệ Thống Bệnh Viện Thẩm Mỹ Quốc Tế & Quản Lý CTV 24/7",
+      hotline: "1900 8888 - 0901 888 999",
+      address: "Số 88 Phố Huế, Q. Hai Bà Trưng, Hà Nội",
+      baseCommissionRate: 15,
+      autoPayoutThreshold: 50000000,
+      systemCurrency: "VNĐ",
+      oneSignalAppId: "6eeb3025-71f7-44af-9a85-f6c52a6da92b",
+      oneSignalApiKey: "",
+      oneSignalEnabled: true,
+      zaloBotToken: "",
+      zaloDefaultChatId: "",
+      zaloWebhookSecret: "",
+      ctvTiers: null
+    };
+  }
+
+  return _cachedCmsSettings;
 };
 
 // 12. Save CMS Brand Settings to Supabase DB
