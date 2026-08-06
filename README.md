@@ -1,95 +1,203 @@
-# 💎 Saohan DELUXE - Nền Tảng Quản Lý Cộng Tác Viên & Dịch Vụ Thẩm Mỹ
+# 🏥 Korean Star — Hệ Thống Quản Lý CTV & Dịch Vụ Thẩm Mỹ
 
-**Saohan DELUXE** là hệ thống toàn diện hỗ trợ quản lý cộng tác viên (CTV) giới thiệu dịch vụ thẩm mỹ, tích hợp công nghệ AI phân tích da và tương tác 3D. Nền tảng giúp tối ưu hóa quy trình bán hàng cho CTV, nâng cao trải nghiệm khách hàng và tự động hóa vận hành cho quản trị viên.
-
----
-
-## ✨ Tính Năng Nổi Bật
-
-### 1. 💼 Quản Lý Cộng Tác Viên & Hoa Hồng Real-time
-* **Theo dõi hoa hồng thời gian thực:** Cập nhật doanh số và hoa hồng phát sinh ngay tức thì.
-* **Báo cáo thống kê chi tiết:** Biểu đồ phân tích hiệu suất giới thiệu, doanh thu và tỷ lệ chuyển đổi.
-* **Dashboard quản trị thân thiện:** Giao diện tối ưu, dễ thao tác, quản lý danh sách CTV và lịch sử giao dịch.
-* **Thanh toán tự động:** Tích hợp hệ thống rút tiền và quyết toán hoa hồng tự động minh bạch.
-
-### 2. 🛠️ Bộ Công Cụ Hỗ Trợ Cộng Tác Viên (Collaborator Toolkit)
-* **Thư viện hình ảnh Trước/Sau (Before/After):** Lưu trữ bộ bộ ảnh thực tế được phân loại chi tiết theo từng dịch vụ thẩm mỹ.
-* **Video hướng dẫn tư vấn:** Kho tài liệu media chuẩn hóa hỗ trợ CTV nâng cao kỹ năng chốt đơn và tư vấn.
-* **Tạo mã giới thiệu cá nhân hóa:** Công cụ tạo link/mã giới thiệu (referral code) riêng cho từng CTV nhanh chóng.
-
-### 3. 🤖 Phân Tích Da AI Thông Minh
-* Tự động quét và phân tích tình trạng da của khách hàng bằng trí tuệ nhân tạo (AI).
-* Đề xuất phác đồ điều trị chuyên biệt và cá nhân hóa theo từng loại da.
-
-### 4. 🧊 Mô Phỏng Chọn Size Túi Ngực Tương Tác 3D
-* Trải nghiệm trực quan hóa 3D cho phép khách hàng xoay, thu phóng và xem kết quả mô phỏng thực tế trước khi thực hiện phẫu thuật.
-
-### 5. 📅 Kết Hợp Liệu Trình & CRM Quản Lý Lịch Hẹn
-* Linh hoạt phối hợp các gói liệu trình đáp ứng chính xác nhu cầu cá nhân của khách hàng.
-* Tích hợp hệ thống CRM thông minh quản lý cuộc hẹn, nhắc lịch tự động và tối ưu lịch làm việc của bác sĩ/chuyên gia.
-
-### 6. 🏥 Danh Mục Dịch Vụ Thẩm Mỹ Đa Dạng
-* Bảng dịch vụ đầy đủ chi tiết với bảng giá công khai, minh bạch và hình ảnh thực tế chất lượng cao.
-
-### 7. 🔔 Khuyến Mãi Real-time & Thông Báo Đẩy (Push Notification)
-* Cập nhật liên tục các chương trình ưu đãi, flash sale theo thời gian thực.
-* Gửi thông báo đẩy tức thì tới CTV và khách hàng để không bỏ lỡ các ưu đãi HOT.
-
-### 8. 🩺 Chăm Sóc Hậu Phẫu Tự Động
-* Xây dựng lộ trình và hướng dẫn chăm sóc sau điều trị/phẫu thuật tùy chỉnh theo từng dịch vụ.
-* Tự động nhắc nhở và kiểm tra theo dõi trạng thái hồi phục sức khỏe của khách hàng.
+> **Bệnh Viện Thẩm Mỹ Quốc Tế Korean Star** — Nền tảng toàn diện quản lý cộng tác viên (CTV), lịch hẹn CRM, thông báo realtime qua **OneSignal Push** & **Zalo Bot**, tích hợp AI phân tích da và mô phỏng 3D.
 
 ---
 
-## 🛠️ Công Nghệ Sử Dụng
+## ✨ Tính Năng Chính
 
-- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, Motion (Framer Motion), Lucide Icons
-- **3D Visualization:** Three.js
-- **AI Integration:** Google GenAI (`@google/genai`)
-- **Backend Server:** Node.js / Express, `tsx`
-- **Charts & Data:** Recharts
+### 👥 1. Quản Lý Cộng Tác Viên (CTV Hub)
+- Dashboard hoa hồng realtime: doanh số, ví khả dụng, tỷ lệ chuyển đổi
+- Mã giới thiệu cá nhân (referral code) tự động sinh
+- Phân cấp CTV: Bạc → Vàng → Bạch Kim → Kim Cương
+- Lịch sử leads & trạng thái từng khách hàng
+
+### 📅 2. CRM Đặt Lịch Hẹn (Smart Booking)
+- CTV đặt lịch tư vấn / tái khám cho khách hàng
+- Gắn ảnh / video hiện tại của khách hàng khi đặt lịch
+- Admin xem **toàn bộ** lịch hẹn hệ thống
+- CTV chỉ thấy **lịch hẹn của chính mình**
+- Đổi trạng thái CRM: Chờ xác nhận → Đã xác nhận → Đang điều trị → Hoàn thành / Đã hủy
+- Đồng bộ realtime qua **Supabase** (auto-sync mỗi 30 giây)
+
+### 🔔 3. Thông Báo Realtime (OneSignal + Zalo Bot)
+| Sự kiện | OneSignal Push | Zalo Bot |
+|---|---|---|
+| CTV đặt lịch mới | ✅ CTV + Admin/Kế toán | ✅ CTV + Admin |
+| Admin đổi trạng thái lịch | ✅ CTV + Admin | ✅ CTV + Admin |
+| Yêu cầu rút hoa hồng | ✅ CTV + Admin/Kế toán | ✅ CTV + Admin |
+| Giải ngân hoa hồng hoàn tất | ✅ CTV + Admin | ✅ CTV + Admin |
+| Thành viên mới đăng ký | ✅ Admin | ✅ Admin |
+| Check-in hậu phẫu | ✅ Admin | ✅ Admin |
+
+### 💰 4. Giải Ngân Hoa Hồng (VietQR Flow 5 Bước)
+- CTV gửi yêu cầu rút tiền → Kế toán kiểm tra → Admin phê duyệt → VietQR tự động
+- Audit log đầy đủ từng bước phê duyệt
+- Thông báo push tự động mỗi bước thay đổi
+
+### 🤖 5. AI Phân Tích Da (Gemini AI)
+- Upload ảnh da → AI phân tích 6 chỉ số (lỗ chân lông, sắc tố, độ ẩm, nếp nhăn, độ đàn hồi, mụn)
+- Đề xuất phác đồ điều trị cá nhân hóa
+- Hướng dẫn chăm sóc da tại nhà
+
+### 🧊 6. Mô Phỏng Chọn Size Túi Ngực 3D
+- Tương tác 3D xoay 360°, thu phóng, chọn size (cc), độ nhô, hình dáng
+- AI tư vấn size phù hợp dựa trên chỉ số cơ thể
+
+### 🏥 7. Chăm Sóc Hậu Phẫu 24/7
+- Check-in ngày hậu phẫu, ghi nhận triệu chứng
+- AI đánh giá trạng thái phục hồi: An toàn / Cần theo dõi / Cảnh báo bác sĩ
+
+### 📋 8. Quản Lý Nội Dung (Editor Dashboard)
+- Bảng giá dịch vụ CRUD (thêm/sửa/xóa)
+- Thư viện ảnh Trước/Sau lâm sàng
+- Video hướng dẫn tư vấn
+- Chương trình ưu đãi & Flash Sale
 
 ---
 
-## 🚀 Hướng Dẫn Cài Đặt & Chạy Ứng Dụng
+## 🛠️ Công Nghệ
 
-### Yêu cầu hệ thống
-- **Node.js** (phiên bản 18+)
-- **npm** hoặc **bun**
-
-### Các bước khởi chạy
-
-1. **Cài đặt dependencies:**
-   ```bash
-   npm install
-   ```
-
-2. **Cấu hình môi trường (`.env`):**
-   Sao chép file `.env.example` thành `.env` và điền các tham số cần thiết:
-   ```bash
-   cp .env.example .env
-   ```
-
-3. **Chạy máy chủ phát triển (Development Server):**
-   ```bash
-   npm run dev
-   ```
-   Ứng dụng sẽ khởi chạy tại: `http://localhost:3000`
-
-4. **Build ứng dụng:**
-   ```bash
-   npm run build
-   ```
-
-5. **Khởi chạy bản Production:**
-   ```bash
-   npm start
-   ```
+| Layer | Công nghệ |
+|---|---|
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v4 |
+| **UI Components** | Lucide Icons, Recharts |
+| **3D** | Three.js |
+| **AI** | Google GenAI (`gemini-3.6-flash`) |
+| **Backend** | Node.js, Express, `tsx` |
+| **Database** | Supabase (PostgreSQL) |
+| **Auth** | Supabase Auth |
+| **Push Notification** | OneSignal Web Push SDK v16 |
+| **Zalo Bot** | Zalo Bot API (Zalo Platform) |
+| **Deploy** | Vercel / Docker / Nixpacks |
 
 ---
 
-## 📄 Giấy Phép (License)
+## 🚀 Cài Đặt & Chạy
 
-Dự án thuộc bản quyền của **Saohan DELUXE**. Tất cả các quyền được bảo lưu.
-# Korean-Star
-# Korean-star
+### Yêu cầu
+- **Node.js** ≥ 18 hoặc **Bun**
+- Tài khoản **Supabase**, **OneSignal**, **Zalo Bot**
+
+### 1. Cài dependencies
+```bash
+npm install
+```
+
+### 2. Cấu hình môi trường
+```bash
+cp .env.example .env
+```
+
+Điền các biến môi trường trong `.env`:
+
+```env
+# Supabase
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key
+
+# Gemini AI
+GEMINI_API_KEY=your_gemini_api_key
+
+# OneSignal Web Push (server-side)
+ONESIGNAL_APP_ID=your_onesignal_app_id
+ONESIGNAL_REST_API_KEY=your_onesignal_rest_api_key
+
+# Zalo Bot
+ZALO_BOT_TOKEN=your_zalo_bot_token
+VITE_ZALO_BOT_TOKEN=your_zalo_bot_token
+```
+
+### 3. Chạy Development Server
+```bash
+npm run dev
+```
+Ứng dụng chạy tại: `http://localhost:3000`
+
+### 4. Build Production
+```bash
+npm run build
+npm start
+```
+
+---
+
+## ⚙️ Cấu Hình Trong App (CMS Settings)
+
+Sau khi đăng nhập bằng tài khoản **Admin**, vào tab **Admin → Cài Đặt Hệ Thống**:
+
+| Mục | Thông tin cần điền |
+|---|---|
+| OneSignal App ID | Lấy tại [app.onesignal.com](https://app.onesignal.com) → App Settings → Keys & IDs |
+| OneSignal REST API Key | Lấy cùng trang trên |
+| Zalo Bot Token | Lấy tại [developers.zalo.me](https://developers.zalo.me) |
+| Zalo Default Admin Chat ID | Chat ID Zalo của Admin (xem hướng dẫn bên dưới) |
+
+### Lấy Zalo Chat ID
+1. Cấu hình Webhook URL trong Zalo Bot: `https://your-domain.com/api/zalo/webhook`
+2. Gửi bất kỳ tin nhắn nào đến bot Zalo của bạn
+3. Bot sẽ tự động reply với Chat ID của bạn
+4. Sao chép Chat ID → Dán vào Hồ Sơ Cá Nhân (CTV) hoặc CMS Settings (Admin)
+
+---
+
+## 🔐 Phân Quyền Hệ Thống
+
+| Role | Quyền truy cập |
+|---|---|
+| `admin` | Toàn quyền: CRM, giải ngân, cài đặt, phân quyền |
+| `accountant` | Duyệt giải ngân VietQR, xem lịch hẹn |
+| `editor` | Quản lý nội dung: dịch vụ, ảnh, video, ưu đãi |
+| `ctv` | Dashboard hoa hồng, đặt lịch, xem lịch của mình |
+
+---
+
+## 📁 Cấu Trúc Thư Mục
+
+```
+├── api/
+│   ├── onesignal/send-notification.ts   # Proxy OneSignal (Vercel Serverless)
+│   └── zalo/
+│       ├── send-message.ts              # Proxy Zalo Bot sendMessage
+│       ├── set-webhook.ts               # Proxy Zalo setWebhook
+│       └── webhook.ts                   # Zalo webhook handler
+├── src/
+│   ├── components/
+│   │   ├── CRMAppointment.tsx           # Đặt lịch hẹn + thông báo
+│   │   ├── AdminDashboard.tsx           # Dashboard Admin
+│   │   ├── CTVHub.tsx                   # Dashboard CTV
+│   │   ├── SystemSettingsModule.tsx     # Cài đặt OneSignal, Zalo, Supabase
+│   │   └── ...
+│   ├── lib/
+│   │   ├── onesignal.ts                 # OneSignal SDK + notification helpers
+│   │   └── supabase.ts                  # Supabase client + CRUD functions
+│   └── services/
+│       └── zaloService.ts               # Zalo Bot notification helpers
+├── server.ts                            # Express server (dev + production)
+├── schema.sql                           # Supabase database schema
+└── .env.example                         # Template biến môi trường
+```
+
+---
+
+## 🗄️ Database Schema (Supabase)
+
+Khởi tạo database bằng file [`schema.sql`](./schema.sql):
+
+```bash
+# Chạy trong Supabase SQL Editor hoặc CLI
+psql -h your-db-host -U postgres -f schema.sql
+```
+
+Các bảng chính:
+- `user_profiles` — Tài khoản CTV, Admin, Zalo Chat ID
+- `appointments` — Lịch hẹn khám (đồng bộ realtime)
+- `services` — Danh mục dịch vụ thẩm mỹ
+- `feedbacks` — Ảnh trước/sau lâm sàng
+- `cms_settings` — Cấu hình hệ thống (OneSignal, Zalo)
+
+---
+
+## 📄 Giấy Phép
+
+© 2025 **Bệnh Viện Thẩm Mỹ Quốc Tế Korean Star** — All rights reserved.
