@@ -725,15 +725,17 @@ export default function App() {
   };
 
   // Helper: Add Appointment
-  const handleAddAppointment = (newApt: Appointment) => {
+  const handleAddAppointment = async (newApt: Appointment) => {
     const updatedAppointments = [newApt, ...appointments];
     setAppointments(updatedAppointments);
     safeSetLocalStorage("saohan_appointments", JSON.stringify(updatedAppointments));
 
-    // Lưu lên Supabase để đồng bộ giữa CTV và Admin
-    saveAppointmentToSupabase(newApt).catch((err) =>
-      console.error("[Supabase] Lỗi lưu appointment:", err)
-    );
+    // Lưu lên Supabase NGAY LẬP TỨC để đồng bộ giữa CTV và Admin
+    try {
+      await saveAppointmentToSupabase(newApt);
+    } catch (err) {
+      console.error("[Supabase] Lỗi lưu appointment:", err);
+    }
 
     // Create a new referral lead automatically
     const newLead: ReferralLead = {
