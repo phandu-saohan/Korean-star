@@ -51,37 +51,7 @@ CREATE POLICY "Public Insert User Profiles" ON public.user_profiles FOR INSERT W
 DROP POLICY IF EXISTS "Public Update User Profiles" ON public.user_profiles;
 CREATE POLICY "Public Update User Profiles" ON public.user_profiles FOR UPDATE USING (true);
 
--- 1b. BẢNG USERS_PROFILES (Bảng Alias đồng bộ cho users_profiles)
-CREATE TABLE IF NOT EXISTS public.users_profiles (
-  id UUID PRIMARY KEY,
-  email TEXT,
-  full_name TEXT,
-  phone TEXT,
-  role TEXT DEFAULT 'ctv',
-  ctv_code TEXT,
-  tier TEXT DEFAULT 'Bạc',
-  available_balance NUMERIC DEFAULT 0,
-  pending_balance NUMERIC DEFAULT 0,
-  total_revenue NUMERIC DEFAULT 0,
-  total_commission NUMERIC DEFAULT 0,
-  avatar_url TEXT,
-  bank_name TEXT,
-  account_number TEXT,
-  account_holder TEXT,
-  id_card_number TEXT,
-  facility_name TEXT,
-  status TEXT DEFAULT 'active',
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
 
-ALTER TABLE public.users_profiles ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Public Read Users Profiles" ON public.users_profiles;
-CREATE POLICY "Public Read Users Profiles" ON public.users_profiles FOR SELECT USING (true);
-DROP POLICY IF EXISTS "Public Insert Users Profiles" ON public.users_profiles;
-CREATE POLICY "Public Insert Users Profiles" ON public.users_profiles FOR INSERT WITH CHECK (true);
-DROP POLICY IF EXISTS "Public Update Users Profiles" ON public.users_profiles;
-CREATE POLICY "Public Update Users Profiles" ON public.users_profiles FOR UPDATE USING (true);
 
 -- 2. BẢNG CMS_SETTINGS (Cấu hình thương hiệu, Logo, Hotline, Địa chỉ & Tỷ lệ hoa hồng)
 CREATE TABLE IF NOT EXISTS public.cms_settings (

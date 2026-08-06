@@ -242,20 +242,6 @@ export const fetchUserProfile = async (userId: string): Promise<AuthUserProfile 
       .maybeSingle();
 
     data = res1.data;
-    error = res1.error;
-
-    // 2. Fallback sang bảng users_profiles nếu bảng user_profiles lỗi hoặc rỗng
-    if (error || !data) {
-      const res2 = await supabase
-        .from("users_profiles")
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle();
-      if (res2.data) {
-        data = res2.data;
-      }
-    }
-
     if (!data) return null;
 
     return {
