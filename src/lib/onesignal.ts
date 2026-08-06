@@ -184,6 +184,15 @@ export const setOneSignalUser = (user: AuthUserProfile) => {
     try {
       if (!OneSignal || !OneSignal.User) return;
 
+      // 1. Login user with external ID first if login method exists
+      if (typeof OneSignal.login === "function" && externalId) {
+        try {
+          await OneSignal.login(externalId);
+        } catch (loginErr) {
+          // Ignore conflict during login
+        }
+      }
+
       const tagsPayload = {
         user_id: user.id || "",
         role: user.role || "ctv",
@@ -192,39 +201,17 @@ export const setOneSignalUser = (user: AuthUserProfile) => {
         full_name: user.fullName || ""
       };
 
-      // Gán Role Tags trực tiếp lên OneSignal.User
+      // 2. Gán Role Tags trực tiếp lên OneSignal.User
       if (typeof OneSignal.User.addTags === "function") {
         try {
           await OneSignal.User.addTags(tagsPayload);
           console.log(`[OneSignal] Dynamic Tags set successfully: ${user.fullName} (${user.role}) - ID: ${user.id}`);
         } catch (tagErr: any) {
-          // 409 Conflict: IndexedDB operation queue từ session cũ bị treo.
-          // Fix: logout() → xóa IndexedDB stale entries → chờ session settle → login() lại → addTags()
-          console.warn("[OneSignal] addTags 409 conflict, clearing stale session...", tagErr);
-          try {
-            // Bước 1: Logout để dọn queue
-            if (typeof OneSignal.logout === "function") {
-              await OneSignal.logout();
-            }
-            // Bước 2: Xóa IndexedDB stale caches
-            await clearOneSignalIndexedDB();
-            // Bước 3: Chờ session settle đủ lâu (800ms)
-            await new Promise((resolve) => setTimeout(resolve, 800));
-            // Bước 4: Re-login với external user ID
-            if (typeof OneSignal.login === "function") {
-              await OneSignal.login(externalId);
-              await new Promise((resolve) => setTimeout(resolve, 300));
-            }
-            // Bước 5: Retry addTags
-            await OneSignal.User.addTags(tagsPayload);
-            console.log(`[OneSignal] Tags set successfully after session reset: ${user.fullName}`);
-          } catch (retryErr) {
-            // Absorbed — non-critical, push notifications still work without tags
-          }
+          // If 409 Conflict occurs (anonymous session merged/conflicted), silent catch as push notification still works via segment filters
         }
       }
     } catch (err) {
-      // General quiet catch
+      // Quiet catch
     }
   });
 };

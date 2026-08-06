@@ -1,4 +1,5 @@
 import express from "express";
+import http from "http";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
@@ -538,7 +539,8 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  const server = http.createServer({ maxHeaderSize: 128 * 1024 }, app);
+  server.listen(PORT, "0.0.0.0", () => {
     console.log(`KOREAN STAR Server running on http://0.0.0.0:${PORT}`);
   });
 }
