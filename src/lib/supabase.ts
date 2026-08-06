@@ -579,35 +579,8 @@ export const saveCmsSettingsToSupabase = async (settings: any) => {
 // 13. Fetch Services from Supabase DB Table (services)
 export const fetchServicesFromSupabase = async (): Promise<any[] | null> => {
   try {
-    let data: any[] | null = null;
-
-    // Lần 1: Truy vấn qua REST API trực tiếp với Header Anon Key chuẩn (bỏ qua session token cũ trong trình duyệt)
-    try {
-      const directRes = await fetch(`${SUPABASE_URL}/rest/v1/services?select=*`, {
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`
-        }
-      });
-      if (directRes.ok) {
-        const directData = await directRes.json();
-        if (Array.isArray(directData) && directData.length > 0) {
-          data = directData;
-        }
-      }
-    } catch (directErr) {
-      console.warn("[Supabase Direct Fetch] Lỗi fetch REST trực tiếp:", directErr);
-    }
-
-    // Lần 2 (Fallback): Thử fetch qua Supabase JS Client nếu Lần 1 chưa có data
-    if (!data) {
-      const res = await supabase.from("services").select("*");
-      if (!res.error && res.data && res.data.length > 0) {
-        data = res.data;
-      }
-    }
-
-    if (!data || data.length === 0) return null;
+    const { data, error } = await supabase.from("services").select("*");
+    if (error || !data || data.length === 0) return null;
 
     return data.map((d: any) => ({
       id: d.id,
@@ -623,19 +596,21 @@ export const fetchServicesFromSupabase = async (): Promise<any[] | null> => {
       description: d.description || "",
       image: d.image || "",
       beforeAfter: typeof d.before_after === "string" ? JSON.parse(d.before_after) : d.before_after || {
-        before: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=600",
-        after: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600",
-        customerAge: "Khách hàng 28 tuổi",
-        treatmentDetails: "Kết quả phẫu thuật đẹp tự nhiên chuẩn y khoa"
+        before: "",
+        after: "",
+        customerAge: "",
+        treatmentDetails: ""
       },
       features: Array.isArray(d.features) ? d.features : typeof d.features === "string" ? JSON.parse(d.features) : [],
       isPopular: Boolean(d.is_popular)
     }));
   } catch (err) {
-    console.error("[Supabase] Lỗi ngoại lệ khi fetch services:", err);
+    console.error("[Supabase] Lỗi fetch services:", err);
     return null;
   }
 };
+
+
 
 // 14. Save/Upsert Service to Supabase DB Table (services)
 export const saveServiceToSupabase = async (service: any) => {
@@ -677,35 +652,8 @@ export const deleteServiceFromSupabase = async (serviceId: string) => {
 // 16. Fetch Feedbacks from Supabase DB Table (service_feedbacks)
 export const fetchFeedbacksFromSupabase = async (): Promise<any[] | null> => {
   try {
-    let data: any[] | null = null;
-
-    // Lần 1: Truy vấn qua REST API trực tiếp với Header Anon Key chuẩn
-    try {
-      const directRes = await fetch(`${SUPABASE_URL}/rest/v1/service_feedbacks?select=*`, {
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`
-        }
-      });
-      if (directRes.ok) {
-        const directData = await directRes.json();
-        if (Array.isArray(directData) && directData.length > 0) {
-          data = directData;
-        }
-      }
-    } catch (directErr) {
-      console.warn("[Supabase Direct Fetch] Lỗi fetch REST feedbacks:", directErr);
-    }
-
-    // Lần 2 (Fallback): Thử fetch qua Supabase JS Client nếu Lần 1 chưa có data
-    if (!data) {
-      const res = await supabase.from("service_feedbacks").select("*");
-      if (!res.error && res.data && res.data.length > 0) {
-        data = res.data;
-      }
-    }
-
-    if (!data || data.length === 0) return null;
+    const { data, error } = await supabase.from("service_feedbacks").select("*");
+    if (error || !data || data.length === 0) return null;
 
     return data.map((d: any) => ({
       id: d.id,
@@ -768,38 +716,8 @@ export const deleteFeedbackFromSupabase = async (feedbackId: string) => {
 // 19. Fetch All Appointments from Supabase DB Table (appointment_bookings)
 export const fetchAppointmentsFromSupabase = async (): Promise<any[] | null> => {
   try {
-    let data: any[] | null = null;
-
-    // Lần 1: Direct REST fetch (bypass Supabase JS client session issues)
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/appointment_bookings?select=*`, {
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          "Content-Type": "application/json"
-        }
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (Array.isArray(json) && json.length > 0) {
-          data = json;
-        }
-      } else {
-        console.warn("[Supabase] appointment_bookings REST fetch status:", res.status);
-      }
-    } catch (directErr) {
-      console.warn("[Supabase Direct Fetch] Lỗi fetch REST appointments:", directErr);
-    }
-
-    // Lần 2 (Fallback): Supabase JS client
-    if (!data) {
-      const { data: jsData, error } = await supabase.from("appointment_bookings").select("*");
-      if (!error && jsData && jsData.length > 0) {
-        data = jsData;
-      }
-    }
-
-    if (!data || data.length === 0) return [];
+    const { data, error } = await supabase.from("appointment_bookings").select("*");
+    if (error || !data || data.length === 0) return [];
 
     return data.map((d: any) => ({
       id: d.id,
@@ -820,7 +738,7 @@ export const fetchAppointmentsFromSupabase = async (): Promise<any[] | null> => 
     }));
   } catch (err) {
     console.warn("[Supabase] Không fetch được appointments:", err);
-    return null;
+    return [];
   }
 };
 
@@ -845,25 +763,6 @@ export const saveAppointmentToSupabase = async (apt: any) => {
       customer_media_type: apt.customerMediaType || "image"
     };
 
-    // Lần 1: Direct REST fetch với POST/upsert
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/appointment_bookings`, {
-        method: "POST",
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          "Content-Type": "application/json",
-          "Prefer": "resolution=merge-duplicates"
-        },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok || res.status === 201) return; // Thành công
-      console.warn("[Supabase] Save appointment REST status:", res.status, await res.text());
-    } catch (directErr) {
-      console.warn("[Supabase Direct POST] Lỗi:", directErr);
-    }
-
-    // Lần 2 (Fallback): Supabase JS client
     await supabase.from("appointment_bookings").upsert(payload, { onConflict: "id" });
   } catch (err) {
     console.error("[Supabase] Lỗi lưu appointment:", err);
@@ -874,28 +773,6 @@ export const saveAppointmentToSupabase = async (apt: any) => {
 export const updateAppointmentStatusInSupabase = async (id: string, status: string) => {
   if (!id) return;
   try {
-    // Lần 1: Direct REST PATCH
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/appointment_bookings?id=eq.${encodeURIComponent(id)}`, {
-        method: "PATCH",
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          "Content-Type": "application/json",
-          "Prefer": "return=minimal"
-        },
-        body: JSON.stringify({ status })
-      });
-      if (res.ok) {
-        console.log(`[Supabase] Cập nhật trạng thái appointment ${id} sang REST thành công: ${status}`);
-        return;
-      }
-      console.warn("[Supabase] Update status REST status:", res.status, await res.text());
-    } catch (directErr) {
-      console.warn("[Supabase Direct PATCH] Lỗi:", directErr);
-    }
-
-    // Lần 2: Supabase JS client
     const { error } = await supabase.from("appointment_bookings").update({ status }).eq("id", id);
     if (error) {
       console.error("[Supabase] JS client update status error:", error);
