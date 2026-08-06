@@ -22,8 +22,7 @@ const getValidSupabaseKey = (): string => {
 
 const SUPABASE_ANON_KEY = getValidSupabaseKey();
 
-// Dùng proxy nội bộ của Express server để tránh lỗi CORS trình duyệt
-// Server sẽ forward request sang Supabase thật phía server-to-server
+// Dùng proxy nội bộ của Express server để tránh lỗi CORS trình duyệt khi gọi REST API
 const SUPABASE_PROXY_URL = (typeof window !== "undefined" ? window.location.origin : SUPABASE_REAL_URL) + "/api/supabase-proxy";
 
 // SUPABASE_URL: dùng proxy URL trong trình duyệt, real URL giữ lại cho reference
@@ -35,6 +34,9 @@ export const supabase = createClient(SUPABASE_PROXY_URL, SUPABASE_ANON_KEY, {
     },
   },
 });
+
+// Client Supabase Realtime dùng trực tiếp SUPABASE_REAL_URL cho kết nối WebSocket wss://
+export const realtimeSupabase = createClient(SUPABASE_REAL_URL, SUPABASE_ANON_KEY);
 
 export interface AuthUserProfile {
   id: string;

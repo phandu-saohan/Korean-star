@@ -42,7 +42,8 @@ import {
   fetchAppointmentsFromSupabase,
   saveAppointmentToSupabase,
   updateAppointmentStatusInSupabase,
-  signOutUser
+  signOutUser,
+  realtimeSupabase
 } from "./lib/supabase";
 
 import {
@@ -410,7 +411,35 @@ export default function App() {
     return () => window.removeEventListener("onesignal-notification-toast", handleOsToast);
   }, []);
 
-  // Auto-polling: đồng bộ lịch hẹn từ Supabase mỗi 30 giây (realtime-like)
+  // Supabase Realtime WebSocket Listener cho Lịch Hẹn CRM (Cập nhật tự động <100ms)
+  useEffect(() => {
+    const channel = realtimeSupabase
+      .channel("realtime-appointment-bookings")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "appointment_bookings" },
+        async (payload) => {
+          console.log("⚡ [Supabase Realtime Event]:", payload);
+          try {
+            const remote = await fetchAppointmentsFromSupabase();
+            if (remote !== null) {
+              setAppointments(remote);
+              safeSetLocalStorage("saohan_appointments", JSON.stringify(remote));
+              showToast("⚡ Hệ thống đã tự động cập nhật lịch hẹn mới nhất theo thời gian thực!");
+            }
+          } catch (_) {}
+        }
+      )
+      .subscribe((status) => {
+        console.log("[Supabase Realtime WebSocket Status]:", status);
+      });
+
+    return () => {
+      realtimeSupabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Auto-polling: đồng bộ dự phòng lịch hẹn từ Supabase mỗi 30 giây
   useEffect(() => {
     const syncAppointments = async () => {
       try {
