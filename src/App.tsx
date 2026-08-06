@@ -428,6 +428,43 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Tự động chuyển đổi appointments thành leads để hiển thị đầy đủ trên Dashboard CTVHub
+  useEffect(() => {
+    if (!appointments || appointments.length === 0) return;
+
+    setLeads((prevLeads) => {
+      const existingLeadIds = new Set(prevLeads.map((l) => l.id));
+      const newLeadsFromApts: ReferralLead[] = [];
+
+      appointments.forEach((apt) => {
+        const leadId = apt.id.startsWith("lead-") ? apt.id : `lead-${apt.id}`;
+        if (!existingLeadIds.has(leadId) && !existingLeadIds.has(apt.id)) {
+          newLeadsFromApts.push({
+            id: leadId,
+            customerName: apt.customerName,
+            customerPhone: apt.customerPhone,
+            serviceId: "srv-custom",
+            serviceName: apt.serviceName,
+            ctvCode: apt.ctvCode || ctvUser.code,
+            ctvName: apt.ctvName || ctvUser.name,
+            createdAt: apt.date || new Date().toISOString().slice(0, 10),
+            status: apt.status === "Hoàn thành" ? "Đã hoàn thành" : apt.status === "Đang điều trị" ? "Đã tư vấn" : "Đã đặt lịch",
+            estimatedValue: 35000000,
+            commission: 5250000,
+            doctorAssigned: apt.doctorName,
+            appointmentDate: apt.date
+          });
+        }
+      });
+
+      if (newLeadsFromApts.length === 0) return prevLeads;
+
+      const mergedLeads = [...newLeadsFromApts, ...prevLeads];
+      safeSetLocalStorage("saohan_leads", JSON.stringify(mergedLeads));
+      return mergedLeads;
+    });
+  }, [appointments, ctvUser]);
+
   // Fetch ngay khi Admin mở tab CRM (không cần đợi 30s)
   useEffect(() => {
     if (activeTab === "admin") {

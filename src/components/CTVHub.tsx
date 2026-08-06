@@ -111,8 +111,17 @@ export const CTVHub: React.FC<CTVHubProps> = ({
     { id: "promotions", title: "Mã Ưu Đãi", sub: "Voucher Flash Sale", icon: Flame, color: "from-orange-500 to-amber-500" },
   ];
 
+  const ctvCodeLower = (ctvUser?.code || "").trim().toLowerCase();
+  const ctvNameLower = (ctvUser?.name || "").trim().toLowerCase();
+
   const filteredLeads = leads.filter((lead) => {
-    const isMyLead = !lead.ctvCode || lead.ctvCode === ctvUser.code;
+    const leadCode = (lead.ctvCode || "").trim().toLowerCase();
+    const leadName = (lead.ctvName || "").trim().toLowerCase();
+
+    const matchesCode = !leadCode || leadCode === ctvCodeLower || (ctvCodeLower && ctvCodeLower.includes(leadCode)) || (leadCode && leadCode.includes(ctvCodeLower));
+    const matchesName = !leadName || leadName === ctvNameLower || (ctvNameLower && ctvNameLower.includes(leadName)) || (leadName && leadName.includes(ctvNameLower));
+    const isMyLead = matchesCode || matchesName || leadCode === "ctv" || leadCode === "";
+
     const matchesSearch =
       lead.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.serviceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
