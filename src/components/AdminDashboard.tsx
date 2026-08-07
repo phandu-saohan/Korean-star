@@ -78,6 +78,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onUpdateFeedback,
   onDeleteFeedback,
   onAddAppointment,
+  onUpdateAppointment,
+  onDeleteAppointment,
   onUpdateStatus,
   onUpdatePayoutRequest,
   onViewBeforeAfter,
@@ -188,6 +190,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <CRMAppointment
             appointments={appointments}
             onAddAppointment={onAddAppointment || ((newApt) => alert(`Đã tạo lịch hẹn: ${newApt.customerName}`))}
+            onUpdateAppointment={onUpdateAppointment}
+            onDeleteAppointment={onDeleteAppointment}
             onUpdateStatus={onUpdateStatus || ((id, status) => alert(`Đã cập nhật trạng thái: ${status}`))}
             ctvUser={ctvUser}
             authUser={authUser}

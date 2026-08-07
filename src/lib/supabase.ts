@@ -935,3 +935,23 @@ export const updateAppointmentStatusInSupabase = async (id: string, status: stri
   }
 };
 
+// 22. Delete Appointment from Supabase DB Table (appointment_bookings)
+export const deleteAppointmentFromSupabase = async (id: string) => {
+  if (!id) return;
+  try {
+    const { error } = await supabase
+      .from("appointment_bookings")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.warn("[Supabase] Lỗi khi xóa appointment:", error.message);
+    } else {
+      console.log(`[Supabase] Đã xóa lịch hẹn ${id} thành công!`);
+    }
+  } catch (err) {
+    console.error("[Supabase] Lỗi ngoại lệ khi xóa appointment:", err);
+  }
+};
+
+

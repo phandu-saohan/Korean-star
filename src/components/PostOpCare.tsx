@@ -127,13 +127,13 @@ export const PostOpCare: React.FC = () => {
 
     setCheckins([newCheckin, ...checkins]);
     notifyPostOpCheckin({
-      serviceName: checkinService,
-      dayPostOp: Number(dayPostOp),
+      serviceName: newCheckin.serviceName,
+      dayPostOp: newCheckin.dayPostOp,
       aiHealthStatus: status
     });
     notifyZaloPostOpCheckin({
-      serviceName: checkinService,
-      dayPostOp: Number(dayPostOp),
+      serviceName: newCheckin.serviceName,
+      dayPostOp: newCheckin.dayPostOp,
       aiHealthStatus: status
     });
   };

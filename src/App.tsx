@@ -42,6 +42,7 @@ import {
   fetchAppointmentsFromSupabase,
   saveAppointmentToSupabase,
   updateAppointmentStatusInSupabase,
+  deleteAppointmentFromSupabase,
   signOutUser,
   realtimeSupabase
 } from "./lib/supabase";
@@ -806,6 +807,39 @@ export default function App() {
     showToast(`Tạo lịch hẹn thành công cho khách hàng ${newApt.customerName}!`);
   };
 
+  // Helper: Update Appointment (Admin & CTV)
+  const handleUpdateAppointment = async (updatedApt: Appointment) => {
+    const updatedAppointments = appointments.map((apt) =>
+      apt.id === updatedApt.id ? updatedApt : apt
+    );
+    setAppointments(updatedAppointments);
+    safeSetLocalStorage("saohan_appointments", JSON.stringify(updatedAppointments));
+
+    try {
+      await saveAppointmentToSupabase(updatedApt);
+    } catch (err) {
+      console.error("[Supabase] Lỗi cập nhật appointment:", err);
+    }
+
+    showToast(`Đã cập nhật lịch hẹn cho khách hàng ${updatedApt.customerName}!`);
+  };
+
+  // Helper: Delete Appointment (Admin Only)
+  const handleDeleteAppointment = async (id: string) => {
+    const targetApt = appointments.find((a) => a.id === id);
+    const updatedAppointments = appointments.filter((apt) => apt.id !== id);
+    setAppointments(updatedAppointments);
+    safeSetLocalStorage("saohan_appointments", JSON.stringify(updatedAppointments));
+
+    try {
+      await deleteAppointmentFromSupabase(id);
+    } catch (err) {
+      console.error("[Supabase] Lỗi xóa appointment:", err);
+    }
+
+    showToast(`Đã xóa vĩnh viễn lịch hẹn ${targetApt ? `của ${targetApt.customerName}` : id}!`);
+  };
+
   // Helper: Update Appointment status in CRM
   const handleUpdateStatus = (id: string, newStatus: Appointment["status"]) => {
     const updatedAppointments = appointments.map((apt) =>
@@ -1236,7 +1270,10 @@ export default function App() {
           {activeTab === "crm-appointments" && (
             <CRMAppointment
               appointments={appointments}
+              services={services}
               onAddAppointment={handleAddAppointment}
+              onUpdateAppointment={handleUpdateAppointment}
+              onDeleteAppointment={handleDeleteAppointment}
               onUpdateStatus={handleUpdateStatus}
               initialServiceName={prefilledService}
               initialNotes={prefilledNotes}
@@ -1297,6 +1334,8 @@ export default function App() {
               onUpdateFeedback={handleUpdateFeedback}
               onDeleteFeedback={handleDeleteFeedback}
               onAddAppointment={handleAddAppointment}
+              onUpdateAppointment={handleUpdateAppointment}
+              onDeleteAppointment={handleDeleteAppointment}
               onUpdateStatus={handleUpdateStatus}
               onUpdatePayoutRequest={handleUpdatePayoutRequest}
               onViewBeforeAfter={(serviceId) => handleViewBeforeAfter(serviceId)}

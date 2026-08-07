@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Appointment, CTVUser } from "../types";
+import { Appointment, CTVUser, ServiceItem } from "../types";
 import { AuthUserProfile } from "../lib/supabase";
+import { SERVICES_DATA } from "../data/aestheticData";
 import { notifyAppointmentCreated, notifyAppointmentStatusChanged } from "../lib/onesignal";
 import { notifyZaloAppointmentCreated, notifyZaloAppointmentStatusChanged } from "../services/zaloService";
 import { 
@@ -25,14 +26,22 @@ import {
   Image as ImageIcon,
   MessageCircle,
   PhoneCall,
-  Globe
+  Pencil,
+  Trash2,
+  Check,
+  DollarSign,
+  AlertTriangle,
+  ShoppingBag
 } from "lucide-react";
 
-import { formatDateVN } from "../utils/formatters";
+import { formatDateVN, formatCurrencyInput } from "../utils/formatters";
 
 interface CRMAppointmentProps {
   appointments: Appointment[];
+  services?: ServiceItem[];
   onAddAppointment: (newApt: Appointment) => void;
+  onUpdateAppointment?: (updatedApt: Appointment) => void;
+  onDeleteAppointment?: (id: string) => void;
   onUpdateStatus: (id: string, newStatus: Appointment["status"]) => void;
   initialServiceName?: string;
   initialNotes?: string;
@@ -42,9 +51,23 @@ interface CRMAppointmentProps {
   onRefresh?: () => void;
 }
 
+const convertVNToIsoDate = (dateStr: string): string => {
+  if (!dateStr) return new Date().toISOString().split("T")[0];
+  if (dateStr.includes("/")) {
+    const parts = dateStr.split("/");
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+    }
+  }
+  return dateStr.split(" ")[0];
+};
+
 export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
   appointments,
+  services,
   onAddAppointment,
+  onUpdateAppointment,
+  onDeleteAppointment,
   onUpdateStatus,
   initialServiceName,
   initialNotes,
@@ -53,12 +76,23 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
   isAdmin,
   onRefresh
 }) => {
+  const catalogServices = services && services.length > 0 ? services : SERVICES_DATA;
+
   const [showModal, setShowModal] = useState(Boolean(initialServiceName));
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
+  const [deletingAppointmentId, setDeletingAppointmentId] = useState<string | null>(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
   const [patientSearchTerm, setPatientSearchTerm] = useState("");
   const [showPatientDropdown, setShowPatientDropdown] = useState(false);
+
+  // Smart Search & Multi-Service selection state
+  const [selectedServiceItems, setSelectedServiceItems] = useState<ServiceItem[]>([]);
+  const [serviceSearchInput, setServiceSearchInput] = useState("");
+  const [serviceCategoryFilter, setServiceCategoryFilter] = useState<string>("ALL");
+  const [showServicePicker, setShowServicePicker] = useState(false);
 
   const currentCtvCode = (ctvUser?.code || authUser?.ctvCode || "").trim().toLowerCase();
   const currentPhone = (authUser?.phone || ctvUser?.phone || "").trim().replace(/\D/g, "");
@@ -66,32 +100,25 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
   const currentUserId = (authUser?.id || ctvUser?.id || "").trim().toLowerCase();
   const currentUserEmail = (authUser?.email || "").trim().toLowerCase();
 
-  // CTV CHỈ xem lịch hẹn do chính mình tạo (khớp theo Mã CTV, Tên CTV, SĐT CTV, hoặc User ID)
+  // CTV CHỈ xem lịch hẹn do chính mình tạo
   const personalAppointments = appointments.filter((apt) => {
     const aptCode = (apt.ctvCode || "").trim().toLowerCase();
     const aptName = (apt.ctvName || "").trim().toLowerCase();
     const aptCtvPhone = (apt.ctvPhone || "").trim().replace(/\D/g, "");
     const aptCtvId = ((apt as any).ctvId || (apt as any).userId || "").trim().toLowerCase();
 
-    // Match theo Mã CTV
     const matchesCode = Boolean(currentCtvCode && aptCode && (aptCode === currentCtvCode || aptCode.includes(currentCtvCode) || currentCtvCode.includes(aptCode)));
-    
-    // Match theo Tên CTV hoặc Email
     const matchesName = Boolean(
       (currentUserName && aptName && (aptName === currentUserName || aptName.includes(currentUserName) || currentUserName.includes(aptName))) ||
       (currentUserEmail && aptName && aptName.includes(currentUserEmail))
     );
-    
-    // Match theo SĐT CTV
     const matchesPhone = Boolean(currentPhone && aptCtvPhone && (aptCtvPhone === currentPhone || (currentPhone.length >= 9 && aptCtvPhone.endsWith(currentPhone.slice(-9)))));
-    
-    // Match theo User ID / CTV ID
     const matchesId = Boolean(currentUserId && aptCtvId && aptCtvId === currentUserId);
 
     return matchesCode || matchesName || matchesPhone || matchesId;
   });
 
-  // Admin & Kế toán xem toàn bộ Lịch Hẹn hệ thống; CTV chỉ xem đúng lịch hẹn của chính mình
+  // Admin & Kế toán xem toàn bộ; CTV chỉ xem lịch hẹn chính mình
   const isUserAdmin = Boolean(
     isAdmin ||
     authUser?.role === "admin" ||
@@ -116,8 +143,104 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
     ctvCode: ctvUser?.code || authUser?.ctvCode || "",
     customerMedia: "",
     customerMediaType: "image" as "image" | "video",
-    appointmentType: "Lịch tư vấn" as "Lịch tư vấn" | "Lịch tái khám"
+    appointmentType: "Lịch tư vấn" as "Lịch tư vấn" | "Lịch tái khám",
+    status: "Chờ xác nhận" as Appointment["status"]
   });
+
+  // Open modal for NEW appointment
+  const handleOpenCreateModal = () => {
+    setEditingAppointment(null);
+    setSelectedServiceItems([]);
+    setServiceSearchInput("");
+    setServiceCategoryFilter("ALL");
+    setForm({
+      customerName: "",
+      customerPhone: "",
+      serviceName: initialServiceName || "Nâng Ngực Nội Soi Ergonomix Nano 6D",
+      doctorName: "Bs. CKII Nguyễn Văn Hùng",
+      date: new Date().toISOString().split("T")[0],
+      time: "09:00 AM",
+      notes: initialNotes || "",
+      ctvCode: ctvUser?.code || authUser?.ctvCode || "",
+      customerMedia: "",
+      customerMediaType: "image",
+      appointmentType: "Lịch tư vấn",
+      status: "Chờ xác nhận"
+    });
+    setShowModal(true);
+  };
+
+  // Open modal for EDITING existing appointment
+  const handleOpenEditModal = (apt: Appointment) => {
+    setEditingAppointment(apt);
+    setServiceSearchInput("");
+    setServiceCategoryFilter("ALL");
+
+    // Match existing service names with catalog items
+    const rawServices = (apt.serviceName || "").split(/\s*\+\s*|\s*,\s*/);
+    const matched = catalogServices.filter((srv) =>
+      rawServices.some((rs) => rs.toLowerCase().trim() === srv.name.toLowerCase().trim() || srv.name.toLowerCase().includes(rs.toLowerCase().trim()))
+    );
+    setSelectedServiceItems(matched);
+
+    setForm({
+      customerName: apt.customerName || "",
+      customerPhone: apt.customerPhone || "",
+      serviceName: apt.serviceName || "",
+      doctorName: apt.doctorName || "Bs. CKII Nguyễn Văn Hùng",
+      date: convertVNToIsoDate(apt.date),
+      time: apt.time || "09:00 AM",
+      notes: apt.notes || "",
+      ctvCode: apt.ctvCode || ctvUser?.code || authUser?.ctvCode || "",
+      customerMedia: apt.customerMedia || "",
+      customerMediaType: apt.customerMediaType || "image",
+      appointmentType: apt.appointmentType || "Lịch tư vấn",
+      status: apt.status || "Chờ xác nhận"
+    });
+    setShowModal(true);
+  };
+
+  // Toggle multi-service selection from smart search
+  const toggleSelectService = (service: ServiceItem) => {
+    let updated: ServiceItem[];
+    const isAlreadySelected = selectedServiceItems.some((s) => s.id === service.id);
+    if (isAlreadySelected) {
+      updated = selectedServiceItems.filter((s) => s.id !== service.id);
+    } else {
+      updated = [...selectedServiceItems, service];
+    }
+    setSelectedServiceItems(updated);
+
+    const combinedNames = updated.map((s) => s.name).join(" + ");
+    setForm((prev) => ({
+      ...prev,
+      serviceName: combinedNames || prev.serviceName
+    }));
+  };
+
+  const removeSelectedService = (serviceId: string) => {
+    const updated = selectedServiceItems.filter((s) => s.id !== serviceId);
+    setSelectedServiceItems(updated);
+    const combinedNames = updated.map((s) => s.name).join(" + ");
+    setForm((prev) => ({
+      ...prev,
+      serviceName: combinedNames
+    }));
+  };
+
+  // Filter catalog services in smart search
+  const filteredSmartServices = catalogServices.filter((srv) => {
+    const matchesCategory = serviceCategoryFilter === "ALL" || srv.category === serviceCategoryFilter;
+    const term = serviceSearchInput.toLowerCase().trim();
+    const matchesSearch = !term ||
+      srv.name.toLowerCase().includes(term) ||
+      (srv.categoryName && srv.categoryName.toLowerCase().includes(term)) ||
+      (srv.description && srv.description.toLowerCase().includes(term)) ||
+      String(srv.price).includes(term);
+    return matchesCategory && matchesSearch;
+  });
+
+  const totalEstimatedCost = selectedServiceItems.reduce((acc, curr) => acc + curr.price, 0);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -140,56 +263,84 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
     if (!form.customerName || !form.customerPhone) return;
 
     const assignedCtvCode = form.ctvCode || ctvUser?.code || authUser?.ctvCode || "";
-
-    const newApt: Appointment = {
-      id: `apt-${Date.now()}`,
-      customerName: form.customerName,
-      customerPhone: form.customerPhone,
-      serviceName: form.serviceName,
-      doctorName: form.doctorName,
-      date: formatDateVN(form.date),
-      time: form.time,
-      status: "Chờ xác nhận",
-      appointmentType: form.appointmentType,
-      notes: form.notes,
-      ctvCode: assignedCtvCode,
-      ctvName: authUser?.fullName || ctvUser?.name || authUser?.email || "CTV",
-      ctvPhone: authUser?.phone || ctvUser?.phone || "",
-      customerMedia: form.customerMedia,
-      customerMediaType: form.customerMediaType
-    };
-
-    // Gán các trường extended (để notify đúng CTV qua Zalo và OneSignal)
     const ctvUserId = authUser?.id || ctvUser?.id || "";
-    (newApt as any).ctvId = ctvUserId;
-    (newApt as any).userId = ctvUserId;
 
-    onAddAppointment(newApt);
-    notifyAppointmentCreated({
-      ...newApt,
-      ctvId: ctvUserId
-    });
+    const finalServiceName = form.serviceName || (selectedServiceItems.length > 0 ? selectedServiceItems.map(s => s.name).join(" + ") : "Dịch Vụ Thẩm Mỹ");
 
-    const userZaloChatId = authUser?.zaloChatId || ctvUser?.zaloChatId;
-    notifyZaloAppointmentCreated(newApt, userZaloChatId);
+    if (editingAppointment) {
+      // EDIT MODE
+      const updatedApt: Appointment = {
+        ...editingAppointment,
+        customerName: form.customerName,
+        customerPhone: form.customerPhone,
+        serviceName: finalServiceName,
+        doctorName: form.doctorName,
+        date: formatDateVN(form.date),
+        time: form.time,
+        status: form.status,
+        appointmentType: form.appointmentType,
+        notes: form.notes,
+        ctvCode: assignedCtvCode || editingAppointment.ctvCode,
+        customerMedia: form.customerMedia,
+        customerMediaType: form.customerMediaType
+      };
+
+      (updatedApt as any).ctvId = ctvUserId;
+      (updatedApt as any).userId = ctvUserId;
+
+      if (onUpdateAppointment) {
+        onUpdateAppointment(updatedApt);
+      } else {
+        onAddAppointment(updatedApt);
+      }
+
+      if (editingAppointment.status !== form.status) {
+        onUpdateStatus(editingAppointment.id, form.status);
+        notifyAppointmentStatusChanged({ ...updatedApt, ctvId: ctvUserId }, form.status);
+        notifyZaloAppointmentStatusChanged(updatedApt, form.status, authUser?.zaloChatId || ctvUser?.zaloChatId);
+      }
+    } else {
+      // CREATE MODE
+      const newApt: Appointment = {
+        id: `apt-${Date.now()}`,
+        customerName: form.customerName,
+        customerPhone: form.customerPhone,
+        serviceName: finalServiceName,
+        doctorName: form.doctorName,
+        date: formatDateVN(form.date),
+        time: form.time,
+        status: form.status,
+        appointmentType: form.appointmentType,
+        notes: form.notes,
+        ctvCode: assignedCtvCode,
+        ctvName: authUser?.fullName || ctvUser?.name || authUser?.email || "CTV",
+        ctvPhone: authUser?.phone || ctvUser?.phone || "",
+        customerMedia: form.customerMedia,
+        customerMediaType: form.customerMediaType
+      };
+
+      (newApt as any).ctvId = ctvUserId;
+      (newApt as any).userId = ctvUserId;
+
+      onAddAppointment(newApt);
+      notifyAppointmentCreated({ ...newApt, ctvId: ctvUserId });
+      notifyZaloAppointmentCreated(newApt, authUser?.zaloChatId || ctvUser?.zaloChatId);
+    }
 
     setShowModal(false);
-    // Reset form
-    setForm({
-      customerName: "",
-      customerPhone: "",
-      serviceName: "Nâng Ngực Nội Soi Ergonomix Nano 6D",
-      doctorName: "Bs. CKII Nguyễn Văn Hùng",
-      date: new Date().toISOString().split("T")[0],
-      time: "09:00 AM",
-      notes: "",
-      ctvCode: ctvUser?.code || authUser?.ctvCode || "",
-      customerMedia: "",
-      customerMediaType: "image",
-      appointmentType: "Lịch tư vấn"
-    });
+    setEditingAppointment(null);
+    setSelectedServiceItems([]);
     setPatientSearchTerm("");
     setShowPatientDropdown(false);
+  };
+
+  // Confirm and delete appointment
+  const handleConfirmDelete = () => {
+    if (!deletingAppointmentId) return;
+    if (onDeleteAppointment) {
+      onDeleteAppointment(deletingAppointmentId);
+    }
+    setDeletingAppointmentId(null);
   };
 
   const consultationPatients = React.useMemo(() => {
@@ -244,12 +395,12 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                   CRM THÔNG MINH
                 </span>
               </div>
-              <p className="text-xs text-slate-300 font-medium mt-1">Theo dõi phác đồ khám, gọi điện tư vấn, chat Zalo trực tiếp & xem hình ảnh/video hiện tại của khách hàng</p>
+              <p className="text-xs text-slate-300 font-medium mt-1">Theo dõi phác đồ khám, chọn nhiều dịch vụ trong bảng giá, chỉnh sửa lịch hẹn & quản lý CRM</p>
             </div>
           </div>
 
           <button
-            onClick={() => setShowModal(true)}
+            onClick={handleOpenCreateModal}
             className="bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 text-[#0B192C] font-black px-4 py-2.5 rounded-2xl transition shadow-lg text-xs flex items-center justify-center gap-2 shrink-0"
           >
             <Plus className="w-4 h-4" /> Đặt Lịch Hẹn Mới
@@ -257,7 +408,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
         </div>
       )}
 
-      {/* Filter & Search Bar - Light Theme */}
+      {/* Filter & Search Bar */}
       <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 space-y-3.5 shadow-sm">
         
         <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
@@ -275,7 +426,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
               </button>
             )}
             <button
-              onClick={() => setShowModal(true)}
+              onClick={handleOpenCreateModal}
               className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 text-[#0B192C] font-black text-[11px] shadow-sm transition shrink-0"
             >
               <Plus className="w-3.5 h-3.5" /> Tạo Lịch Hẹn Mới
@@ -338,7 +489,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
         </div>
       </div>
 
-      {/* Appointments Grid List - Professional Light Theme Cards */}
+      {/* Appointments Grid List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filteredAppointments.length > 0 ? (
           filteredAppointments.map((apt) => {
@@ -350,7 +501,6 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
               "Đã hủy": { bg: "bg-rose-100 text-rose-800 border-rose-300", label: "Đã hủy" }
             }[apt.status] || { bg: "bg-slate-100 text-slate-700 border-slate-300", label: apt.status };
 
-            // Sanitize phone for Zalo link (e.g. 0903888112)
             const cleanPhone = apt.customerPhone.replace(/\D/g, "");
 
             return (
@@ -364,14 +514,43 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                     <span className="text-amber-700 font-black font-mono text-xs bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
                       {apt.id}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-[11px] font-black border ${statusConfig.bg}`}>
-                      {statusConfig.label}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-3 py-1 rounded-full text-[11px] font-black border ${statusConfig.bg}`}>
+                        {statusConfig.label}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Customer Info & Direct Contact Actions */}
                   <div className="space-y-2">
-                    <h4 className="font-black text-base text-slate-900">{apt.customerName}</h4>
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="font-black text-base text-slate-900">{apt.customerName}</h4>
+                      
+                      {/* Action Buttons: Edit (CTV & Admin) & Delete (Admin Only) */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {/* Edit Button for BOTH CTV and Admin */}
+                        <button
+                          onClick={() => handleOpenEditModal(apt)}
+                          className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-extrabold text-[11px] px-2.5 py-1.5 rounded-xl transition flex items-center gap-1 shadow-xs"
+                          title="Chỉnh sửa lịch hẹn"
+                        >
+                          <Pencil className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Sửa</span>
+                        </button>
+
+                        {/* Delete Button for ADMIN ONLY */}
+                        {isUserAdmin && (
+                          <button
+                            onClick={() => setDeletingAppointmentId(apt.id)}
+                            className="bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 font-extrabold text-[11px] px-2.5 py-1.5 rounded-xl transition flex items-center gap-1 shadow-xs"
+                            title="Xóa lịch hẹn vĩnh viễn (Admin)"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                            <span>Xóa</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
                     
                     {/* Customer Phone + Call & Zalo Action Buttons */}
                     <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 flex items-center justify-between gap-2">
@@ -381,7 +560,6 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {/* Call Button */}
                         <a
                           href={`tel:${cleanPhone || apt.customerPhone}`}
                           className="bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-black px-2.5 py-1.5 rounded-xl transition shadow-xs flex items-center gap-1"
@@ -391,7 +569,6 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                           <span>Gọi</span>
                         </a>
 
-                        {/* Zalo Button */}
                         <a
                           href={`https://zalo.me/${cleanPhone || apt.customerPhone}`}
                           target="_blank"
@@ -437,9 +614,13 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                   {/* Service & Doctor Box */}
                   <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 text-xs space-y-2 font-medium">
                     <div>
-                      <span className="text-[10px] text-slate-500 font-bold uppercase block">Dịch vụ thẩm mỹ:</span>
-                      <div className="flex items-center gap-2 flex-wrap mt-0.5">
-                        <span className="font-black text-slate-900 text-xs leading-snug">{apt.serviceName}</span>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase block">Dịch vụ thẩm mỹ đã chọn:</span>
+                      <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                        {apt.serviceName.split(/\s*\+\s*|\s*,\s*/).map((srvName, idx) => (
+                          <span key={idx} className="bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-black px-2.5 py-1 rounded-lg">
+                            ✨ {srvName.trim()}
+                          </span>
+                        ))}
                         {apt.appointmentType && (
                           <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
                             apt.appointmentType === "Lịch tư vấn"
@@ -467,7 +648,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                     </div>
                   </div>
 
-                  {/* CTV Contact Box - Contact info & Direct Call/Zalo Buttons for CTV */}
+                  {/* CTV Contact Box */}
                   {(() => {
                     const ctvPhone = apt.ctvPhone || "";
                     const cleanCtvPhone = ctvPhone.replace(/\D/g, "");
@@ -493,7 +674,6 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                             </div>
                           </div>
 
-                          {/* Direct Contact Actions for CTV */}
                           <div className="flex items-center gap-1 shrink-0">
                             <a
                               href={`tel:${cleanCtvPhone}`}
@@ -539,8 +719,6 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                         { ...apt, ctvId: authUser?.id || ctvUser?.id },
                         newStatus
                       );
-                      // Khi Admin đổi trạng thái: Zalo gửi đến cả CTV tạo lịch hẹn (tìm qua ctvCode)
-                      // và Admin (tìm qua defaultChatId + user profiles)
                       const aptWithCtvInfo = {
                         ...apt,
                         ctvId: (apt as any).ctvId || (apt as any).userId || "",
@@ -565,7 +743,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
           <div className="col-span-full text-center py-12 bg-white rounded-3xl border border-slate-200 text-slate-500 text-xs font-medium space-y-3 shadow-xs">
             <p>Không tìm thấy lịch hẹn khám nào phù hợp với bộ lọc.</p>
             <button
-              onClick={() => setShowModal(true)}
+              onClick={handleOpenCreateModal}
               className="bg-amber-500 text-[#0B192C] px-5 py-2.5 rounded-xl font-bold text-xs shadow-md"
             >
               + Đặt Lịch Hẹn Mới
@@ -574,24 +752,28 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
         )}
       </div>
 
-      {/* BOOKING MODAL - WITH IMAGE/VIDEO UPLOAD & PHONE */}
+      {/* BOOKING / EDIT MODAL - WITH SMART MULTI-SERVICE SELECTION */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 text-slate-900 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl relative">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full p-6 text-slate-900 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl relative">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-amber-500" /> Đặt Lịch Hẹn Khám & Tư Vấn Thẩm Mỹ
+                <Calendar className="w-5 h-5 text-amber-500" />
+                {editingAppointment ? "Chỉnh Sửa Lịch Hẹn CRM" : "Đặt Lịch Hẹn Khám & Tư Vấn Thẩm Mỹ"}
               </h3>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setEditingAppointment(null);
+                }}
                 className="p-1 hover:bg-slate-100 rounded-full text-slate-400"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleBookingSubmit} className="space-y-3.5 text-xs font-medium">
-              {/* 1. LOẠI LỊCH HẸN (ĐƯA LÊN TRÊN CÙNG) */}
+            <form onSubmit={handleBookingSubmit} className="space-y-4 text-xs font-medium">
+              {/* 1. LOẠI LỊCH HẸN */}
               <div>
                 <label className="block text-slate-700 font-bold mb-1.5">Loại Lịch Hẹn (*):</label>
                 <div className="flex gap-2">
@@ -706,37 +888,266 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                 </div>
               )}
 
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Họ & Tên Khách Hàng (*):</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ví dụ: Nguyễn Thanh Vân..."
-                  value={form.customerName}
-                  onChange={(e) => setForm({ ...form, customerName: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-bold focus:outline-none focus:border-amber-500"
-                />
+              {/* 2. HỌ TÊN & SỐ ĐIỆN THOẠI */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Họ & Tên Khách Hàng (*):</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ví dụ: Nguyễn Thanh Vân..."
+                    value={form.customerName}
+                    onChange={(e) => setForm({ ...form, customerName: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-bold focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Số Điện Thoại Khách Hàng (*):</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="0912345678"
+                    value={form.customerPhone}
+                    onChange={(e) => setForm({ ...form, customerPhone: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-mono font-bold focus:outline-none focus:border-amber-500"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Số Điện Thoại Khách Hàng (*):</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="0912345678"
-                  value={form.customerPhone}
-                  onChange={(e) => setForm({ ...form, customerPhone: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-mono font-bold focus:outline-none focus:border-amber-500"
-                />
+              {/* 3. SMART MULTI-SERVICE SELECTION INPUT (BẢNG GIÁ DỊCH VỤ) */}
+              <div className="bg-amber-50/80 border border-amber-200/90 p-3.5 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-amber-900 font-extrabold text-xs flex items-center gap-1.5">
+                    <ShoppingBag className="w-4 h-4 text-amber-600" />
+                    <span>Chọn Nhiều Dịch Vụ Từ Bảng Giá Niêm Yết:</span>
+                  </label>
+                  <span className="text-[10px] text-amber-800 font-bold bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
+                    Đã chọn {selectedServiceItems.length} dịch vụ
+                  </span>
+                </div>
+
+                {/* Smart Service Search Bar */}
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <input
+                    type="text"
+                    placeholder="Tìm nhanh dịch vụ trong bảng giá (tên, danh mục, giá tiền)..."
+                    value={serviceSearchInput}
+                    onFocus={() => setShowServicePicker(true)}
+                    onChange={(e) => {
+                      setServiceSearchInput(e.target.value);
+                      setShowServicePicker(true);
+                    }}
+                    className="w-full bg-white border border-amber-300 rounded-xl pl-9 pr-8 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-500 shadow-xs"
+                  />
+                  {serviceSearchInput && (
+                    <button
+                      type="button"
+                      onClick={() => setServiceSearchInput("")}
+                      className="absolute right-2.5 top-2.5 text-xs text-slate-400 hover:text-slate-600 font-bold"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Category Filter Chips for Smart Search */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                  {[
+                    { id: "ALL", label: "Tất cả" },
+                    { id: "phau-thuat", label: "Phẫu Thuật" },
+                    { id: "da-lieu", label: "Da Liễu" },
+                    { id: "tre-hoa", label: "Trẻ Hóa" },
+                    { id: "voc-dang", label: "Vóc Dáng" }
+                  ].map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => {
+                        setServiceCategoryFilter(cat.id);
+                        setShowServicePicker(true);
+                      }}
+                      className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition whitespace-nowrap ${
+                        serviceCategoryFilter === cat.id
+                          ? "bg-amber-600 border-amber-600 text-white shadow-xs"
+                          : "bg-white border-amber-200 text-slate-700 hover:bg-amber-100"
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Dropdown list of catalog services for multi-selection */}
+                {showServicePicker && (
+                  <div className="bg-white border border-amber-200 rounded-2xl shadow-xl p-2 max-h-56 overflow-y-auto space-y-1 z-20">
+                    <div className="flex items-center justify-between px-2 py-1 border-b border-slate-100 text-[10px] font-extrabold text-slate-500 uppercase">
+                      <span>Tích chọn dịch vụ mong muốn:</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowServicePicker(false)}
+                        className="text-amber-700 hover:underline"
+                      >
+                        Đóng danh sách
+                      </button>
+                    </div>
+
+                    {filteredSmartServices.length > 0 ? (
+                      filteredSmartServices.map((srv) => {
+                        const isSelected = selectedServiceItems.some((s) => s.id === srv.id);
+                        return (
+                          <div
+                            key={srv.id}
+                            onClick={() => toggleSelectService(srv)}
+                            className={`p-2.5 rounded-xl cursor-pointer transition flex items-center justify-between border ${
+                              isSelected
+                                ? "bg-amber-50 border-amber-400 shadow-xs"
+                                : "bg-white border-slate-100 hover:bg-slate-50"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center font-bold text-xs shrink-0 ${
+                                isSelected ? "bg-amber-500 border-amber-600 text-[#0B192C]" : "border-slate-300 bg-white"
+                              }`}>
+                                {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-extrabold text-slate-900 text-xs truncate">{srv.name}</div>
+                                <div className="text-[10px] text-slate-500 font-medium">
+                                  {srv.categoryName || srv.category} • <span className="font-mono text-emerald-700 font-bold">{formatCurrencyInput(srv.price)} VNĐ</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              isSelected ? "bg-amber-200 text-amber-900" : "bg-slate-100 text-slate-600"
+                            }`}>
+                              {isSelected ? "Đã chọn" : "+ Thêm"}
+                            </span>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="p-3 text-center text-xs text-slate-400 font-medium">
+                        Không tìm thấy dịch vụ phù hợp từ khóa
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Selected Service Badges */}
+                {selectedServiceItems.length > 0 && (
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[10px] text-slate-600 font-extrabold block">Các dịch vụ đã chọn:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedServiceItems.map((srv) => (
+                        <span
+                          key={srv.id}
+                          className="bg-white border border-amber-400 text-amber-900 text-[11px] font-extrabold px-2.5 py-1 rounded-xl shadow-xs flex items-center gap-1.5"
+                        >
+                          <span>{srv.name}</span>
+                          <span className="font-mono text-[10px] text-emerald-700">({formatCurrencyInput(srv.price)}đ)</span>
+                          <button
+                            type="button"
+                            onClick={() => removeSelectedService(srv.id)}
+                            className="hover:bg-rose-100 hover:text-rose-700 rounded-full p-0.5 text-slate-400 transition"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+
+                    {totalEstimatedCost > 0 && (
+                      <div className="flex items-center justify-between text-xs font-black text-amber-900 bg-white p-2 rounded-xl border border-amber-300 mt-2">
+                        <span>Tổng chi phí dự kiến ({selectedServiceItems.length} dịch vụ):</span>
+                        <span className="font-mono text-emerald-700 text-sm">
+                          {formatCurrencyInput(totalEstimatedCost)} VNĐ
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Combined Custom Service Text Input */}
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1 text-[11px]">
+                    Tên Dịch Vụ Niêm Yết Tổng Hợp (Tự động cập nhật hoặc chỉnh sửa thủ công):
+                  </label>
+                  <input
+                    type="text"
+                    value={form.serviceName}
+                    onChange={(e) => setForm({ ...form, serviceName: e.target.value })}
+                    className="w-full bg-white border border-amber-300 rounded-xl p-2.5 text-amber-900 font-extrabold focus:outline-none focus:border-amber-500 text-xs shadow-xs"
+                  />
+                </div>
               </div>
 
-              {/* Upload Image/Video Current Status */}
+              {/* 4. CHỌN BÁC SĨ & KHUNG GIỜ & NGÀY KHÁM */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Chọn Bác Sĩ:</label>
+                  <select
+                    value={form.doctorName}
+                    onChange={(e) => setForm({ ...form, doctorName: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-bold focus:outline-none focus:border-amber-500 text-xs"
+                  >
+                    <option value="Bs. CKII Nguyễn Văn Hùng">Bs. CKII Nguyễn Văn Hùng</option>
+                    <option value="Bs. CKI Trần Thị Thu">Bs. CKI Trần Thị Thu</option>
+                    <option value="Bs. CKI Phạm Đức Anh">Bs. CKI Phạm Đức Anh</option>
+                    <option value="Ths. Bs. Trần Mỹ Linh">Ths. Bs. Trần Mỹ Linh</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Khung Giờ Hẹn Khám:</label>
+                  <select
+                    value={form.time}
+                    onChange={(e) => setForm({ ...form, time: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-bold focus:outline-none focus:border-amber-500 text-xs"
+                  >
+                    <option value="09:00 AM">09:00 AM</option>
+                    <option value="10:30 AM">10:30 AM</option>
+                    <option value="02:00 PM">02:00 PM</option>
+                    <option value="04:30 PM">04:30 PM</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Ngày Khám Dự Kiến:</label>
+                  <input
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => setForm({ ...form, date: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-bold focus:outline-none focus:border-amber-500 text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Trạng Thái CRM (*):</label>
+                  <select
+                    value={form.status}
+                    onChange={(e) => setForm({ ...form, status: e.target.value as any })}
+                    className="w-full bg-slate-50 border border-amber-300 rounded-xl p-2.5 text-amber-900 font-extrabold focus:outline-none focus:border-amber-500 text-xs"
+                  >
+                    <option value="Chờ xác nhận">⏳ Chờ xác nhận</option>
+                    <option value="Đã xác nhận">✅ Đã xác nhận</option>
+                    <option value="Đang điều trị">🏥 Đang điều trị</option>
+                    <option value="Hoàn thành">🎉 Hoàn thành</option>
+                    <option value="Đã hủy">❌ Đã hủy</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 5. TẢI media VỀ TÌNH TRẠNG */}
               <div>
                 <label className="block text-slate-700 font-bold mb-1 flex items-center justify-between">
                   <span className="flex items-center gap-1 text-amber-800">
                     <Upload className="w-4 h-4 text-amber-600" /> Tải Ảnh Hoặc Video Tình Trạng Hiện Tại Của Khách:
                   </span>
-                  <span className="text-[10px] text-slate-400 font-normal">(Ảnh PNG/JPG hoặc Video MP4)</span>
                 </label>
 
                 <div className="bg-slate-50 border border-dashed border-slate-300 rounded-2xl p-3 text-center space-y-2">
@@ -771,56 +1182,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Dịch Vụ Thẩm Mỹ Đăng Ký:</label>
-                <input
-                  type="text"
-                  value={form.serviceName}
-                  onChange={(e) => setForm({ ...form, serviceName: e.target.value })}
-                  className="w-full bg-slate-50 border border-amber-300 rounded-xl p-2.5 text-amber-900 font-extrabold focus:outline-none focus:border-amber-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Chọn Bác Sĩ:</label>
-                  <select
-                    value={form.doctorName}
-                    onChange={(e) => setForm({ ...form, doctorName: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-bold focus:outline-none focus:border-amber-500"
-                  >
-                    <option value="Bs. CKII Nguyễn Văn Hùng">Bs. CKII Nguyễn Văn Hùng</option>
-                    <option value="Bs. CKI Trần Thị Thu">Bs. CKI Trần Thị Thu</option>
-                    <option value="Bs. CKI Phạm Đức Anh">Bs. CKI Phạm Đức Anh</option>
-                    <option value="Ths. Bs. Trần Mỹ Linh">Ths. Bs. Trần Mỹ Linh</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Khung Giờ Hẹn Khám:</label>
-                  <select
-                    value={form.time}
-                    onChange={(e) => setForm({ ...form, time: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-bold focus:outline-none focus:border-amber-500"
-                  >
-                    <option value="09:00 AM">09:00 AM</option>
-                    <option value="10:30 AM">10:30 AM</option>
-                    <option value="02:00 PM">02:00 PM</option>
-                    <option value="04:30 PM">04:30 PM</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Ngày Khám Dự Kiến:</label>
-                <input
-                  type="date"
-                  value={form.date}
-                  onChange={(e) => setForm({ ...form, date: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-bold focus:outline-none focus:border-amber-500"
-                />
-              </div>
-
+              {/* GHI CHÚ */}
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Ghi Chú Yêu Cầu Từ Khách Hàng:</label>
                 <textarea
@@ -828,14 +1190,18 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   placeholder="Nhập mong muốn của khách (ví dụ: dáng S-Line tự nhiên)..."
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-amber-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 text-xs focus:outline-none focus:border-amber-500"
                 />
               </div>
 
+              {/* FOOTER ACTION BUTTONS */}
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => {
+                    setShowModal(false);
+                    setEditingAppointment(null);
+                  }}
                   className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition"
                 >
                   Hủy
@@ -845,10 +1211,58 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                   className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-[#0B192C] font-black rounded-xl shadow-md transition flex items-center gap-1.5"
                 >
                   <Save className="w-4 h-4" />
-                  <span>Xác Nhận Đặt Lịch CRM</span>
+                  <span>{editingAppointment ? "Lưu Cập Nhật Lịch Hẹn" : "Xác Nhận Đặt Lịch CRM"}</span>
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRM DELETE MODAL (ADMIN ONLY) */}
+      {deletingAppointmentId && (
+        <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 text-slate-900 space-y-4 shadow-2xl relative">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="font-black text-base text-slate-900">Xác Nhận Xóa Lịch Hẹn</h3>
+                <p className="text-xs text-slate-500 font-medium">Hành động này không thể hoàn tác trên hệ thống</p>
+              </div>
+            </div>
+
+            {(() => {
+              const target = appointments.find((a) => a.id === deletingAppointmentId);
+              if (!target) return null;
+              return (
+                <div className="bg-rose-50 border border-rose-200 p-3.5 rounded-2xl space-y-1.5 text-xs text-slate-800">
+                  <div className="font-black text-slate-900 text-sm">👤 {target.customerName}</div>
+                  <div className="font-mono font-bold text-slate-600">📞 SĐT: {target.customerPhone}</div>
+                  <div className="font-medium text-slate-700">✨ Dịch vụ: <span className="font-bold text-amber-900">{target.serviceName}</span></div>
+                  <div className="font-medium text-slate-600">🏥 Bác sĩ: {target.doctorName} ({formatDateVN(target.date)})</div>
+                </div>
+              );
+            })()}
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeletingAppointmentId(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+              >
+                Hủy Bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl text-xs shadow-md transition flex items-center gap-1.5"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Xác Nhận Xóa Vĩnh Viễn</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
