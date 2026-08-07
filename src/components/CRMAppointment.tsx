@@ -565,18 +565,16 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
       {/* APPOINTMENTS CONTAINER: TABLE ON DESKTOP & GRID CARDS ON MOBILE */}
       {filteredAppointments.length > 0 ? (
         <>
-          {/* A. DESKTOP VIEW: BẢNG CRM CHUYÊN NGHIỆP ƯU TIÊN TÊN KHÁCH HÀNG & DỊCH VỤ */}
+          {/* A. DESKTOP VIEW: BẢNG CRM GỌN GÀNG TẬP TRUNG KHÁCH HÀNG & DỊCH VỤ */}
           <div className="hidden md:block bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-gradient-to-r from-[#0B192C] via-[#1E3A8A] to-[#0B192C] text-white text-[11px] font-black uppercase tracking-wider border-b border-slate-800">
-                    <th className="py-4 px-4 w-1/4">👤 Khách Hàng & SĐT</th>
-                    <th className="py-4 px-4 w-1/3">✨ Dịch Vụ Thẩm Mỹ</th>
+                    <th className="py-4 px-4">👤 Khách Hàng & SĐT</th>
+                    <th className="py-4 px-4">✨ Dịch Vụ Thẩm Mỹ</th>
                     <th className="py-4 px-4">📅 Ngày & Giờ Hẹn</th>
-                    <th className="py-4 px-4">📋 Mã LH & Loại</th>
-                    <th className="py-4 px-4">🤝 CTV Giới Thiệu</th>
-                    <th className="py-4 px-4 text-center">Trạng Thái</th>
+                    {isUserAdmin && <th className="py-4 px-4 text-center">Trạng Thái</th>}
                     <th className="py-4 px-4 text-right">Thao Tác</th>
                   </tr>
                 </thead>
@@ -584,12 +582,11 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                   {filteredAppointments.map((apt) => {
                     const statusConfig = getStatusConfig(apt.status);
                     const cleanPhone = apt.customerPhone.replace(/\D/g, "");
-                    const ctvPhone = (apt.ctvPhone || "").replace(/\D/g, "");
                     const initials = apt.customerName ? apt.customerName.trim().charAt(0).toUpperCase() : "K";
 
                     return (
                       <tr key={apt.id} className="hover:bg-amber-50/50 transition">
-                        {/* 1. KHÁCH HÀNG & SĐT (ƯU TIÊN NỔI BẬT #1) */}
+                        {/* 1. KHÁCH HÀNG & SĐT */}
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 text-[#0B192C] font-black flex items-center justify-center text-sm shadow-xs shrink-0">
@@ -620,7 +617,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                           </div>
                         </td>
 
-                        {/* 2. DỊCH VỤ THẨM MỸ (ƯU TIÊN NỔI BẬT #2) */}
+                        {/* 2. DỊCH VỤ THẨM MỸ */}
                         <td className="py-4 px-4">
                           <div className="flex flex-wrap gap-1.5">
                             {apt.serviceName.split(/\s*\+\s*|\s*,\s*/).map((srv, idx) => (
@@ -635,7 +632,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                           </div>
                         </td>
 
-                        {/* 3. NGÀY & GIỜ HẸN */}
+                        {/* 3. NGÀY & GIỜ HẸN & BÁC SĨ */}
                         <td className="py-4 px-4 whitespace-nowrap">
                           <div className="font-mono font-black text-slate-900 bg-slate-100 px-2.5 py-1 rounded-xl border border-slate-200 text-xs inline-flex items-center gap-1.5">
                             <Calendar className="w-3.5 h-3.5 text-amber-600" />
@@ -650,56 +647,24 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                           </div>
                         </td>
 
-                        {/* 4. MÃ LH & LOẠI */}
-                        <td className="py-4 px-4 whitespace-nowrap">
-                          <div className="font-mono font-black text-amber-800 bg-amber-50/80 px-2 py-0.5 rounded-md border border-amber-200 inline-block text-[11px]">
-                            {apt.id}
-                          </div>
-                          <div className="mt-1">
-                            <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
-                              apt.appointmentType === "Lịch tư vấn"
-                                ? "bg-blue-50 text-blue-700 border-blue-200"
-                                : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            }`}>
-                              {apt.appointmentType === "Lịch tư vấn" ? "💬" : "🔄"} {apt.appointmentType || "Lịch tư vấn"}
-                            </span>
-                          </div>
-                        </td>
+                        {/* 4. TRẠNG THÁI CRM (CHỈ HIỂN THỊ DÀNH CHO ADMIN) */}
+                        {isUserAdmin && (
+                          <td className="py-4 px-4 text-center whitespace-nowrap">
+                            <select
+                              value={apt.status}
+                              onChange={(e) => handleStatusChange(apt, e.target.value as any)}
+                              className="bg-white border border-amber-300 rounded-xl px-2.5 py-1.5 text-xs font-black text-amber-900 focus:outline-none focus:border-amber-500 shadow-2xs cursor-pointer"
+                            >
+                              <option value="Chờ xác nhận">⏳ Chờ xác nhận</option>
+                              <option value="Đã xác nhận">✅ Đã xác nhận</option>
+                              <option value="Đang điều trị">🏥 Đang điều trị</option>
+                              <option value="Hoàn thành">🎉 Hoàn thành</option>
+                              <option value="Đã hủy">❌ Đã hủy</option>
+                            </select>
+                          </td>
+                        )}
 
-                        {/* 5. CTV GIỚI THIỆU */}
-                        <td className="py-4 px-4 whitespace-nowrap">
-                          <div className="font-extrabold text-slate-900 text-xs">{apt.ctvName || "CTV"}</div>
-                          <div className="font-mono text-[10px] font-bold text-blue-800 flex items-center gap-1 mt-0.5">
-                            <span className="bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded">{apt.ctvCode || "SAOHAN-CTV"}</span>
-                            {ctvPhone && (
-                              <a
-                                href={`https://zalo.me/${ctvPhone}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-blue-600 hover:underline font-bold"
-                              >
-                                Chat
-                              </a>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* 6. TRẠNG THÁI CRM */}
-                        <td className="py-4 px-4 text-center whitespace-nowrap">
-                          <select
-                            value={apt.status}
-                            onChange={(e) => handleStatusChange(apt, e.target.value as any)}
-                            className="bg-white border border-amber-300 rounded-xl px-2.5 py-1.5 text-xs font-black text-amber-900 focus:outline-none focus:border-amber-500 shadow-2xs cursor-pointer"
-                          >
-                            <option value="Chờ xác nhận">⏳ Chờ xác nhận</option>
-                            <option value="Đã xác nhận">✅ Đã xác nhận</option>
-                            <option value="Đang điều trị">🏥 Đang điều trị</option>
-                            <option value="Hoàn thành">🎉 Hoàn thành</option>
-                            <option value="Đã hủy">❌ Đã hủy</option>
-                          </select>
-                        </td>
-
-                        {/* 7. THAO TÁC */}
+                        {/* 5. THAO TÁC (Xem chi tiết, Sửa, Xóa) */}
                         <td className="py-4 px-4 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
                             <button
@@ -752,7 +717,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                   key={apt.id}
                   className="bg-white border border-slate-200 hover:border-amber-400 rounded-3xl p-4 shadow-sm transition space-y-3"
                 >
-                  {/* PROMINENT DATE & TIME BANNER - CHỈ GIỮ BORDER THEO YÊU CẦU */}
+                    {/* PROMINENT DATE & TIME BANNER - CHỈ GIỮ BORDER THEO YÊU CẦU */}
                   <div className="border border-slate-300 bg-slate-50/50 p-2.5 rounded-2xl flex items-center justify-between">
                     <div className="flex items-center gap-2 font-mono font-black text-xs">
                       <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
@@ -761,9 +726,11 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                       <Clock className="w-4 h-4 text-blue-600 shrink-0" />
                       <span className="text-emerald-700">{apt.time}</span>
                     </div>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${statusConfig.bg}`}>
-                      {statusConfig.label}
-                    </span>
+                    {isUserAdmin && (
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${statusConfig.bg}`}>
+                        {statusConfig.label}
+                      </span>
+                    )}
                   </div>
 
                   {/* Customer Header Info */}
@@ -884,19 +851,21 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                           )}
                         </div>
 
-                        <div className="flex items-center gap-1">
-                          <select
-                            value={apt.status}
-                            onChange={(e) => handleStatusChange(apt, e.target.value as any)}
-                            className="bg-white border border-amber-300 rounded-xl px-2 py-1 text-xs font-black text-amber-900"
-                          >
-                            <option value="Chờ xác nhận">⏳ Chờ xác nhận</option>
-                            <option value="Đã xác nhận">✅ Đã xác nhận</option>
-                            <option value="Đang điều trị">🏥 Đang điều trị</option>
-                            <option value="Hoàn thành">🎉 Hoàn thành</option>
-                            <option value="Đã hủy">❌ Đã hủy</option>
-                          </select>
-                        </div>
+                        {isUserAdmin && (
+                          <div className="flex items-center gap-1">
+                            <select
+                              value={apt.status}
+                              onChange={(e) => handleStatusChange(apt, e.target.value as any)}
+                              className="bg-white border border-amber-300 rounded-xl px-2 py-1 text-xs font-black text-amber-900"
+                            >
+                              <option value="Chờ xác nhận">⏳ Chờ xác nhận</option>
+                              <option value="Đã xác nhận">✅ Đã xác nhận</option>
+                              <option value="Đang điều trị">🏥 Đang điều trị</option>
+                              <option value="Hoàn thành">🎉 Hoàn thành</option>
+                              <option value="Đã hủy">❌ Đã hủy</option>
+                            </select>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -981,24 +950,40 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                 </div>
               </div>
 
-              {/* Bác sĩ & Loại lịch */}
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Bác Sĩ Phụ Trách:</span>
-                  <span className="font-extrabold text-amber-900">{selectedDetailAppointment.doctorName}</span>
+              {/* Mã Lịch Hẹn, Bác Sĩ & Loại Lịch (Hiển thị chi tiết) */}
+              <div className="grid grid-cols-3 gap-2.5 text-xs">
+                <div className="bg-amber-50/90 p-2.5 rounded-2xl border border-amber-200">
+                  <span className="text-[10px] text-amber-800 font-extrabold uppercase block">Mã Lịch Hẹn:</span>
+                  <span className="font-mono font-black text-amber-900 text-[11px]">{selectedDetailAppointment.id}</span>
                 </div>
 
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Loại Lịch Hẹn:</span>
-                  <span className="font-extrabold text-slate-900">{selectedDetailAppointment.appointmentType || "Lịch tư vấn"}</span>
+                <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Bác Sĩ Phụ Trách:</span>
+                  <span className="font-extrabold text-slate-900 text-xs">{selectedDetailAppointment.doctorName}</span>
+                </div>
+
+                <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Loại Lịch:</span>
+                  <span className="font-extrabold text-blue-700 text-xs">{selectedDetailAppointment.appointmentType || "Lịch tư vấn"}</span>
                 </div>
               </div>
 
-              {/* CTV Info */}
-              <div className="bg-blue-50 p-3.5 rounded-2xl border border-blue-200 space-y-1">
-                <div className="text-[10px] text-blue-900 font-extrabold uppercase">Cộng Tác Viên Giới Thiệu:</div>
-                <div className="font-black text-slate-900 text-xs">{selectedDetailAppointment.ctvName || "CTV"} ({selectedDetailAppointment.ctvCode || "SAOHAN-CTV"})</div>
-                <div className="font-mono text-blue-700 text-xs font-bold">📞 {selectedDetailAppointment.ctvPhone}</div>
+              {/* 🤝 CTV GIỚI THIỆU (CHỈ HIỂN THỊ TRONG CHI TIẾT) */}
+              <div className="bg-blue-50/80 p-3 rounded-2xl border border-blue-200 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-blue-900 font-extrabold uppercase flex items-center gap-1">
+                    🤝 Cộng Tác Viên Giới Thiệu:
+                  </span>
+                  <span className="font-mono text-[10px] font-black text-blue-800 bg-white px-2 py-0.5 rounded-md border border-blue-200 shadow-2xs">
+                    {selectedDetailAppointment.ctvCode || "SAOHAN-CTV"}
+                  </span>
+                </div>
+                <div className="font-black text-slate-900 text-xs flex items-center justify-between pt-0.5">
+                  <span>👤 {selectedDetailAppointment.ctvName || "CTV"}</span>
+                  {selectedDetailAppointment.ctvPhone && (
+                    <span className="font-mono text-blue-700 font-bold">📞 {selectedDetailAppointment.ctvPhone}</span>
+                  )}
+                </div>
               </div>
 
               {/* Customer Photo / Video */}
