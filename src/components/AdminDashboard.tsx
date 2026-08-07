@@ -106,7 +106,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // --- ANALYTICS COMPUTATIONS ---
-  const pendingPayoutsCount = payoutRequests.filter((p) => p.status === "Chờ duyệt").length;
+  const pendingPayoutsCount = payoutRequests.filter((p) => 
+    p.status === "Kế toán đã kiểm tra - Chờ Admin duyệt" || 
+    p.status === "Chờ kế toán kiểm tra" || 
+    p.status === "Chờ duyệt"
+  ).length;
   const pendingAptsCount = appointments.filter((a) => a.status === "Chờ xác nhận").length;
   const confirmedAptsCount = appointments.filter((a) => a.status === "Đã xác nhận").length;
   const inTreatmentAptsCount = appointments.filter((a) => a.status === "Đang điều trị").length;

@@ -54,7 +54,12 @@ export const AccountantDashboard: React.FC<AccountantDashboardProps> = ({
 
   const totalSystemRevenue = leads.reduce((acc, l) => acc + (l.status === "Đã hoàn thành" ? l.estimatedValue : 0), 0);
   const totalCommissionPaid = leads.reduce((acc, l) => acc + (l.status === "Đã hoàn thành" ? l.commission : 0), 0);
-  const pendingPayoutCount = payoutRequests.filter((r) => r.status === "Chờ kế toán duyệt").length;
+  const pendingPayoutCount = payoutRequests.filter((r) => 
+    r.status === "Chờ kế toán kiểm tra" || 
+    r.status === "Admin đã phê duyệt - Chờ kế toán chi tiền" || 
+    r.status === "Chờ kế toán duyệt" || 
+    r.status === "Chờ duyệt"
+  ).length;
 
   const filteredRequests = payoutRequests.filter((req) => {
     const matchesSearch =
@@ -223,7 +228,13 @@ export const AccountantDashboard: React.FC<AccountantDashboardProps> = ({
             </div>
 
             <div className="space-y-2 text-xs">
-              {payoutRequests.filter(r => r.status === "Đã giải ngân VietQR").map((r) => (
+              {payoutRequests.filter(r => 
+                r.status === "Giải ngân thành công" || 
+                r.status === "Đã chuyển tiền" || 
+                r.status === "Đã duyệt" || 
+                r.status === "Đã giải ngân VietQR" ||
+                r.status === "Hoàn thành - Đã chi tiền VietQR"
+              ).map((r) => (
                 <div key={r.id} className="bg-slate-50 border border-slate-200 p-3 rounded-xl flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center">
