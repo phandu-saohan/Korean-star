@@ -428,17 +428,17 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
   return (
     <div className="space-y-6">
       
-      {/* Module Banner Header - ẩn khi trong Admin Dashboard */}
+      {/* Module Banner Header - Nền gradient giống Header */}
       {!isUserAdmin && (
-        <div className="bg-[#0B192C] text-white p-4 sm:p-6 rounded-3xl shadow-xl border border-blue-900/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="bg-gradient-to-r from-[#0B192C] via-[#1E3A8A] to-[#0B192C] text-white p-5 sm:p-6 rounded-3xl shadow-xl border border-blue-900/50 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 text-[#0B192C] flex items-center justify-center font-bold shadow-md shrink-0">
-              <Stethoscope className="w-6 h-6" />
+              <Stethoscope className="w-6 h-6 text-[#0B192C]" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-base sm:text-xl font-black uppercase tracking-wide text-white">Quản Lý Lịch Hẹn & Khám Lâm Sàng</h2>
-                <span className="bg-amber-500/20 text-amber-400 border border-amber-400/40 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full">
+                <h2 className="text-base sm:text-xl font-black uppercase tracking-wide text-white">Quản Lý Lịch Hẹn</h2>
+                <span className="bg-amber-500/20 text-amber-300 border border-amber-400/40 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full">
                   CRM THÔNG MINH
                 </span>
               </div>
@@ -448,9 +448,9 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
 
           <button
             onClick={handleOpenCreateModal}
-            className="bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 text-[#0B192C] font-black px-4 py-2.5 rounded-2xl transition shadow-lg text-xs flex items-center justify-center gap-2 shrink-0"
+            className="w-full md:w-auto bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 text-[#0B192C] font-black px-5 py-3 rounded-2xl transition shadow-lg text-xs flex items-center justify-center gap-2 shrink-0 self-center"
           >
-            <Plus className="w-4 h-4" /> Đặt Lịch Hẹn Mới
+            <Plus className="w-4 h-4 stroke-[3]" /> Đặt Lịch Hẹn Mới
           </button>
         </div>
       )}
