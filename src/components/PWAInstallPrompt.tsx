@@ -121,8 +121,12 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ config, onTo
           </button>
 
           <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shrink-0 text-2xl shadow-inner">
-              ✨
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shrink-0 text-2xl shadow-inner overflow-hidden">
+              {activeConfig.pwaLogoUrl ? (
+                <img src={activeConfig.pwaLogoUrl} alt="PWA App Logo" className="w-full h-full object-contain p-1 rounded-xl" />
+              ) : (
+                "✨"
+              )}
             </div>
             <div className="space-y-1 pr-4">
               <div className="flex items-center gap-1.5">

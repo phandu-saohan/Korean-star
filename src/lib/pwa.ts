@@ -32,6 +32,7 @@ export interface PWAInstallConfig {
   themeColor: string;
   appDescription: string;
   enableInstallPrompt: boolean;
+  pwaLogoUrl?: string;
 }
 
 export const DEFAULT_PWA_CONFIG: PWAInstallConfig = {
@@ -39,5 +40,6 @@ export const DEFAULT_PWA_CONFIG: PWAInstallConfig = {
   shortName: "KOREAN STAR",
   themeColor: "#F59E0B",
   appDescription: "Hệ thống quản lý Cộng tác viên & Đặt lịch dịch vụ thẩm mỹ KOREAN STAR 24/7",
-  enableInstallPrompt: true
+  enableInstallPrompt: true,
+  pwaLogoUrl: ""
 };

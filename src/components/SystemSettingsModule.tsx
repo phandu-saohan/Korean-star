@@ -252,6 +252,29 @@ const DEFAULT_ROLES: RoleConfig[] = [
   }
 ];
 
+export const PRESET_PWA_LOGOS = [
+  {
+    id: "preset-star",
+    name: "✨ Korean Star Gold",
+    url: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230B192C'/><text y='.75em' x='50%' text-anchor='middle' font-size='60'>✨</text></svg>"
+  },
+  {
+    id: "preset-hospital",
+    name: "🏥 Thẩm Mỹ Viện Shield",
+    url: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230F172A'/><path d='M50 15 L80 30 V60 C80 75 50 88 50 88 C50 88 20 75 20 60 V30 Z' fill='%23F59E0B'/><path d='M43 40 H57 V60 H43 Z M38 45 H62 V55 H38 Z' fill='%230F172A'/></svg>"
+  },
+  {
+    id: "preset-crown",
+    name: "👑 Crown VIP Gold",
+    url: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230B192C'/><text y='.75em' x='50%' text-anchor='middle' font-size='60'>👑</text></svg>"
+  },
+  {
+    id: "preset-diamond",
+    name: "💎 Diamond Luxury",
+    url: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230B192C'/><text y='.75em' x='50%' text-anchor='middle' font-size='60'>💎</text></svg>"
+  }
+];
+
 export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
   ctvUser,
   onToast
@@ -588,6 +611,60 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
       }
       alert(`❌ Lỗi kích hoạt Webhook Zalo Bot API:\n\n${errMsg}`);
     }
+  };
+
+  // PWA LOGO UPLOAD & COMPRESSION HANDLER
+  const handlePwaLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Kích thước file ảnh logo quá lớn (> 5MB). Vui lòng chọn ảnh nhỏ hơn!");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64Str = event.target?.result as string;
+      if (!base64Str) return;
+
+      // Nén ảnh tự động qua Canvas max 512x512 cho PWA App Icon
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_SIZE = 512;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = Math.round((height * MAX_SIZE) / width);
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = Math.round((width * MAX_SIZE) / height);
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL("image/png", 0.9);
+          setBrandConfig((prev: any) => ({
+            ...prev,
+            pwaLogoUrl: compressedDataUrl,
+            logoUrl: compressedDataUrl
+          }));
+          onToast("✨ Đã tải lên & nén ảnh Logo PWA (512x512) thành công!");
+        }
+      };
+      img.src = base64Str;
+    };
+    reader.readAsDataURL(file);
   };
 
   // SAVE BRAND CONFIG TO SUPABASE
@@ -1283,7 +1360,128 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
-            {/* Tên App Đầy Đủ */}
+            {/* 📸 PWA LOGO UPLOAD & CUSTOMIZATION SECTION */}
+            <div className="md:col-span-2 bg-slate-50 border border-slate-200 rounded-3xl p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                <div>
+                  <h4 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                    <Camera className="w-4 h-4 text-amber-500" /> Upload & Tùy Chỉnh Biểu Tượng Logo PWA (App Icon)
+                  </h4>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Logo này sẽ hiển thị làm Icon ứng dụng trên Màn hình chính điện thoại, Favicon trình duyệt và Banner cài đặt
+                  </p>
+                </div>
+                {(brandConfig.pwaLogoUrl || brandConfig.logoUrl) && (
+                  <button
+                    type="button"
+                    onClick={() => setBrandConfig({ ...brandConfig, pwaLogoUrl: "", logoUrl: "" })}
+                    className="text-xs text-red-600 hover:text-red-700 font-bold flex items-center gap-1 cursor-pointer bg-red-50 px-2.5 py-1 rounded-lg border border-red-200"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Reset Mặc Định
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-center">
+                
+                {/* Left Column: Live Logo Preview Card */}
+                <div className="bg-[#0B192C] text-white rounded-2xl p-4 flex flex-col items-center justify-center space-y-3 text-center border border-amber-400/40 shadow-inner">
+                  <span className="text-[10px] text-amber-400 font-mono uppercase font-black tracking-wider">Xem Trước App Icon (PWA)</span>
+                  
+                  <div className="relative group">
+                    <div className="w-20 h-20 rounded-2xl bg-slate-900 border-2 border-amber-400/60 p-1 flex items-center justify-center overflow-hidden shadow-xl">
+                      {brandConfig.pwaLogoUrl || brandConfig.logoUrl ? (
+                        <img
+                          src={brandConfig.pwaLogoUrl || brandConfig.logoUrl}
+                          alt="PWA Logo Preview"
+                          className="w-full h-full object-contain rounded-xl"
+                        />
+                      ) : (
+                        <span className="text-4xl">✨</span>
+                      )}
+                    </div>
+                    <span className="absolute -bottom-2 bg-amber-500 text-[#0B192C] font-black text-[9px] px-2 py-0.5 rounded-full shadow-xs">
+                      512x512 PNG
+                    </span>
+                  </div>
+
+                  <div className="space-y-0.5 pt-1">
+                    <h5 className="font-extrabold text-xs text-white">{brandConfig.pwaShortName || "KOREAN STAR"}</h5>
+                    <span className="text-[10px] text-slate-400 font-medium block">Hiển thị trên Home Screen iOS/Android</span>
+                  </div>
+                </div>
+
+                {/* Right Column: Upload File & Preset Choice */}
+                <div className="lg:col-span-2 space-y-4">
+                  
+                  {/* 1. File Upload Dropzone */}
+                  <div>
+                    <label className="block text-slate-700 font-extrabold text-xs mb-1">
+                      1. Tải Lên Tập Tin Ảnh Logo Mới (PNG, JPG, SVG, WebP - Tối Đa 5MB):
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/jpg, image/svg+xml, image/webp"
+                        onChange={handlePwaLogoUpload}
+                        className="hidden"
+                        id="pwa-logo-file-input"
+                      />
+                      <label
+                        htmlFor="pwa-logo-file-input"
+                        className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-[#0B192C] font-black text-xs px-4 py-3 rounded-xl cursor-pointer transition shadow-sm border border-amber-600/30"
+                      >
+                        <Camera className="w-4 h-4" />
+                        <span>Chọn Ảnh Tải Lên Từ Máy ĐT / Máy Tính</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* 2. Image URL Input */}
+                  <div>
+                    <label className="block text-slate-700 font-extrabold text-xs mb-1">
+                      Hoặc Nhập URL Đường Dẫn Ảnh Trực Tiếp:
+                    </label>
+                    <div className="relative">
+                      <Globe className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                      <input
+                        type="text"
+                        placeholder="https://example.com/logo.png"
+                        value={brandConfig.pwaLogoUrl || ""}
+                        onChange={(e) => setBrandConfig({ ...brandConfig, pwaLogoUrl: e.target.value, logoUrl: e.target.value })}
+                        className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-3 py-2 font-mono text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 3. Preset Icons Choice */}
+                  <div>
+                    <label className="block text-slate-700 font-extrabold text-xs mb-1.5">
+                      Hoặc Chọn Biểu Tượng Mẫu Chuẩn Có Sẵn:
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {PRESET_PWA_LOGOS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => setBrandConfig({ ...brandConfig, pwaLogoUrl: preset.url, logoUrl: preset.url })}
+                          className={`p-2 rounded-xl border text-left transition flex items-center gap-2 cursor-pointer ${
+                            brandConfig.pwaLogoUrl === preset.url
+                              ? "bg-amber-100 border-amber-500 ring-2 ring-amber-400/50"
+                              : "bg-white border-slate-200 hover:bg-slate-100"
+                          }`}
+                        >
+                          <img src={preset.url} alt={preset.name} className="w-6 h-6 rounded-md shrink-0" />
+                          <span className="text-[11px] font-extrabold text-slate-800 truncate">{preset.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
             <div>
               <label className="block text-slate-700 font-extrabold text-xs mb-1">
                 Tên Ứng Dụng Đầy Đủ (App Title):
