@@ -64,6 +64,97 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
 
   const [printInvoiceModal, setPrintInvoiceModal] = useState<AppointmentInvoice | null>(null);
 
+  // Create New Invoice Modal State
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState("");
+  const [customCustomerName, setCustomCustomerName] = useState("");
+  const [customCustomerPhone, setCustomCustomerPhone] = useState("");
+  const [customServiceName, setCustomServiceName] = useState("");
+  const [customTotalAmount, setCustomTotalAmount] = useState("");
+  const [customDepositAmount, setCustomDepositAmount] = useState("0");
+  const [customCommissionRate, setCustomCommissionRate] = useState("15");
+  const [customPaymentMethod, setCustomPaymentMethod] = useState<AppointmentInvoice["paymentMethod"]>("VietQR / Chuyển khoản");
+  const [customCtvCode, setCustomCtvCode] = useState("");
+  const [customCtvName, setCustomCtvName] = useState("");
+  const [customNotes, setCustomNotes] = useState("");
+
+  const handleSelectAppointmentForCreate = (aptId: string) => {
+    setSelectedAppointmentId(aptId);
+    if (!aptId) return;
+    const apt = appointments.find((a) => a.id === aptId);
+    if (apt) {
+      setCustomCustomerName(apt.customerName || "");
+      setCustomCustomerPhone(apt.customerPhone || "");
+      setCustomServiceName(apt.serviceName || "");
+      setCustomCtvCode(apt.ctvCode || ctvUser?.code || "CTV-SYSTEM");
+      setCustomCtvName(apt.ctvName || ctvUser?.name || "Bệnh Viện Korean Star");
+      if (!customTotalAmount) {
+        setCustomTotalAmount("15000000");
+      }
+    }
+  };
+
+  const handleCreateInvoiceSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const total = parseInt(customTotalAmount.replace(/\D/g, "")) || 0;
+    const deposit = parseInt(customDepositAmount.replace(/\D/g, "")) || 0;
+    if (total <= 0) {
+      alert("Vui lòng nhập Tổng chi phí dịch vụ phẫu thuật hợp lệ!");
+      return;
+    }
+
+    const remaining = Math.max(0, total - deposit);
+    const commRate = parseInt(customCommissionRate) || 15;
+    const commAmount = Math.round(total * (commRate / 100));
+    
+    let paymentStatus: AppointmentInvoice["paymentStatus"] = "Chờ cọc";
+    if (deposit >= total) {
+      paymentStatus = "Đã thu đủ (Hoàn thành)";
+    } else if (deposit > 0) {
+      paymentStatus = "Đã cọc";
+    }
+
+    const newInvId = `INV-2026-${String(Math.floor(100 + Math.random() * 900))}`;
+
+    const newInvoice: AppointmentInvoice = {
+      id: newInvId,
+      appointmentId: selectedAppointmentId || `apt-${Date.now()}`,
+      customerName: customCustomerName || "Khách Hàng Thẩm Mỹ",
+      customerPhone: customCustomerPhone || "0988888888",
+      serviceName: customServiceName || "Dịch Vụ Phẫu Thuật",
+      totalAmount: total,
+      depositAmount: deposit,
+      remainingAmount: remaining,
+      commissionRate: commRate,
+      commissionAmount: commAmount,
+      paymentStatus: paymentStatus,
+      ctvCode: customCtvCode || ctvUser?.code || "CTV-ADMIN",
+      ctvName: customCtvName || ctvUser?.name || "Kế Toán / Admin",
+      createdAt: new Date().toLocaleString("vi-VN"),
+      paymentMethod: customPaymentMethod,
+      notes: customNotes
+    };
+
+    if (onAddInvoice) {
+      onAddInvoice(newInvoice);
+    } else {
+      onUpdateInvoice(newInvoice);
+    }
+
+    // Automatically credit CTV commission if fully paid on creation
+    if (paymentStatus === "Đã thu đủ (Hoàn thành)" && onCreditCTVCommission && newInvoice.ctvCode) {
+      onCreditCTVCommission(newInvoice.ctvCode, commAmount, newInvoice.serviceName);
+    }
+
+    // Update appointment status if linked
+    if (selectedAppointmentId && onUpdateAppointmentStatus) {
+      const targetStatus = deposit >= total ? "Hoàn thành" : (deposit > 0 ? "Đã xác nhận" : "Chờ xác nhận");
+      onUpdateAppointmentStatus(selectedAppointmentId, targetStatus);
+    }
+
+    setIsCreateModalOpen(false);
+  };
+
   // Sync / Auto-generate invoices for appointments that don't have invoices yet
   const effectiveInvoices = useMemo(() => {
     const invoiceMap = new Map<string, AppointmentInvoice>();
@@ -327,6 +418,28 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
               </button>
             )}
           </div>
+
+          {/* Nút Tạo Hóa Đơn Mới */}
+          <button
+            onClick={() => {
+              setIsCreateModalOpen(true);
+              setSelectedAppointmentId("");
+              setCustomCustomerName("");
+              setCustomCustomerPhone("");
+              setCustomServiceName("");
+              setCustomTotalAmount("");
+              setCustomDepositAmount("0");
+              setCustomCommissionRate("15");
+              setCustomCtvCode(ctvUser?.code || "CTV-ADMIN");
+              setCustomCtvName(ctvUser?.name || "Bệnh Viện Korean Star");
+              setCustomNotes("");
+            }}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-3.5 py-2 rounded-2xl transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer shrink-0"
+            title="Tạo hóa đơn thu tiền theo dịch vụ đã xác nhận trong CRM"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Tạo Hóa Đơn Mới</span>
+          </button>
 
           {/* Status Filter Badges */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
@@ -1016,6 +1129,217 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                 <span>In Phiếu Thu Ngay</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. MODAL 4: TẠO HÓA ĐƠN DỊCH VỤ MỚI */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-50 bg-[#0B192C]/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-emerald-200 my-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2 text-emerald-700 font-black text-sm uppercase">
+                <Plus className="w-5 h-5 text-emerald-600" />
+                <span>TẠO HÓA ĐƠN DỊCH VỤ ĐÃ XÁC NHẬN</span>
+              </div>
+              <button
+                onClick={() => setIsCreateModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateInvoiceSubmit} className="space-y-4 text-xs">
+              
+              {/* Chọn Lịch Hẹn Đã Xác Nhận Từ CRM */}
+              <div>
+                <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
+                  Chọn Lịch Hẹn Đã Xác Nhận Trong CRM:
+                </label>
+                <select
+                  value={selectedAppointmentId}
+                  onChange={(e) => handleSelectAppointmentForCreate(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-2xl p-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="">-- Tạo hóa đơn trực tiếp (Không chọn lịch hẹn CRM) --</option>
+                  {appointments.map((apt) => (
+                    <option key={apt.id} value={apt.id}>
+                      [{apt.id}] {apt.customerName} - {apt.serviceName} ({apt.status})
+                    </option>
+                  ))}
+                </select>
+                <span className="text-[10px] text-slate-500 mt-1 block">
+                  *Chọn lịch hẹn từ CRM để tự động điền Tên khách hàng, SĐT và Tên dịch vụ phẫu thuật.
+                </span>
+              </div>
+
+              {/* Tên Khách Hàng & SĐT */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
+                    Họ và Tên Khách Hàng:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="VD: Nguyễn Thị Hồng"
+                    value={customCustomerName}
+                    onChange={(e) => setCustomCustomerName(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
+                    Số Điện Thoại Khách Hàng:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="VD: 0988 123 456"
+                    value={customCustomerPhone}
+                    onChange={(e) => setCustomCustomerPhone(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-bold text-slate-900 font-mono focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              {/* Tên Dịch Vụ */}
+              <div>
+                <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
+                  Tên Dịch Vụ Phẫu Thuật / Thẩm Mỹ:
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="VD: Nâng Ngực Ergonomix Nâng Cấp Chuyên Sâu"
+                  value={customServiceName}
+                  onChange={(e) => setCustomServiceName(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              {/* Chi Phí & Hoa Hồng & Tiền Cọc */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
+                    Tổng Chi Phí (VNĐ):
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={100000}
+                    step={500000}
+                    placeholder="15000000"
+                    value={customTotalAmount}
+                    onChange={(e) => setCustomTotalAmount(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-black font-mono text-emerald-700 focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
+                    Tiền Cọc Nhận Ngay (VNĐ):
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={100000}
+                    placeholder="0"
+                    value={customDepositAmount}
+                    onChange={(e) => setCustomDepositAmount(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-black font-mono text-amber-600 focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
+                    Hoa Hồng CTV (%):
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={50}
+                    value={customCommissionRate}
+                    onChange={(e) => setCustomCommissionRate(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-black font-mono text-purple-700 focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              {/* Thông Tin CTV */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-amber-50/60 border border-amber-200 rounded-2xl p-3">
+                <div>
+                  <label className="block text-[10px] font-extrabold text-amber-900 uppercase mb-1">
+                    Mã CTV Giới Thiệu:
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="VD: CTV8888"
+                    value={customCtvCode}
+                    onChange={(e) => setCustomCtvCode(e.target.value)}
+                    className="w-full bg-white border border-amber-300 rounded-xl p-2 text-xs font-bold text-amber-950 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-extrabold text-amber-900 uppercase mb-1">
+                    Tên CTV Giới Thiệu:
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="VD: Nguyễn Văn A"
+                    value={customCtvName}
+                    onChange={(e) => setCustomCtvName(e.target.value)}
+                    className="w-full bg-white border border-amber-300 rounded-xl p-2 text-xs font-bold text-amber-950"
+                  />
+                </div>
+              </div>
+
+              {/* Phương Thức Thanh Toán */}
+              <div>
+                <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
+                  Hình Thức Thanh Toán Thu Tiền:
+                </label>
+                <select
+                  value={customPaymentMethod}
+                  onChange={(e) => setCustomPaymentMethod(e.target.value as any)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-2xl p-2.5 text-xs font-bold text-slate-800"
+                >
+                  <option value="VietQR / Chuyển khoản">VietQR / Chuyển khoản ngân hàng</option>
+                  <option value="Tiền mặt">Tiền mặt tại quầy thu ngân</option>
+                  <option value="Thẻ ATM/Visa">Thẻ ATM / Visa / Quẹt thẻ POS</option>
+                </select>
+              </div>
+
+              {/* Ghi chú */}
+              <div>
+                <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
+                  Ghi Chú Hóa Đơn:
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ghi chú dịch vụ phẫu thuật, phòng khám..."
+                  value={customNotes}
+                  onChange={(e) => setCustomNotes(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs text-slate-800"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs py-3 rounded-2xl cursor-pointer"
+                >
+                  Hủy Bỏ
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-3 rounded-2xl shadow-md cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Xác Nhận Tạo Hóa Đơn</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
