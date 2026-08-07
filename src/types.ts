@@ -219,3 +219,25 @@ export interface PayoutRequest {
   rejectedReason?: string;
   logs?: PayoutAuditLog[];
 }
+
+export interface AppointmentInvoice {
+  id: string;
+  appointmentId: string;
+  customerName: string;
+  customerPhone: string;
+  serviceName: string;
+  ctvCode?: string;
+  ctvName?: string;
+  doctorName?: string;
+  totalAmount: number;
+  depositAmount: number;
+  depositPaidAt?: string;
+  remainingAmount: number;
+  remainingPaidAt?: string;
+  paymentStatus: "Chờ cọc" | "Đã cọc" | "Đã thu đủ (Hoàn thành)" | "Đã hủy";
+  paymentMethod: "VietQR / Chuyển khoản" | "Tiền mặt" | "Thẻ ATM/Visa";
+  commissionRate: number;
+  commissionAmount: number;
+  createdAt: string;
+  notes?: string;
+}

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { CTVUser, ReferralLead, PayoutRequest } from "../types";
+import { CTVUser, ReferralLead, PayoutRequest, Appointment, AppointmentInvoice } from "../types";
 import { PayoutManagementModule } from "./PayoutManagementModule";
+import { RevenueInvoiceModule } from "./RevenueInvoiceModule";
 import { 
   Wallet, 
   TrendingUp, 
@@ -16,27 +17,38 @@ import {
   QrCode,
   CreditCard,
   History,
-  AlertCircle
+  AlertCircle,
+  Receipt
 } from "lucide-react";
 
 interface AccountantDashboardProps {
   ctvUser: CTVUser;
   leads: ReferralLead[];
+  appointments?: Appointment[];
+  invoices?: AppointmentInvoice[];
   payoutRequests: PayoutRequest[];
   onApprovePayoutRequest: (requestId: string) => void;
   onRejectPayoutRequest: (requestId: string) => void;
   onUpdatePayoutRequest?: (updatedReq: PayoutRequest) => void;
+  onUpdateInvoice?: (updatedInvoice: AppointmentInvoice) => void;
+  onUpdateAppointmentStatus?: (appointmentId: string, status: Appointment["status"]) => void;
+  onCreditCTVCommission?: (ctvCode: string, commissionAmount: number, serviceName: string) => void;
 }
 
 export const AccountantDashboard: React.FC<AccountantDashboardProps> = ({
   ctvUser,
   leads,
+  appointments = [],
+  invoices = [],
   payoutRequests,
   onApprovePayoutRequest,
   onRejectPayoutRequest,
-  onUpdatePayoutRequest
+  onUpdatePayoutRequest,
+  onUpdateInvoice = () => {},
+  onUpdateAppointmentStatus,
+  onCreditCTVCommission
 }) => {
-  const [activeTab, setActiveTab] = useState<"requests" | "history" | "audit">("requests");
+  const [activeTab, setActiveTab] = useState<"invoices" | "requests" | "history" | "audit">("invoices");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
@@ -135,35 +147,58 @@ export const AccountantDashboard: React.FC<AccountantDashboardProps> = ({
         {/* Navigation sub-tabs */}
         <div className="flex border-b border-slate-100 gap-3 sm:gap-6 text-xs font-extrabold overflow-x-auto no-scrollbar">
           <button
+            onClick={() => setActiveTab("invoices")}
+            className={`pb-3 border-b-2 transition shrink-0 flex items-center gap-1.5 cursor-pointer ${
+              activeTab === "invoices" ? "border-emerald-600 text-emerald-800 font-black" : "border-transparent text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            <Receipt className="w-4 h-4 text-emerald-600" />
+            <span>1. Quản Lý Doanh Thu & Hóa Đơn (Cọc ➔ Thu Đủ ➔ CTV)</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("requests")}
-            className={`pb-3 border-b-2 transition shrink-0 flex items-center gap-1.5 ${
+            className={`pb-3 border-b-2 transition shrink-0 flex items-center gap-1.5 cursor-pointer ${
               activeTab === "requests" ? "border-emerald-600 text-emerald-800 font-black" : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >
             <QrCode className="w-4 h-4 text-emerald-600" />
-            <span>1. Duyệt Yêu Cầu Rút Tiền VietQR ({pendingPayoutCount} Chờ)</span>
+            <span>2. Duyệt Rút Tiền VietQR ({pendingPayoutCount} Chờ)</span>
           </button>
           
           <button
             onClick={() => setActiveTab("history")}
-            className={`pb-3 border-b-2 transition shrink-0 flex items-center gap-1.5 ${
+            className={`pb-3 border-b-2 transition shrink-0 flex items-center gap-1.5 cursor-pointer ${
               activeTab === "history" ? "border-emerald-600 text-emerald-800 font-black" : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >
             <History className="w-4 h-4 text-emerald-600" />
-            <span>2. Sổ Nhật Ký Giao Dịch & Giải Ngân</span>
+            <span>3. Sổ Nhật Ký Giao Dịch & Giải Ngân</span>
           </button>
 
           <button
             onClick={() => setActiveTab("audit")}
-            className={`pb-3 border-b-2 transition shrink-0 flex items-center gap-1.5 ${
+            className={`pb-3 border-b-2 transition shrink-0 flex items-center gap-1.5 cursor-pointer ${
               activeTab === "audit" ? "border-emerald-600 text-emerald-800 font-black" : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >
             <FileCheck className="w-4 h-4 text-emerald-600" />
-            <span>3. Đối Đối Kháng & Kiểm Toán Hợp Đồng</span>
+            <span>4. Đối Kháng & Kiểm Toán Hợp Đồng</span>
           </button>
         </div>
+
+        {/* TAB 0: QUẢN LÝ DOANH THU & HÓA ĐƠN THU TIỀN */}
+        {activeTab === "invoices" && (
+          <RevenueInvoiceModule
+            appointments={appointments}
+            ctvUser={ctvUser}
+            invoices={invoices}
+            onUpdateInvoice={onUpdateInvoice}
+            onUpdateAppointmentStatus={onUpdateAppointmentStatus}
+            onCreditCTVCommission={onCreditCTVCommission}
+            isAdmin={true}
+          />
+        )}
 
         {/* TAB 1: DUYỆT YÊU CẦU RÚT TIỀN HOA HỒNG VIETQR (5 BƯỚC FLOW & AUDIT LOG) */}
         {activeTab === "requests" && (

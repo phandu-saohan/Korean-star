@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { CTVUser, ReferralLead, Appointment, ServiceItem, ServiceFeedback, PayoutRequest } from "../types";
+import { CTVUser, ReferralLead, Appointment, ServiceItem, ServiceFeedback, PayoutRequest, AppointmentInvoice } from "../types";
 import { formatCurrencyInput } from "../utils/formatters";
 import { AuthUserProfile } from "../lib/supabase";
 import { ServiceCatalog } from "./ServiceCatalog";
@@ -30,6 +30,7 @@ import {
   CheckCircle2,
   LogOut,
   ArrowLeftRight,
+  Receipt,
   UserCheck,
   Plus,
   ArrowUpRight,
@@ -37,6 +38,7 @@ import {
   Activity,
   Layers
 } from "lucide-react";
+import { RevenueInvoiceModule } from "./RevenueInvoiceModule";
 
 interface AdminDashboardProps {
   ctvUser: CTVUser;
@@ -64,6 +66,9 @@ interface AdminDashboardProps {
   onRefreshAppointments?: () => void;
   onRoleChange?: (role: any) => void;
   onSignOut?: () => void;
+  invoices?: AppointmentInvoice[];
+  onUpdateInvoice?: (updatedInvoice: AppointmentInvoice) => void;
+  onCreditCTVCommission?: (ctvCode: string, commissionAmount: number, serviceName: string) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -91,9 +96,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onGenerateServiceLink,
   onRefreshAppointments,
   onRoleChange,
-  onSignOut
+  onSignOut,
+  invoices = [],
+  onUpdateInvoice = () => {},
+  onCreditCTVCommission
 }) => {
-  const [activeTab, setActiveTab] = useState<"analytics" | "crm" | "payouts" | "services" | "feedbacks" | "settings">("analytics");
+  const [activeTab, setActiveTab] = useState<"analytics" | "crm" | "payouts" | "invoices" | "services" | "feedbacks" | "settings">("analytics");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
@@ -195,8 +203,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       description: "Xử lý rút tiền & quét mã VietQR tự động"
     },
     {
+      id: "invoices",
+      title: "4. Quản Lý Doanh Thu & Hóa Đơn",
+      shortTitle: "Doanh Thu & Hóa Đơn",
+      icon: Receipt,
+      badge: "Cọc ➔ CTV",
+      badgeColor: "bg-emerald-900/80 text-emerald-300 border border-emerald-700",
+      description: "Hóa đơn thu cọc, thu đủ & tự động trích hoa hồng CTV"
+    },
+    {
       id: "services",
-      title: "4. Bảng Giá & Dịch Vụ",
+      title: "5. Bảng Giá & Dịch Vụ",
       shortTitle: "Bảng Giá Dịch Vụ",
       icon: Tag,
       badge: services.length,
@@ -205,7 +222,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     },
     {
       id: "feedbacks",
-      title: "5. Feedback & Ảnh Lâm Sàng",
+      title: "6. Feedback & Ảnh Lâm Sàng",
       shortTitle: "Feedback Phẫu Thuật",
       icon: Camera,
       badge: feedbacks.length,
@@ -214,7 +231,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     },
     {
       id: "settings",
-      title: "6. Cài Đặt & Phân Quyền",
+      title: "7. Cài Đặt & Phân Quyền",
       shortTitle: "Cài Đặt Hệ Thống",
       icon: Settings,
       badge: "Hệ thống",
@@ -752,6 +769,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               onUpdatePayoutRequest={onUpdatePayoutRequest || (() => {})}
               currentRole="admin"
               currentUserFullName={ctvUser.name || authUser?.fullName || "Admin Quản Trị"}
+            />
+          )}
+
+          {/* TAB 3.5: QUẢN LÝ DOANH THU & HÓA ĐƠN THU TIỀN */}
+          {activeTab === "invoices" && (
+            <RevenueInvoiceModule
+              appointments={appointments}
+              ctvUser={ctvUser}
+              invoices={invoices}
+              onUpdateInvoice={onUpdateInvoice}
+              onUpdateAppointmentStatus={onUpdateStatus}
+              onCreditCTVCommission={onCreditCTVCommission}
+              isAdmin={true}
             />
           )}
 

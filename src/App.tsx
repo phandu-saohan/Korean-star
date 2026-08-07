@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { UserRole, CTVUser, ReferralLead, Appointment, RealtimeNotification, ServiceItem, Promotion, VideoGuide, PayoutRequest, ServiceFeedback } from "./types";
+import { UserRole, CTVUser, ReferralLead, Appointment, RealtimeNotification, ServiceItem, Promotion, VideoGuide, PayoutRequest, ServiceFeedback, AppointmentInvoice } from "./types";
 import { 
   INITIAL_CTV, 
   SERVICES_DATA, 
@@ -201,6 +201,52 @@ export default function App() {
     const saved = localStorage.getItem("saohan_feedbacks");
     return saved ? JSON.parse(saved) : INITIAL_FEEDBACKS;
   });
+
+  const [invoices, setInvoices] = useState<AppointmentInvoice[]>(() => {
+    const saved = localStorage.getItem("saohan_invoices");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const handleUpdateInvoice = (updatedInvoice: AppointmentInvoice) => {
+    setInvoices((prev) => {
+      const idx = prev.findIndex((i) => i.id === updatedInvoice.id);
+      let updated: AppointmentInvoice[];
+      if (idx >= 0) {
+        updated = [...prev];
+        updated[idx] = updatedInvoice;
+      } else {
+        updated = [updatedInvoice, ...prev];
+      }
+      safeSetLocalStorage("saohan_invoices", JSON.stringify(updated));
+      return updated;
+    });
+    showToast(`Đã cập nhật hóa đơn ${updatedInvoice.id} (${updatedInvoice.paymentStatus})!`);
+  };
+
+  const handleCreditCTVCommission = (ctvCode: string, amount: number, serviceName: string) => {
+    setCtvUser((prev) => {
+      const updated = {
+        ...prev,
+        totalRevenue: prev.totalRevenue + Math.round(amount / 0.15),
+        totalCommission: prev.totalCommission + amount,
+        availableBalance: prev.availableBalance + amount
+      };
+      safeSetLocalStorage("saohan_ctv_user", JSON.stringify(updated));
+      return updated;
+    });
+
+    const newNotif: RealtimeNotification = {
+      id: `notif-${Date.now()}`,
+      title: "Cộng Tiền Hoa Hồng Vào Ví",
+      text: `🎉 Bạn vừa nhận +${amount.toLocaleString("vi-VN")} VNĐ hoa hồng từ ca dịch vụ "${serviceName}"!`,
+      time: "Vừa xong",
+      type: "commission",
+      isRead: false
+    };
+
+    setNotifications((prev) => [newNotif, ...prev]);
+    showToast(`🎉 Đã cộng +${amount.toLocaleString("vi-VN")} VNĐ hoa hồng vào ví CTV ${ctvCode}!`);
+  };
 
   const [payoutModalOpen, setPayoutModalOpen] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -1022,6 +1068,9 @@ export default function App() {
             onBookAppointment={(serviceName, notes) => handleBookFromComponent(serviceName, notes)}
             onGenerateServiceLink={(serviceName) => handleGenerateServiceLink(serviceName)}
             onRefreshAppointments={handleRefreshAppointments}
+            invoices={invoices}
+            onUpdateInvoice={handleUpdateInvoice}
+            onCreditCTVCommission={handleCreditCTVCommission}
             onRoleChange={(role) => {
               setCurrentRole(role);
               if (role === "ctv") setActiveTab("ctv-dashboard");
@@ -1359,10 +1408,15 @@ export default function App() {
             <AccountantDashboard
               ctvUser={ctvUser}
               leads={leads}
+              appointments={appointments}
+              invoices={invoices}
               payoutRequests={payoutRequests}
               onApprovePayoutRequest={handleApprovePayoutRequest}
               onRejectPayoutRequest={handleRejectPayoutRequest}
               onUpdatePayoutRequest={handleUpdatePayoutRequest}
+              onUpdateInvoice={handleUpdateInvoice}
+              onUpdateAppointmentStatus={handleUpdateStatus}
+              onCreditCTVCommission={handleCreditCTVCommission}
             />
           )}
 
