@@ -27,6 +27,7 @@ import {
   BellOff,
   BellRing
 } from "lucide-react";
+import { PWAInstallPrompt } from "./PWAInstallPrompt";
 
 interface HeaderProps {
   currentRole: UserRole;
@@ -175,6 +176,9 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Right Header Actions: Notifications & Account Dropdown */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+
+            {/* PWA Install App Button */}
+            <PWAInstallPrompt />
 
             {/* Notification Bell Dropdown */}
             <div className="relative" ref={notifRef}>

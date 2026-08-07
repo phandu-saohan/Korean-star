@@ -58,7 +58,10 @@ import {
   TrendingUp,
   Percent,
   ChevronRight,
-  MessageSquare
+  MessageSquare,
+  Smartphone,
+  Download,
+  CheckCircle2
 } from "lucide-react";
 
 interface SystemSettingsModuleProps {
@@ -253,7 +256,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
   ctvUser,
   onToast
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<"brand" | "tiers" | "users" | "roles">("brand");
+  const [activeSubTab, setActiveSubTab] = useState<"brand" | "pwa" | "financial" | "tiers" | "users" | "roles">("brand");
 
   // 1.5 CTV TIERS & COMMISSION PERCENTAGES STATE
   const [tierConfigs, setTierConfigs] = useState<CTVTierConfig[]>(() => {
@@ -393,10 +396,21 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
       logoUrl: "",
       tagline: "Hệ Thống Bệnh Viện Thẩm Mỹ Quốc Tế & Quản Lý CTV 24/7",
       hotline: "1900 8888 - 0901 888 999",
+      zaloSupport: "0901 888 999",
+      emailSupport: "cskh@koreanstar.vn",
       address: "Số 88 Phố Huế, Q. Hai Bà Trưng, Hà Nội",
       baseCommissionRate: 15,
+      minPayoutAmount: 100000,
+      maxSinglePayout: 100000000,
       autoPayoutThreshold: 50000000,
+      payoutRefPrefix: "KS-PAY-",
       systemCurrency: "VNĐ",
+      pwaAppName: "KOREAN STAR - Hệ Thống CTV & Thẩm Mỹ",
+      pwaShortName: "KOREAN STAR",
+      pwaThemeColor: "#F59E0B",
+      pwaBgColor: "#0B192C",
+      pwaDescription: "Hệ thống quản lý Cộng tác viên & Đặt lịch dịch vụ thẩm mỹ KOREAN STAR 24/7",
+      pwaEnableInstallPrompt: true,
       oneSignalAppId: "",
       oneSignalApiKey: "",
       oneSignalEnabled: true,
@@ -866,7 +880,31 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
           }`}
         >
           <Building2 className="w-4 h-4" />
-          <span>1. Cấu Hình Thương Hiệu & Logo</span>
+          <span>1. Thương Hiệu & Contact</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab("pwa")}
+          className={`px-4 py-2.5 rounded-2xl font-extrabold text-xs transition flex items-center gap-2 shrink-0 cursor-pointer ${
+            activeSubTab === "pwa"
+              ? "bg-amber-500 text-[#0B192C] shadow-md"
+              : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
+          }`}
+        >
+          <Smartphone className="w-4 h-4 text-emerald-600" />
+          <span>2. Cấu Hình PWA & App Di Động</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab("financial")}
+          className={`px-4 py-2.5 rounded-2xl font-extrabold text-xs transition flex items-center gap-2 shrink-0 cursor-pointer ${
+            activeSubTab === "financial"
+              ? "bg-amber-500 text-[#0B192C] shadow-md"
+              : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
+          }`}
+        >
+          <DollarSign className="w-4 h-4 text-cyan-600" />
+          <span>3. Tài Chính & Hoa Hồng</span>
         </button>
 
         <button
@@ -878,7 +916,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
           }`}
         >
           <Award className="w-4 h-4 text-amber-600" />
-          <span>2. Cấp Bậc & % Hoa Hồng ({tierConfigs.length})</span>
+          <span>4. Cấp Bậc CTV ({tierConfigs.length})</span>
         </button>
 
         <button
@@ -890,7 +928,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>3. Quản Lý Tài Khoản ({userAccounts.length})</span>
+          <span>5. Quản Lý Tài Khoản ({userAccounts.length})</span>
         </button>
 
         <button
@@ -902,7 +940,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
           }`}
         >
           <ShieldCheck className="w-4 h-4" />
-          <span>4. Vai Trò & Phân Quyền CRUD</span>
+          <span>6. Vai Trò & Phân Quyền</span>
         </button>
       </div>
 
@@ -1222,7 +1260,323 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
         </form>
       )}
 
-      {/* SUB-TAB 2: CẤU HÌNH CẤP BẬC & PHẦN TRĂM HOA HỒNG THEO DOANH SỐ TÍCH LŨY */}
+      {/* SUB-TAB 2: CẤU HÌNH PWA & APP DI ĐỘNG */}
+      {activeSubTab === "pwa" && (
+        <form onSubmit={handleSaveBrandConfig} className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 space-y-6 shadow-sm">
+          <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+            <div>
+              <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+                <Smartphone className="w-5 h-5 text-emerald-500" /> Cấu Hình Progressive Web App (PWA) & App Di Động
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Quản lý tên app hiển thị trên màn hình điện thoại/máy tính, màu chủ đạo, mô tả và banner tự động nhắc cài đặt
+              </p>
+            </div>
+            <button
+              type="submit"
+              className="bg-amber-500 hover:bg-amber-400 text-[#0B192C] font-extrabold px-5 py-2.5 rounded-xl transition text-xs shadow-md flex items-center gap-2 cursor-pointer"
+            >
+              <Save className="w-4 h-4" />
+              <span>Lưu Cấu Hình PWA</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Tên App Đầy Đủ */}
+            <div>
+              <label className="block text-slate-700 font-extrabold text-xs mb-1">
+                Tên Ứng Dụng Đầy Đủ (App Title):
+              </label>
+              <div className="relative">
+                <Smartphone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  required
+                  value={brandConfig.pwaAppName || "KOREAN STAR - Hệ Thống CTV & Thẩm Mỹ"}
+                  onChange={(e) => setBrandConfig({ ...brandConfig, pwaAppName: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2.5 font-black text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Tên Ngắn Màn Hình Chính */}
+            <div>
+              <label className="block text-slate-700 font-extrabold text-xs mb-1">
+                Tên Ngắn Trên Màn Hình Chính (Short Name):
+              </label>
+              <div className="relative">
+                <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  required
+                  value={brandConfig.pwaShortName || "KOREAN STAR"}
+                  onChange={(e) => setBrandConfig({ ...brandConfig, pwaShortName: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2.5 font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Màu Chủ Đạo Theme Color */}
+            <div>
+              <label className="block text-slate-700 font-extrabold text-xs mb-1">
+                Mã Màu Chủ Đạo PWA (Theme Color Hex):
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={brandConfig.pwaThemeColor || "#F59E0B"}
+                  onChange={(e) => setBrandConfig({ ...brandConfig, pwaThemeColor: e.target.value })}
+                  className="w-10 h-10 rounded-xl border border-slate-300 cursor-pointer p-0.5"
+                />
+                <input
+                  type="text"
+                  value={brandConfig.pwaThemeColor || "#F59E0B"}
+                  onChange={(e) => setBrandConfig({ ...brandConfig, pwaThemeColor: e.target.value })}
+                  className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs uppercase"
+                />
+              </div>
+            </div>
+
+            {/* Màu Nền Splash Screen */}
+            <div>
+              <label className="block text-slate-700 font-extrabold text-xs mb-1">
+                Mã Màu Nền Màn Hình Chờ (Splash Screen Background):
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={brandConfig.pwaBgColor || "#0B192C"}
+                  onChange={(e) => setBrandConfig({ ...brandConfig, pwaBgColor: e.target.value })}
+                  className="w-10 h-10 rounded-xl border border-slate-300 cursor-pointer p-0.5"
+                />
+                <input
+                  type="text"
+                  value={brandConfig.pwaBgColor || "#0B192C"}
+                  onChange={(e) => setBrandConfig({ ...brandConfig, pwaBgColor: e.target.value })}
+                  className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs uppercase"
+                />
+              </div>
+            </div>
+
+            {/* Mô Tả PWA */}
+            <div className="md:col-span-2">
+              <label className="block text-slate-700 font-extrabold text-xs mb-1">
+                Mô Tả Ứng Dụng PWA (App Description):
+              </label>
+              <textarea
+                rows={2}
+                value={brandConfig.pwaDescription || "Hệ thống quản lý Cộng tác viên & Đặt lịch dịch vụ thẩm mỹ KOREAN STAR 24/7"}
+                onChange={(e) => setBrandConfig({ ...brandConfig, pwaDescription: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 font-medium text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
+              />
+            </div>
+
+            {/* Toggle Banner Tự Động Nhắc Cài Đặt */}
+            <div className="md:col-span-2 bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center justify-between">
+              <div className="space-y-0.5">
+                <h4 className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-amber-500" /> Tự Động Hiển Thị Banner Nhắc Cài Đặt PWA
+                </h4>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Tự động gợi ý người dùng (CTV & Khách hàng) thêm ứng dụng vào Màn hình chính khi truy cập từ Safari / Chrome
+                </p>
+              </div>
+
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  checked={brandConfig.pwaEnableInstallPrompt !== false}
+                  onChange={(e) => setBrandConfig({ ...brandConfig, pwaEnableInstallPrompt: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+              </label>
+            </div>
+
+            {/* Thẻ Trạng Thái PWA System Status */}
+            <div className="md:col-span-2 bg-[#0B192C] text-white rounded-2xl p-4 space-y-3 border border-slate-800">
+              <h4 className="font-extrabold text-xs text-amber-400 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Trạng Thái Tích Hợp PWA Service Worker Hiện Tại
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+                  <span className="text-[10px] text-slate-400 block font-semibold">Service Worker</span>
+                  <span className="font-mono font-bold text-emerald-400 flex items-center gap-1 mt-0.5">
+                    <Check className="w-3.5 h-3.5" /> Đã Kích Hoạt (/sw.js)
+                  </span>
+                </div>
+                <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+                  <span className="text-[10px] text-slate-400 block font-semibold">Web App Manifest</span>
+                  <span className="font-mono font-bold text-sky-400 flex items-center gap-1 mt-0.5">
+                    <Check className="w-3.5 h-3.5" /> /manifest.json
+                  </span>
+                </div>
+                <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+                  <span className="text-[10px] text-slate-400 block font-semibold">Hỗ Trợ Offline</span>
+                  <span className="font-mono font-bold text-amber-400 flex items-center gap-1 mt-0.5">
+                    <Check className="w-3.5 h-3.5" /> Cache Shell Ready
+                  </span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 flex justify-end">
+            <button
+              type="submit"
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 font-black text-[#0B192C] text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer"
+            >
+              <Save className="w-4 h-4" />
+              <span>Lưu Cấu Hình PWA & App Di Động</span>
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* SUB-TAB 3: CẤU HÌNH TÀI CHÍNH & QUY ĐỊNH HOA HỒNG */}
+      {activeSubTab === "financial" && (
+        <form onSubmit={handleSaveBrandConfig} className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 space-y-6 shadow-sm">
+          <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+            <div>
+              <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-cyan-600" /> Cấu Hình Tài Chính & Quy Định Rút Hoa Hồng
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Thiết lập hạn mức rút tối thiểu/tối đa, tỷ lệ hoa hồng mặc định và tiền tố giao dịch VietQR
+              </p>
+            </div>
+            <button
+              type="submit"
+              className="bg-amber-500 hover:bg-amber-400 text-[#0B192C] font-extrabold px-5 py-2.5 rounded-xl transition text-xs shadow-md flex items-center gap-2 cursor-pointer"
+            >
+              <Save className="w-4 h-4" />
+              <span>Lưu Cấu Hình Tài Chính</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Tỷ lệ hoa hồng cơ bản */}
+            <div>
+              <label className="block text-slate-700 font-extrabold text-xs mb-1">
+                Tỷ Lệ Hoa Hồng Cơ Bản Mặc Định (%):
+              </label>
+              <div className="relative">
+                <Percent className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  required
+                  value={brandConfig.baseCommissionRate}
+                  onChange={(e) => setBrandConfig({ ...brandConfig, baseCommissionRate: Number(e.target.value) || 0 })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2.5 font-black text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Hạn mức tự động duyệt VietQR */}
+            <div>
+              <label className="block text-slate-700 font-extrabold text-xs mb-1">
+                Hạn Mức Tự Động Phê Duyệt Giải Ngân (VNĐ):
+              </label>
+              <div className="relative">
+                <CreditCard className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  required
+                  value={formatCurrencyInput(brandConfig.autoPayoutThreshold)}
+                  onChange={(e) => setBrandConfig({ ...brandConfig, autoPayoutThreshold: parseCurrencyInput(e.target.value) })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2.5 font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Hạn mức rút tiền tối thiểu */}
+            <div>
+              <label className="block text-slate-700 font-extrabold text-xs mb-1">
+                Số Tiền Rút Hoa Hồng Tối Thiểu 1 Lần (VNĐ):
+              </label>
+              <div className="relative">
+                <DollarSign className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  required
+                  value={formatCurrencyInput(brandConfig.minPayoutAmount || 100000)}
+                  onChange={(e) => setBrandConfig({ ...brandConfig, minPayoutAmount: parseCurrencyInput(e.target.value) })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2.5 font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Hạn mức rút tiền tối đa */}
+            <div>
+              <label className="block text-slate-700 font-extrabold text-xs mb-1">
+                Số Tiền Rút Hoa Hồng Tối Đa 1 Lần (VNĐ):
+              </label>
+              <div className="relative">
+                <DollarSign className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  required
+                  value={formatCurrencyInput(brandConfig.maxSinglePayout || 100000000)}
+                  onChange={(e) => setBrandConfig({ ...brandConfig, maxSinglePayout: parseCurrencyInput(e.target.value) })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2.5 font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Tiền tố giao dịch VietQR */}
+            <div>
+              <label className="block text-slate-700 font-extrabold text-xs mb-1">
+                Tiền Tố Mã Giao Dịch Rút Tiền (Prefix):
+              </label>
+              <div className="relative">
+                <FileBadge className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  required
+                  value={brandConfig.payoutRefPrefix || "KS-PAY-"}
+                  onChange={(e) => setBrandConfig({ ...brandConfig, payoutRefPrefix: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Đơn vị tiền tệ */}
+            <div>
+              <label className="block text-slate-700 font-extrabold text-xs mb-1">
+                Đơn Vị Tiền Tệ Hệ Thống:
+              </label>
+              <div className="relative">
+                <Globe className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  required
+                  value={brandConfig.systemCurrency || "VNĐ"}
+                  onChange={(e) => setBrandConfig({ ...brandConfig, systemCurrency: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2.5 font-extrabold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
+                />
+              </div>
+            </div>
+
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 flex justify-end">
+            <button
+              type="submit"
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 font-black text-[#0B192C] text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer"
+            >
+              <Save className="w-4 h-4" />
+              <span>Lưu Cấu Hình Tài Chính & Quy Định Hoa Hồng</span>
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* SUB-TAB 4: CẤU HÌNH CẤP BẬC & PHẦN TRĂM HOA HỒNG THEO DOANH SỐ TÍCH LŨY */}
       {activeSubTab === "tiers" && (
         <div className="space-y-6">
           
