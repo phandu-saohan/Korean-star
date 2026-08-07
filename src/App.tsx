@@ -637,17 +637,22 @@ export default function App() {
       .filter(i => i.paymentStatus === "Đã thu đủ (Hoàn thành)")
       .reduce((sum, i) => sum + (i.commissionAmount || 0), 0);
 
-    const computedAvailable = Math.max(0, completedComm - totalPaidOut);
-    const availableBalance = completedComm > 0 ? computedAvailable : ctvUser.availableBalance;
+    const invoiceAptIds = new Set(ctvInvoices.map(i => i.appointmentId).filter(Boolean));
 
-    const totalCommission = completedComm > 0 ? completedComm : ctvUser.totalCommission;
+    const completedAptComm = ctvAppointments
+      .filter(a => a.status === "Hoàn thành" && !invoiceAptIds.has(a.id))
+      .reduce((sum, a) => sum + Math.round(35000000 * 0.15), 0);
+
+    const totalEarnedComm = completedComm + completedAptComm;
+    const computedAvailable = Math.max(0, totalEarnedComm - totalPaidOut);
+
+    const availableBalance = Math.max(ctvUser.availableBalance || 0, computedAvailable);
+    const totalCommission = Math.max(ctvUser.totalCommission || 0, totalEarnedComm);
 
     // Metric 2: CHỜ DUYỆT (Hoa hồng đã đặt cọc + hoa hồng từ các lịch hẹn đã xác nhận chưa xuất hóa đơn)
     const depositedComm = ctvInvoices
       .filter(i => i.paymentStatus === "Đã cọc")
       .reduce((sum, i) => sum + (i.commissionAmount || 0), 0);
-
-    const invoiceAptIds = new Set(ctvInvoices.map(i => i.appointmentId).filter(Boolean));
 
     const pendingAptComm = ctvAppointments
       .filter(a => !invoiceAptIds.has(a.id) && (a.status === "Chờ xác nhận" || a.status === "Đã xác nhận" || a.status === "Đang điều trị"))
@@ -1042,6 +1047,16 @@ export default function App() {
     const targetApt = updatedAppointments.find((a) => a.id === id);
     if (targetApt) {
       saveAppointmentToSupabase(targetApt);
+
+      // Tự động cộng hoa hồng & số dư khả dụng cho CTV khi lịch hẹn hoàn thành
+      if (newStatus === "Hoàn thành") {
+        const matchingInv = invoices.find(i => i.appointmentId === targetApt.id || i.customerPhone === targetApt.customerPhone);
+        const commAmount = matchingInv ? matchingInv.commissionAmount : Math.round(35000000 * 0.15);
+        const targetCtvCode = targetApt.ctvCode || matchingInv?.ctvCode || ctvUser.code;
+        if (targetCtvCode) {
+          handleCreditCTVCommission(targetCtvCode, commAmount, targetApt.serviceName);
+        }
+      }
     }
 
     showToast(`Đã cập nhật trạng thái lịch hẹn sang: "${newStatus}"`);
