@@ -262,20 +262,21 @@ export const resetUserPassword = async (email: string) => {
 };
 
 // 5. Fetch User Profile from Supabase DB Table (user_profiles)
-export const fetchUserProfile = async (userId: string): Promise<AuthUserProfile | null> => {
-  if (!userId) return null;
+export const fetchUserProfile = async (identifier: string): Promise<AuthUserProfile | null> => {
+  if (!identifier) return null;
   try {
-    let data: any = null;
-    let error: any = null;
+    const val = identifier.trim();
+    let query = supabase.from("user_profiles").select("*");
 
-    // 1. Thử lấy dữ liệu từ bảng user_profiles
-    const res1 = await supabase
-      .from("user_profiles")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
+    if (val.includes("@")) {
+      query = query.eq("email", val);
+    } else if (val.match(/^0\d{8,10}$/)) {
+      query = query.eq("phone", val);
+    } else {
+      query = query.eq("id", val);
+    }
 
-    data = res1.data;
+    const { data } = await query.maybeSingle();
     if (!data) return null;
 
     return {

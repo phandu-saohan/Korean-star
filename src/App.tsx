@@ -35,6 +35,7 @@ import { HelpSupportModal } from "./components/HelpSupportModal";
 import { PullToRefresh } from "./components/PullToRefresh";
 import { updateAppBadgeFromUnread, clearBadge } from "./lib/badge";
 import {
+  fetchUserProfile,
   updateUserProfile,
   fetchServicesFromSupabase,
   saveServiceToSupabase,
@@ -461,20 +462,22 @@ export default function App() {
         console.warn("[Supabase] Không fetch được feedbacks, sử dụng bộ lưu trữ local.", err);
       }
 
-      // Fetch & Sync Appointments từ Supabase (đồng bộ giữa CTV và Admin)
-      try {
-        const remoteAppointments = await fetchAppointmentsFromSupabase();
-        if (remoteAppointments !== null) {
-          setAppointments(remoteAppointments);
-          safeSetLocalStorage("saohan_appointments", JSON.stringify(remoteAppointments));
+      // Fetch & Sync Live User Profile trực tiếp từ bảng user_profiles trên Supabase DB
+      if (authUser?.id || authUser?.email) {
+        try {
+          const liveProfile = await fetchUserProfile(authUser.id || authUser.email);
+          if (liveProfile) {
+            setAuthUser(liveProfile);
+            safeSetLocalStorage("saohan_auth_user", JSON.stringify(liveProfile));
+          }
+        } catch (err) {
+          console.warn("[Supabase] Không fetch được user profile:", err);
         }
-      } catch (err) {
-        console.warn("[Supabase] Không đồng bộ được appointments:", err);
       }
     };
 
     bootstrapFromSupabase();
-  }, []);
+  }, [authUser?.id, authUser?.email]);
 
   // Khởi tạo OneSignal Web Push SDK
   useEffect(() => {
@@ -1331,11 +1334,13 @@ export default function App() {
         safeSetLocalStorage("saohan_payout_requests", JSON.stringify(remotePayouts));
       }
 
-      // 5. Đồng bộ hóa đơn doanh thu
-      const remoteInvoices = await fetchInvoicesFromSupabase();
-      if (remoteInvoices !== null) {
-        setInvoices(remoteInvoices);
-        safeSetLocalStorage("saohan_invoices", JSON.stringify(remoteInvoices));
+      // 6. Đồng bộ trực tiếp thông tin cá nhân tài khoản từ Supabase DB
+      if (authUser?.id || authUser?.email) {
+        const freshProfile = await fetchUserProfile(authUser.id || authUser.email);
+        if (freshProfile) {
+          setAuthUser(freshProfile);
+          safeSetLocalStorage("saohan_auth_user", JSON.stringify(freshProfile));
+        }
       }
 
       showToast("✨ Đã cập nhật xong dữ liệu mới nhất từ Supabase!");
