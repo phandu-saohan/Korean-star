@@ -735,14 +735,14 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                   key={apt.id}
                   className="bg-white border border-slate-200 hover:border-amber-400 rounded-3xl p-4 shadow-sm transition space-y-3"
                 >
-                  {/* PROMINENT DATE & TIME BANNER - THỐNG TIN NỔI BẬT NGÀY GIỜ HẸN */}
-                  <div className="bg-gradient-to-r from-[#0B192C] via-[#1E3A8A] to-[#0B192C] text-white p-3 rounded-2xl flex items-center justify-between shadow-md">
+                  {/* PROMINENT DATE & TIME BANNER - CHỈ GIỮ BORDER THEO YÊU CẦU */}
+                  <div className="border border-slate-300 bg-slate-50/50 p-2.5 rounded-2xl flex items-center justify-between">
                     <div className="flex items-center gap-2 font-mono font-black text-xs">
-                      <Calendar className="w-4 h-4 text-amber-400 shrink-0" />
-                      <span className="text-amber-300">{formatDateVN(apt.date)}</span>
-                      <span className="text-slate-400">•</span>
-                      <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-                      <span className="text-emerald-400">{apt.time}</span>
+                      <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span className="text-amber-800">{formatDateVN(apt.date)}</span>
+                      <span className="text-slate-300">•</span>
+                      <Clock className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span className="text-emerald-700">{apt.time}</span>
                     </div>
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${statusConfig.bg}`}>
                       {statusConfig.label}
@@ -918,9 +918,11 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
 
             <div className="space-y-3.5 text-xs font-medium">
               {/* Ngày & Giờ banner */}
-              <div className="bg-gradient-to-r from-[#0B192C] via-[#1E3A8A] to-[#0B192C] text-white p-3.5 rounded-2xl flex items-center justify-between shadow-md">
-                <div className="font-mono font-black text-sm text-amber-300">
-                  📅 {formatDateVN(selectedDetailAppointment.date)} - ⏰ {selectedDetailAppointment.time}
+              <div className="border border-slate-300 bg-slate-50/50 p-3 rounded-2xl flex items-center justify-between">
+                <div className="font-mono font-black text-xs text-amber-900 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-amber-600" /> {formatDateVN(selectedDetailAppointment.date)}
+                  <span className="text-slate-300">•</span>
+                  <Clock className="w-4 h-4 text-blue-600" /> {selectedDetailAppointment.time}
                 </div>
                 <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black border ${getStatusConfig(selectedDetailAppointment.status).bg}`}>
                   {getStatusConfig(selectedDetailAppointment.status).label}
