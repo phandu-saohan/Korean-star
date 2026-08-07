@@ -448,4 +448,17 @@ CREATE INDEX IF NOT EXISTS idx_appointment_invoices_customer_phone ON public.app
 CREATE INDEX IF NOT EXISTS idx_appointment_invoices_ctv_code ON public.appointment_invoices(ctv_code);
 CREATE INDEX IF NOT EXISTS idx_appointment_invoices_payment_status ON public.appointment_invoices(payment_status);
 
+-- Bật Realtime cho bảng Hóa đơn an toàn (Idempotent safe check)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+    AND schemaname = 'public' 
+    AND tablename = 'appointment_invoices'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.appointment_invoices;
+  END IF;
+END $$;
+
 
