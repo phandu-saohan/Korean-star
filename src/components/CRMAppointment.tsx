@@ -573,8 +573,8 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                   <tr className="bg-gradient-to-r from-[#0B192C] via-[#1E3A8A] to-[#0B192C] text-white text-[11px] font-black uppercase tracking-wider border-b border-slate-800">
                     <th className="py-4 px-4">👤 Khách Hàng & SĐT</th>
                     <th className="py-4 px-4">✨ Dịch Vụ Thẩm Mỹ</th>
-                    <th className="py-4 px-4">📅 Ngày & Giờ Hẹn</th>
-                    {isUserAdmin && <th className="py-4 px-4 text-center">Trạng Thái</th>}
+                    <th className="py-4 px-4 font-black">📅 Ngày & Giờ Hẹn</th>
+                    <th className="py-4 px-4 text-center">Trạng Thái</th>
                     <th className="py-4 px-4 text-right">Thao Tác</th>
                   </tr>
                 </thead>
@@ -647,9 +647,9 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                           </div>
                         </td>
 
-                        {/* 4. TRẠNG THÁI CRM (CHỈ HIỂN THỊ DÀNH CHO ADMIN) */}
-                        {isUserAdmin && (
-                          <td className="py-4 px-4 text-center whitespace-nowrap">
+                        {/* 4. TRẠNG THÁI CRM (Admin được đổi, CTV chỉ được xem) */}
+                        <td className="py-4 px-4 text-center whitespace-nowrap">
+                          {isUserAdmin ? (
                             <select
                               value={apt.status}
                               onChange={(e) => handleStatusChange(apt, e.target.value as any)}
@@ -661,8 +661,12 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                               <option value="Hoàn thành">🎉 Hoàn thành</option>
                               <option value="Đã hủy">❌ Đã hủy</option>
                             </select>
-                          </td>
-                        )}
+                          ) : (
+                            <span className={`px-2.5 py-1 rounded-full text-[11px] font-black border inline-block ${statusConfig.bg}`}>
+                              {statusConfig.label}
+                            </span>
+                          )}
+                        </td>
 
                         {/* 5. THAO TÁC (Xem chi tiết, Sửa, Xóa) */}
                         <td className="py-4 px-4 text-right whitespace-nowrap">
@@ -726,11 +730,9 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                       <Clock className="w-4 h-4 text-blue-600 shrink-0" />
                       <span className="text-emerald-700">{apt.time}</span>
                     </div>
-                    {isUserAdmin && (
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${statusConfig.bg}`}>
-                        {statusConfig.label}
-                      </span>
-                    )}
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${statusConfig.bg}`}>
+                      {statusConfig.label}
+                    </span>
                   </div>
 
                   {/* Customer Header Info */}
@@ -851,8 +853,8 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                           )}
                         </div>
 
-                        {isUserAdmin && (
-                          <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1">
+                          {isUserAdmin ? (
                             <select
                               value={apt.status}
                               onChange={(e) => handleStatusChange(apt, e.target.value as any)}
@@ -864,8 +866,12 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                               <option value="Hoàn thành">🎉 Hoàn thành</option>
                               <option value="Đã hủy">❌ Đã hủy</option>
                             </select>
-                          </div>
-                        )}
+                          ) : (
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-black border ${statusConfig.bg}`}>
+                              {statusConfig.label}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1410,17 +1416,24 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
 
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Trạng Thái CRM (*):</label>
-                  <select
-                    value={form.status}
-                    onChange={(e) => setForm({ ...form, status: e.target.value as any })}
-                    className="w-full bg-slate-50 border border-amber-300 rounded-xl p-2.5 text-amber-900 font-extrabold focus:outline-none focus:border-amber-500 text-xs"
-                  >
-                    <option value="Chờ xác nhận">⏳ Chờ xác nhận</option>
-                    <option value="Đã xác nhận">✅ Đã xác nhận</option>
-                    <option value="Đang điều trị">🏥 Đang điều trị</option>
-                    <option value="Hoàn thành">🎉 Hoàn thành</option>
-                    <option value="Đã hủy">❌ Đã hủy</option>
-                  </select>
+                  {isUserAdmin ? (
+                    <select
+                      value={form.status}
+                      onChange={(e) => setForm({ ...form, status: e.target.value as any })}
+                      className="w-full bg-slate-50 border border-amber-300 rounded-xl p-2.5 text-amber-900 font-extrabold focus:outline-none focus:border-amber-500 text-xs shadow-xs cursor-pointer"
+                    >
+                      <option value="Chờ xác nhận">⏳ Chờ xác nhận</option>
+                      <option value="Đã xác nhận">✅ Đã xác nhận</option>
+                      <option value="Đang điều trị">🏥 Đang điều trị</option>
+                      <option value="Hoàn thành">🎉 Hoàn thành</option>
+                      <option value="Đã hủy">❌ Đã hủy</option>
+                    </select>
+                  ) : (
+                    <div className="w-full bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-amber-900 font-extrabold text-xs flex items-center justify-between">
+                      <span>{getStatusConfig(form.status).label}</span>
+                      <span className="text-[10px] text-amber-700 font-normal italic">(Chỉ Admin mới có quyền cập nhật)</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
