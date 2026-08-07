@@ -341,22 +341,6 @@ export const CTVHub: React.FC<CTVHubProps> = ({
               <option value="Đã đặt lịch">Đã đặt lịch</option>
               <option value="Đã tư vấn">Đã tư vấn</option>
             </select>
-
-            {leads.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.confirm("Bạn có chắc chắn muốn xóa toàn bộ danh sách khách hàng giới thiệu mẫu này để chạy dữ liệu thực tế?")) {
-                    if (onClearAllLeads) onClearAllLeads();
-                  }
-                }}
-                className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 transition cursor-pointer"
-                title="Xóa danh sách khách hàng mẫu"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Xóa Danh Sách</span>
-              </button>
-            )}
           </div>
         </div>
 
