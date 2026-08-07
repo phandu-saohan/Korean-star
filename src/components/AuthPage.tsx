@@ -443,20 +443,19 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
       <div className="fixed top-10 left-1/2 -translate-x-1/2 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Centered Content Envelope */}
-      <main className={`w-full my-auto flex flex-col items-center justify-center space-y-4 z-10 py-6 transition-all duration-300 ${
+      <main className={`w-full my-auto flex flex-col items-center justify-center space-y-4 z-10 py-4 sm:py-6 transition-all duration-300 max-w-full px-2 sm:px-4 overflow-x-hidden ${
         mode === "signup" ? "max-w-xl" : "max-w-md"
       }`}>
         
         {/* LOGO SECTION: ICON ON TOP, NAME BELOW */}
-        <div className="text-center space-y-3 w-full">
+        <div className="text-center space-y-3 w-full max-w-full">
           {/* Logo Icon on Top */}
           <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-400 to-amber-500 text-[#0B192C] shadow-2xl flex items-center justify-center font-bold mx-auto border-2 border-amber-300/40 animate-pulse">
             <Sparkles className="w-9 h-9" />
           </div>
 
-          {/* Name & Subtitle Below */}
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-none uppercase">
+          <div className="space-y-1">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center justify-center gap-2">
               KOREAN <span className="text-amber-400">STAR</span>
             </h1>
             <p className="text-amber-400 font-extrabold text-[11px] tracking-widest uppercase mt-1">
