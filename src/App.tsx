@@ -624,10 +624,10 @@ export default function App() {
       (ctvName && lead.ctvName?.toLowerCase().trim() === ctvName)
     );
 
-    // 4. Lệnh rút tiền đã giải ngân thành công
+    // 4. Lệnh rút tiền đã giải ngân hoặc đang chờ kiểm tra
     const ctvPayouts = payoutRequests.filter(p => 
       ((p.ctvCode && p.ctvCode.toLowerCase().trim() === ctvCode) || (ctvName && p.ctvName?.toLowerCase().trim() === ctvName)) &&
-      (p.status === "Giải ngân thành công" || p.status === "Đã chuyển tiền" || p.status === "Đã duyệt")
+      (p.status === "Giải ngân thành công" || p.status === "Đã chuyển tiền" || p.status === "Đã duyệt" || p.status === "Chờ kế toán kiểm tra")
     );
 
     const totalPaidOut = ctvPayouts.reduce((sum, p) => sum + (p.amount || 0), 0);
@@ -646,7 +646,8 @@ export default function App() {
     const totalEarnedComm = completedComm + completedAptComm;
     const computedAvailable = Math.max(0, totalEarnedComm - totalPaidOut);
 
-    const availableBalance = Math.max(ctvUser.availableBalance || 0, computedAvailable);
+    const baseBalance = ctvUser.availableBalance || 0;
+    const availableBalance = baseBalance > totalEarnedComm ? Math.max(0, baseBalance - totalPaidOut) : computedAvailable;
     const totalCommission = Math.max(ctvUser.totalCommission || 0, totalEarnedComm);
 
     // Metric 2: CHỜ DUYỆT (Hoa hồng đã đặt cọc + hoa hồng từ các lịch hẹn đã xác nhận chưa xuất hóa đơn)
@@ -1645,7 +1646,7 @@ export default function App() {
         {/* Mobile Payout Modal */}
         {payoutModalOpen && (
           <PayoutModal
-            ctvUser={ctvUser}
+            ctvUser={effectiveCtvUser}
             onClose={() => setPayoutModalOpen(false)}
             onConfirmPayout={handleConfirmPayout}
           />
@@ -1894,7 +1895,7 @@ export default function App() {
         {/* Payout Modal */}
         {payoutModalOpen && (
           <PayoutModal
-            ctvUser={ctvUser}
+            ctvUser={effectiveCtvUser}
             onClose={() => setPayoutModalOpen(false)}
             onConfirmPayout={(amount) => {
               const nowStr = formatDateTimeVN(new Date().toISOString().replace("T", " ").slice(0, 16));
