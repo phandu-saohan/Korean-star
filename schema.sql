@@ -418,3 +418,34 @@ ON CONFLICT (id) DO UPDATE SET
   treatment_details = EXCLUDED.treatment_details,
   updated_at = NOW();
 
+-- 13. BẢNG APPOINTMENT_INVOICES (Quản Lý Doanh Thu & Hóa Đơn Phẫu Thuật)
+CREATE TABLE IF NOT EXISTS public.appointment_invoices (
+  id TEXT PRIMARY KEY,
+  appointment_id TEXT,
+  customer_name TEXT NOT NULL,
+  customer_phone TEXT NOT NULL,
+  service_name TEXT NOT NULL,
+  total_amount NUMERIC DEFAULT 0,
+  deposit_amount NUMERIC DEFAULT 0,
+  remaining_amount NUMERIC DEFAULT 0,
+  commission_rate NUMERIC DEFAULT 15,
+  commission_amount NUMERIC DEFAULT 0,
+  payment_status TEXT DEFAULT 'Chờ cọc',
+  ctv_code TEXT,
+  ctv_name TEXT,
+  deposit_paid_at TEXT,
+  final_paid_at TEXT,
+  payment_method TEXT DEFAULT 'VietQR / Chuyển khoản',
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.appointment_invoices DISABLE ROW LEVEL SECURITY;
+
+-- Index hỗ trợ tìm kiếm nhanh theo mã hóa đơn, SĐT và CTV
+CREATE INDEX IF NOT EXISTS idx_appointment_invoices_customer_phone ON public.appointment_invoices(customer_phone);
+CREATE INDEX IF NOT EXISTS idx_appointment_invoices_ctv_code ON public.appointment_invoices(ctv_code);
+CREATE INDEX IF NOT EXISTS idx_appointment_invoices_payment_status ON public.appointment_invoices(payment_status);
+
+
