@@ -1,18 +1,24 @@
 {
   "name": "KOREAN STAR - Hệ Thống CTV & Thẩm Mỹ",
   "short_name": "KOREAN STAR",
-  "description": "Hệ thống quản lý Cộng tác viên & Đặt lịch dịch vụ thẩm mỹ KOREAN STAR",
+  "description": "Hệ thống quản lý Cộng tác viên & Đặt lịch dịch vụ thẩm mỹ KOREAN STAR 24/7",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0B192C",
-  "theme_color": "#F59E0B",
+  "theme_color": "#0B192C",
   "orientation": "portrait-primary",
   "scope": "/",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230B192C'/><text y='.75em' x='50%' text-anchor='middle' font-size='60'>✨</text></svg>",
-      "sizes": "192x192 512x512",
-      "type": "image/svg+xml",
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

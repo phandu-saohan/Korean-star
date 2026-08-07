@@ -154,11 +154,11 @@ export const Header: React.FC<HeaderProps> = ({
             }}
             title="Quay về trang chủ"
           >
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 p-0.5 shadow-md flex items-center justify-center font-bold text-white shrink-0">
-              <div className="w-full h-full bg-[#0B192C] rounded-[10px] sm:rounded-[14px] flex items-center justify-center">
-                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
-              </div>
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="KOREAN STAR Logo" 
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl object-cover border border-amber-400/50 shadow-lg shrink-0 transition hover:scale-105" 
+            />
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 min-w-0">
                 <h1 className="text-sm sm:text-lg font-black tracking-tight text-white leading-none truncate">

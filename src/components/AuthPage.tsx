@@ -449,10 +449,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
         
         {/* LOGO SECTION: ICON ON TOP, NAME BELOW */}
         <div className="text-center space-y-3 w-full max-w-full">
-          {/* Logo Icon on Top */}
-          <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-400 to-amber-500 text-[#0B192C] shadow-2xl flex items-center justify-center font-bold mx-auto border-2 border-amber-300/40 animate-pulse">
-            <Sparkles className="w-9 h-9" />
-          </div>
+          {/* Logo Image on Top */}
+          <img 
+            src="/logo.png" 
+            alt="KOREAN STAR Logo" 
+            className="w-20 h-20 rounded-3xl object-cover border-2 border-amber-400/60 shadow-2xl mx-auto transition hover:scale-105" 
+          />
 
           <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center justify-center gap-2">
