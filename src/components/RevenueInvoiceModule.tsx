@@ -5,6 +5,7 @@ import {
   CTVUser 
 } from "../types";
 import { generateVietQRUrl } from "../lib/banks";
+import { formatCurrencyInput, parseCurrencyInput } from "../utils/formatters";
 import { 
   DollarSign, 
   Receipt, 
@@ -720,12 +721,11 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                   Số Tiền Đặt Cọc (VNĐ):
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   required
-                  min={100000}
-                  step={100000}
-                  value={depositInputValue}
-                  onChange={(e) => setDepositInputValue(e.target.value)}
+                  placeholder="1.000.000"
+                  value={formatCurrencyInput(depositInputValue)}
+                  onChange={(e) => setDepositInputValue(parseCurrencyInput(e.target.value).toString())}
                   className="w-full bg-slate-50 border border-slate-300 rounded-2xl p-3 text-base font-black font-mono text-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
                 <span className="text-[11px] text-slate-500 mt-1 block">
@@ -1226,13 +1226,11 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                     Tổng Chi Phí (VNĐ):
                   </label>
                   <input
-                    type="number"
+                    type="text"
                     required
-                    min={100000}
-                    step={500000}
-                    placeholder="15000000"
-                    value={customTotalAmount}
-                    onChange={(e) => setCustomTotalAmount(e.target.value)}
+                    placeholder="15.000.000"
+                    value={formatCurrencyInput(customTotalAmount)}
+                    onChange={(e) => setCustomTotalAmount(parseCurrencyInput(e.target.value).toString())}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-black font-mono text-emerald-700 focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
@@ -1241,12 +1239,10 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                     Tiền Cọc Nhận Ngay (VNĐ):
                   </label>
                   <input
-                    type="number"
-                    min={0}
-                    step={100000}
+                    type="text"
                     placeholder="0"
-                    value={customDepositAmount}
-                    onChange={(e) => setCustomDepositAmount(e.target.value)}
+                    value={formatCurrencyInput(customDepositAmount)}
+                    onChange={(e) => setCustomDepositAmount(parseCurrencyInput(e.target.value).toString())}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-black font-mono text-amber-600 focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>

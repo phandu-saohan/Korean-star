@@ -16,6 +16,7 @@ import { sendOneSignalNotification } from "../lib/onesignal";
 import { ZaloNotifier } from "./ZaloNotifier";
 import { registerZaloWebhook } from "../services/zaloService";
 import { VIETNAM_BANKS, getBankLogo } from "../lib/banks";
+import { formatCurrencyInput, parseCurrencyInput } from "../utils/formatters";
 import {
   Settings,
   Building2,
@@ -1020,10 +1021,10 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               <div className="relative">
                 <DollarSign className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                 <input
-                  type="number"
-                  step={5000000}
-                  value={brandConfig.autoPayoutThreshold}
-                  onChange={(e) => setBrandConfig({ ...brandConfig, autoPayoutThreshold: Number(e.target.value) })}
+                  type="text"
+                  placeholder="50.000.000"
+                  value={formatCurrencyInput(brandConfig.autoPayoutThreshold)}
+                  onChange={(e) => setBrandConfig({ ...brandConfig, autoPayoutThreshold: parseCurrencyInput(e.target.value) })}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
                 />
               </div>
@@ -2185,13 +2186,11 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">2. Doanh số tối thiểu (VNĐ) (*):</label>
                   <input
-                    type="number"
+                    type="text"
                     required
-                    min={0}
-                    step={1000000}
                     placeholder="0"
-                    value={tierFormData.minRevenue}
-                    onChange={(e) => setTierFormData({ ...tierFormData, minRevenue: Number(e.target.value) })}
+                    value={formatCurrencyInput(tierFormData.minRevenue)}
+                    onChange={(e) => setTierFormData({ ...tierFormData, minRevenue: parseCurrencyInput(e.target.value) })}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500"
                   />
                 </div>
@@ -2199,13 +2198,11 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">3. Doanh số tối đa (VNĐ):</label>
                   <input
-                    type="number"
+                    type="text"
                     disabled={tierFormData.isUnlimited}
-                    min={0}
-                    step={1000000}
-                    placeholder="50000000"
-                    value={tierFormData.isUnlimited ? "" : tierFormData.maxRevenue || ""}
-                    onChange={(e) => setTierFormData({ ...tierFormData, maxRevenue: Number(e.target.value) })}
+                    placeholder="50.000.000"
+                    value={tierFormData.isUnlimited ? "" : formatCurrencyInput(tierFormData.maxRevenue || 0)}
+                    onChange={(e) => setTierFormData({ ...tierFormData, maxRevenue: parseCurrencyInput(e.target.value) })}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 disabled:opacity-50"
                   />
                   <label className="flex items-center gap-1.5 mt-1 cursor-pointer text-slate-600 font-bold text-[11px]">
