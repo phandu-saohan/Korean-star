@@ -1062,25 +1062,31 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
               </div>
 
               {/* Thông tin Khách Hàng */}
-              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
-                <div className="text-[10px] text-slate-400 font-extrabold uppercase">Khách Hàng:</div>
-                <div className="font-black text-slate-900 text-sm">{selectedDetailAppointment.customerName}</div>
-                <div className="font-mono font-bold text-blue-700 text-xs flex items-center gap-2">
-                  <span>📞 {selectedDetailAppointment.customerPhone}</span>
-                  <a
-                    href={`tel:${selectedDetailAppointment.customerPhone.replace(/\D/g, "")}`}
-                    className="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px] font-bold"
-                  >
-                    Gọi Ngay
-                  </a>
-                  <a
-                    href={`https://zalo.me/${selectedDetailAppointment.customerPhone.replace(/\D/g, "")}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-bold"
-                  >
-                    Zalo Chat
-                  </a>
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1.5">
+                <div className="text-[10px] text-slate-400 font-extrabold uppercase">KHÁCH HÀNG:</div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="font-black text-slate-900 text-sm sm:text-base">
+                    {selectedDetailAppointment.customerName}
+                  </div>
+                  <div className="font-mono font-bold text-blue-700 text-xs flex flex-wrap items-center gap-2">
+                    <span className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs">
+                      📞 {selectedDetailAppointment.customerPhone}
+                    </span>
+                    <a
+                      href={`tel:${selectedDetailAppointment.customerPhone.replace(/\D/g, "")}`}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-xl text-[10px] font-bold transition flex items-center gap-1 shadow-2xs"
+                    >
+                      Gọi Ngay
+                    </a>
+                    <a
+                      href={`https://zalo.me/${selectedDetailAppointment.customerPhone.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded-xl text-[10px] font-bold transition flex items-center gap-1 shadow-2xs"
+                    >
+                      Zalo Chat
+                    </a>
+                  </div>
                 </div>
               </div>
 
