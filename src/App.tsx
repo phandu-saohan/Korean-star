@@ -43,6 +43,8 @@ import {
   saveAppointmentToSupabase,
   updateAppointmentStatusInSupabase,
   deleteAppointmentFromSupabase,
+  fetchPayoutRequestsFromSupabase,
+  savePayoutRequestToSupabase,
   signOutUser,
   realtimeSupabase
 } from "./lib/supabase";
@@ -547,6 +549,25 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Auto-polling: đồng bộ yêu cầu rút tiền (payoutRequests) từ Supabase mỗi 15 giây
+  useEffect(() => {
+    const syncPayouts = async () => {
+      try {
+        const remotePayouts = await fetchPayoutRequestsFromSupabase();
+        if (remotePayouts && remotePayouts.length > 0) {
+          setPayoutRequests(remotePayouts);
+          safeSetLocalStorage("saohan_payout_requests", JSON.stringify(remotePayouts));
+        }
+      } catch (_) {
+        // Silent fail
+      }
+    };
+
+    syncPayouts();
+    const interval = setInterval(syncPayouts, 15000); // 15 giây
+    return () => clearInterval(interval);
+  }, []);
+
   // Tự động chuyển đổi appointments thành leads để hiển thị đầy đủ trên Dashboard CTVHub
   useEffect(() => {
     if (!appointments || appointments.length === 0) return;
@@ -814,6 +835,7 @@ export default function App() {
 
   const handleUpdatePayoutRequest = (updatedReq: PayoutRequest) => {
     setPayoutRequests((prev) => prev.map((r) => (r.id === updatedReq.id ? updatedReq : r)));
+    savePayoutRequestToSupabase(updatedReq);
     showToast(`Đã cập nhật trạng thái lệnh ${updatedReq.id}: ${updatedReq.status}`);
   };
 
@@ -1139,6 +1161,7 @@ export default function App() {
     };
 
     setPayoutRequests((prev) => [newReq, ...prev]);
+    savePayoutRequestToSupabase(newReq);
     setCtvUser((prev) => ({
       ...prev,
       availableBalance: Math.max(0, prev.availableBalance - amount),

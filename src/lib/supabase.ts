@@ -957,4 +957,78 @@ export const deleteAppointmentFromSupabase = async (id: string) => {
   }
 };
 
+// 23. Fetch Payout Requests from Supabase DB Table (payout_requests)
+export const fetchPayoutRequestsFromSupabase = async (): Promise<any[] | null> => {
+  try {
+    const { data, error } = await supabase
+      .from("payout_requests")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.warn("[Supabase] Lỗi fetch payout_requests:", error.message);
+      return null;
+    }
+
+    if (data) {
+      return data.map((item: any) => ({
+        id: item.id,
+        ctvCode: item.ctv_code || "",
+        ctvName: item.ctv_name || "",
+        amount: Number(item.amount || 0),
+        bankName: item.bank_name || "",
+        accountNumber: item.account_number || "",
+        accountHolder: item.account_holder || "",
+        status: item.status || "Chờ kế toán kiểm tra",
+        transactionRef: item.transaction_ref || undefined,
+        proofImage: item.proof_image || undefined,
+        rejectedReason: item.rejected_reason || undefined,
+        requestedAt: item.requested_at || (item.created_at ? new Date(item.created_at).toLocaleString("vi-VN") : undefined),
+        verifiedByAccountantAt: item.verified_by_accountant_at || undefined,
+        approvedByAdminAt: item.approved_by_admin_at || undefined,
+        disbursedAt: item.disbursed_at || undefined,
+        logs: Array.isArray(item.logs) ? item.logs : []
+      }));
+    }
+    return null;
+  } catch (err) {
+    console.error("[Supabase] Lỗi ngoại lệ fetch payout_requests:", err);
+    return null;
+  }
+};
+
+// 24. Save Payout Request to Supabase DB Table (payout_requests)
+export const savePayoutRequestToSupabase = async (req: any) => {
+  if (!req || !req.id) return;
+  try {
+    const payload = {
+      id: req.id,
+      ctv_code: req.ctvCode || "",
+      ctv_name: req.ctvName || "",
+      amount: req.amount || 0,
+      bank_name: req.bankName || "",
+      account_number: req.accountNumber || "",
+      account_holder: req.accountHolder || "",
+      status: req.status || "Chờ kế toán kiểm tra",
+      transaction_ref: req.transactionRef || null,
+      proof_image: req.proofImage || null,
+      rejected_reason: req.rejectedReason || null,
+      requested_at: req.requestedAt || new Date().toLocaleString("vi-VN"),
+      verified_by_accountant_at: req.verifiedByAccountantAt || null,
+      approved_by_admin_at: req.approvedByAdminAt || null,
+      disbursed_at: req.disbursedAt || null,
+      logs: req.logs || []
+    };
+
+    const { error } = await supabase.from("payout_requests").upsert(payload, { onConflict: "id" });
+    if (error) {
+      console.error("[Supabase] Lỗi khi lưu payout_request:", error.message);
+    } else {
+      console.log(`[Supabase] Đã lưu payout_request ${req.id} (${req.status}) thành công!`);
+    }
+  } catch (err) {
+    console.error("[Supabase] Lỗi ngoại lệ save payout_request:", err);
+  }
+};
+
 
