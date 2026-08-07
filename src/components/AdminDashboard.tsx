@@ -468,68 +468,70 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           </div>
 
-          {/* TOP METRIC CARDS ROW */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 p-4 rounded-2xl flex items-center justify-between shadow-2xs">
-              <div>
-                <span className="text-[10px] font-extrabold text-emerald-800 uppercase block">Doanh Thu Phẫu Thuật</span>
-                <div className="font-mono font-black text-base sm:text-xl text-emerald-950 mt-0.5">
-                  {formatCurrencyInput(totalRevenue)} VNĐ
+          {/* TOP METRIC CARDS ROW (Chỉ hiển thị khi ở Tab Analytics) */}
+          {activeTab === "analytics" && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 p-4 rounded-2xl flex items-center justify-between shadow-2xs">
+                <div>
+                  <span className="text-[10px] font-extrabold text-emerald-800 uppercase block">Doanh Thu Phẫu Thuật</span>
+                  <div className="font-mono font-black text-base sm:text-xl text-emerald-950 mt-0.5">
+                    {formatCurrencyInput(totalRevenue)} VNĐ
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-700 flex items-center gap-1 mt-1">
+                    <TrendingUp className="w-3 h-3 text-emerald-600" /> +18.5% so với tháng trước
+                  </span>
                 </div>
-                <span className="text-[10px] font-bold text-emerald-700 flex items-center gap-1 mt-1">
-                  <TrendingUp className="w-3 h-3 text-emerald-600" /> +18.5% so với tháng trước
-                </span>
+                <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-md shrink-0">
+                  <DollarSign className="w-5 h-5" />
+                </div>
               </div>
-              <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-md shrink-0">
-                <DollarSign className="w-5 h-5" />
-              </div>
-            </div>
 
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 p-4 rounded-2xl flex items-center justify-between shadow-2xs">
-              <div>
-                <span className="text-[10px] font-extrabold text-blue-800 uppercase block">Tổng Lịch Hẹn CRM</span>
-                <div className="font-mono font-black text-base sm:text-xl text-blue-950 mt-0.5">
-                  {appointments.length} Lịch
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 p-4 rounded-2xl flex items-center justify-between shadow-2xs">
+                <div>
+                  <span className="text-[10px] font-extrabold text-blue-800 uppercase block">Tổng Lịch Hẹn CRM</span>
+                  <div className="font-mono font-black text-base sm:text-xl text-blue-950 mt-0.5">
+                    {appointments.length} Lịch
+                  </div>
+                  <span className="text-[10px] font-bold text-blue-700 flex items-center gap-1 mt-1">
+                    <Clock className="w-3 h-3 text-amber-600" /> {pendingAptsCount} Chờ xác nhận
+                  </span>
                 </div>
-                <span className="text-[10px] font-bold text-blue-700 flex items-center gap-1 mt-1">
-                  <Clock className="w-3 h-3 text-amber-600" /> {pendingAptsCount} Chờ xác nhận
-                </span>
+                <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-md shrink-0">
+                  <Stethoscope className="w-5 h-5" />
+                </div>
               </div>
-              <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-md shrink-0">
-                <Stethoscope className="w-5 h-5" />
-              </div>
-            </div>
 
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-4 rounded-2xl flex items-center justify-between shadow-2xs">
-              <div>
-                <span className="text-[10px] font-extrabold text-amber-800 uppercase block">Hoa Hồng Đã Duyệt</span>
-                <div className="font-mono font-black text-base sm:text-xl text-amber-950 mt-0.5">
-                  {formatCurrencyInput(totalPayoutApproved)} VNĐ
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-4 rounded-2xl flex items-center justify-between shadow-2xs">
+                <div>
+                  <span className="text-[10px] font-extrabold text-amber-800 uppercase block">Hoa Hồng Đã Duyệt</span>
+                  <div className="font-mono font-black text-base sm:text-xl text-amber-950 mt-0.5">
+                    {formatCurrencyInput(totalPayoutApproved)} VNĐ
+                  </div>
+                  <span className="text-[10px] font-bold text-amber-700 flex items-center gap-1 mt-1">
+                    <QrCode className="w-3 h-3 text-amber-600" /> {pendingPayoutsCount} Yêu cầu chờ duyệt
+                  </span>
                 </div>
-                <span className="text-[10px] font-bold text-amber-700 flex items-center gap-1 mt-1">
-                  <QrCode className="w-3 h-3 text-amber-600" /> {pendingPayoutsCount} Yêu cầu chờ duyệt
-                </span>
+                <div className="w-10 h-10 rounded-2xl bg-amber-500 text-[#0B192C] flex items-center justify-center font-bold shadow-md shrink-0">
+                  <Award className="w-5 h-5" />
+                </div>
               </div>
-              <div className="w-10 h-10 rounded-2xl bg-amber-500 text-[#0B192C] flex items-center justify-center font-bold shadow-md shrink-0">
-                <Award className="w-5 h-5" />
-              </div>
-            </div>
 
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 p-4 rounded-2xl flex items-center justify-between shadow-2xs">
-              <div>
-                <span className="text-[10px] font-extrabold text-purple-800 uppercase block">Dịch Vụ & Feedback</span>
-                <div className="font-mono font-black text-base sm:text-xl text-purple-950 mt-0.5">
-                  {services.length} Dịch Vụ
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 p-4 rounded-2xl flex items-center justify-between shadow-2xs">
+                <div>
+                  <span className="text-[10px] font-extrabold text-purple-800 uppercase block">Dịch Vụ & Feedback</span>
+                  <div className="font-mono font-black text-base sm:text-xl text-purple-950 mt-0.5">
+                    {services.length} Dịch Vụ
+                  </div>
+                  <span className="text-[10px] font-bold text-purple-700 flex items-center gap-1 mt-1">
+                    <Camera className="w-3 h-3 text-purple-600" /> {feedbacks.length} Ảnh lâm sàng
+                  </span>
                 </div>
-                <span className="text-[10px] font-bold text-purple-700 flex items-center gap-1 mt-1">
-                  <Camera className="w-3 h-3 text-purple-600" /> {feedbacks.length} Ảnh lâm sàng
-                </span>
-              </div>
-              <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-bold shadow-md shrink-0">
-                <Tag className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-bold shadow-md shrink-0">
+                  <Tag className="w-5 h-5" />
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* SUB-MODULE DISPLAY / TAB CONTENT */}

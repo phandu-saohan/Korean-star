@@ -245,33 +245,6 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
   return (
     <div className="space-y-6">
       
-      {/* 1. MODULE HEADER BANNER */}
-      <div className="bg-gradient-to-r from-[#0B192C] via-emerald-950 to-[#0B192C] text-white rounded-3xl p-6 shadow-xl border border-emerald-900/60 relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-black text-emerald-400 uppercase tracking-widest">
-              <Receipt className="w-4 h-4" />
-              <span>Quản Lý Doanh Thu & Hóa Đơn Thẩm Mỹ</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-black text-white mt-1">
-              Quy Trình Thu Tiền Đặt Cọc ➔ Thu Đủ ➔ Tự Động Chi Hoa Hồng CTV
-            </h2>
-            <p className="text-xs text-slate-300 font-medium mt-1 max-w-2xl">
-              Hệ thống kế toán & Admin theo dõi hóa đơn từng ca phẫu thuật, xác nhận thu tiền cọc, thu đủ tiền còn lại và tự động hạch toán doanh số & hoa hồng trực tiếp vào ví CTV.
-            </p>
-          </div>
-
-          <div className="bg-emerald-900/60 border border-emerald-700/60 rounded-2xl p-3.5 text-right font-mono shrink-0">
-            <span className="text-[10px] text-emerald-300 block uppercase font-bold">Tổng Hợp Đồng Doanh Thu</span>
-            <span className="text-xl font-black text-amber-400">
-              {stats.totalRev.toLocaleString("vi-VN")} <span className="text-xs font-normal">VNĐ</span>
-            </span>
-          </div>
-        </div>
-      </div>
-
       {/* 2. FINANCIAL KPIS SUMMARY ROW */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Tổng Doanh Thu */}
