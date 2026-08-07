@@ -162,6 +162,8 @@ CREATE TABLE IF NOT EXISTS public.payout_requests (
   account_holder TEXT,
   status TEXT DEFAULT 'Chờ kế toán kiểm tra',
   transaction_ref TEXT,
+  proof_image TEXT,
+  rejected_reason TEXT,
   requested_at TEXT,
   verified_by_accountant_at TEXT,
   approved_by_admin_at TEXT,
@@ -169,6 +171,34 @@ CREATE TABLE IF NOT EXISTS public.payout_requests (
   logs JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Thêm các cột bổ sung nếu chưa có cho bảng payout_requests
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payout_requests' AND column_name = 'proof_image') THEN
+        ALTER TABLE public.payout_requests ADD COLUMN proof_image TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payout_requests' AND column_name = 'rejected_reason') THEN
+        ALTER TABLE public.payout_requests ADD COLUMN rejected_reason TEXT;
+    END IF;
+END $$;
+
+-- Index cho bảng payout_requests
+CREATE INDEX IF NOT EXISTS idx_payout_requests_ctv_code ON public.payout_requests(ctv_code);
+CREATE INDEX IF NOT EXISTS idx_payout_requests_status ON public.payout_requests(status);
+
+-- Bật Realtime cho bảng Payout Requests
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+    AND schemaname = 'public' 
+    AND tablename = 'payout_requests'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.payout_requests;
+  END IF;
+END $$;
 
 ALTER TABLE public.payout_requests DISABLE ROW LEVEL SECURITY;
 
