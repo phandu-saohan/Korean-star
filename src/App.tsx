@@ -31,6 +31,7 @@ import { PayoutModal } from "./components/PayoutModal";
 import { AuthModal } from "./components/AuthModal";
 import { AuthPage } from "./components/AuthPage";
 import { ProfileEditModal } from "./components/ProfileEditModal";
+import { PullToRefresh } from "./components/PullToRefresh";
 import {
   updateUserProfile,
   fetchServicesFromSupabase,
@@ -1198,13 +1199,58 @@ export default function App() {
 
   const quickNavItems = allQuickNavItems.filter((item) => item.roles.includes(userRoleKey));
 
+  // Hàm làm mới toàn bộ dữ liệu Supabase khi người dùng kéo vuốt từ trên xuống trên thiết bị di động / PWA
+  const handleGlobalDataRefresh = async () => {
+    try {
+      // 1. Đồng bộ danh sách dịch vụ
+      const remoteServices = await fetchServicesFromSupabase();
+      if (remoteServices && remoteServices.length > 0) {
+        setServices(remoteServices);
+        safeSetLocalStorage("saohan_services", JSON.stringify(remoteServices));
+      }
+
+      // 2. Đồng bộ phản hồi khách hàng
+      const remoteFeedbacks = await fetchFeedbacksFromSupabase();
+      if (remoteFeedbacks && remoteFeedbacks.length > 0) {
+        setFeedbacks(remoteFeedbacks);
+        safeSetLocalStorage("saohan_feedbacks", JSON.stringify(remoteFeedbacks));
+      }
+
+      // 3. Đồng bộ lịch hẹn CRM
+      const remoteAppointments = await fetchAppointmentsFromSupabase();
+      if (remoteAppointments !== null) {
+        setAppointments(remoteAppointments);
+        safeSetLocalStorage("saohan_appointments", JSON.stringify(remoteAppointments));
+      }
+
+      // 4. Đồng bộ yêu cầu rút tiền
+      const remotePayouts = await fetchPayoutRequestsFromSupabase();
+      if (remotePayouts !== null) {
+        setPayoutRequests(remotePayouts);
+        safeSetLocalStorage("saohan_payout_requests", JSON.stringify(remotePayouts));
+      }
+
+      // 5. Đồng bộ hóa đơn doanh thu
+      const remoteInvoices = await fetchInvoicesFromSupabase();
+      if (remoteInvoices !== null) {
+        setInvoices(remoteInvoices);
+        safeSetLocalStorage("saohan_invoices", JSON.stringify(remoteInvoices));
+      }
+
+      showToast("✨ Đã cập nhật xong dữ liệu mới nhất từ Supabase!");
+    } catch (err) {
+      showToast("Đã làm mới dữ liệu hệ thống!");
+    }
+  };
+
   // Mandatory Login Gate: Render AuthPage if user is not logged in
   if (!authUser) {
     return <AuthPage onAuthSuccess={handleAuthSuccess} />;
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 font-sans antialiased selection:bg-amber-500 selection:text-white flex flex-col">
+    <PullToRefresh onRefresh={handleGlobalDataRefresh}>
+      <div className="min-h-screen bg-slate-100 text-slate-900 font-sans antialiased selection:bg-amber-500 selection:text-white flex flex-col">
       
       {/* Toast Notification Alert */}
       {toastMsg && (
@@ -1973,6 +2019,7 @@ export default function App() {
         />
 
       </div>
+    </PullToRefresh>
   );
 }
 

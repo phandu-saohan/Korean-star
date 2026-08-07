@@ -30,11 +30,13 @@
 /* Ngăn tràn màn hình mà KHÔNG phá vỡ position: sticky của Header */
 html {
   overflow-x: clip;
+  overscroll-behavior-y: contain;
 }
 
 body {
   overflow-x: clip;
   max-width: 100vw;
+  overscroll-behavior-y: contain;
 }
 
 @media screen and (max-width: 768px) {
