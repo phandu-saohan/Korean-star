@@ -91,6 +91,24 @@ export const initOneSignal = (config?: OneSignalConfig) => {
             await OneSignal.Slidedown.promptPush();
           }
         } catch (e) {}
+
+        // Listen to OneSignal foreground push notifications and dispatch event to header bell icon
+        try {
+          if (OneSignal.Notifications && typeof OneSignal.Notifications.addEventListener === "function") {
+            OneSignal.Notifications.addEventListener("foregroundWillDisplay", (event: any) => {
+              const notification = event?.notification || {};
+              const title = notification.title || "Thông Báo KOREAN STAR";
+              const message = notification.body || "";
+              const data = notification.additionalData || {};
+
+              window.dispatchEvent(
+                new CustomEvent("onesignal-notification-toast", {
+                  detail: { title, message, data }
+                })
+              );
+            });
+          }
+        } catch (e) {}
       }
     } catch (err) {
       // Quiet warning for custom or invalid app ID

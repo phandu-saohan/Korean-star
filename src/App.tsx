@@ -492,12 +492,39 @@ export default function App() {
     }
   }, [authUser]);
 
-  // Đăng ký nhận Event thông báo Realtime OneSignal để bật Toast góc phải màn hình
+  // Đăng ký nhận Event thông báo Realtime OneSignal để bật Toast & lưu vào biểu tượng Chuông trên Header
   useEffect(() => {
     const handleOsToast = (e: any) => {
-      const { title, message } = e.detail || {};
+      const { title, message, data } = e.detail || {};
       if (title || message) {
+        // 1. Hiển thị Toast nổi góc trên bên phải
         showToast(`${title}: ${message}`);
+
+        // 2. Tạo đối tượng thông báo mới và lưu vào biểu tượng Chuông trên Header
+        const notifType = data?.type === "COMMISSION" 
+          ? "commission" 
+          : data?.type === "PAYOUT" 
+          ? "system" 
+          : "lead";
+
+        const newNotif: RealtimeNotification = {
+          id: `os-notif-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          title: title || "Thông Báo OneSignal",
+          text: message || "",
+          time: "Vừa xong",
+          type: notifType,
+          isRead: false
+        };
+
+        setNotifications((prev) => {
+          // Tránh lặp trùng cùng ID thông báo trong 2 giây
+          if (prev.length > 0 && prev[0].title === newNotif.title && prev[0].text === newNotif.text) {
+            return prev;
+          }
+          const updated = [newNotif, ...prev];
+          safeSetLocalStorage("saohan_notifications", JSON.stringify(updated));
+          return updated;
+        });
       }
     };
 
