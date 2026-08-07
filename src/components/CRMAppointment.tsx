@@ -147,6 +147,10 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
   const [serviceCategoryFilter, setServiceCategoryFilter] = useState<string>("ALL");
   const [showServicePicker, setShowServicePicker] = useState(false);
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   const currentCtvCode = (ctvUser?.code || authUser?.ctvCode || "").trim().toLowerCase();
   const currentPhone = (authUser?.phone || ctvUser?.phone || "").trim().replace(/\D/g, "");
   const currentUserName = (authUser?.fullName || ctvUser?.name || "").trim().toLowerCase();
@@ -454,6 +458,15 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
     return matchesSearch && matchesStatus && matchesType;
   });
 
+  // Tự động chuyển về trang 1 khi lọc hoặc thay đổi số dòng / trang
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, typeFilter, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredAppointments.length / itemsPerPage) || 1;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedAppointments = filteredAppointments.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <div className="space-y-6">
       
@@ -573,13 +586,13 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                   <tr className="bg-gradient-to-r from-[#0B192C] via-[#1E3A8A] to-[#0B192C] text-white text-[11px] font-black uppercase tracking-wider border-b border-slate-800">
                     <th className="py-4 px-4">👤 Khách Hàng & SĐT</th>
                     <th className="py-4 px-4">✨ Dịch Vụ Thẩm Mỹ</th>
-                    <th className="py-4 px-4 font-black">📅 Ngày & Giờ Hẹn</th>
+                    <th className="py-4 px-4 font-black">⏰ Giờ & 📅 Ngày Hẹn</th>
                     <th className="py-4 px-4 text-center">Trạng Thái</th>
                     <th className="py-4 px-4 text-right">Thao Tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs text-slate-800 font-medium">
-                  {filteredAppointments.map((apt) => {
+                  {paginatedAppointments.map((apt) => {
                     const statusConfig = getStatusConfig(apt.status);
                     const cleanPhone = apt.customerPhone.replace(/\D/g, "");
                     const initials = apt.customerName ? apt.customerName.trim().charAt(0).toUpperCase() : "K";
@@ -632,18 +645,28 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                           </div>
                         </td>
 
-                        {/* 3. NGÀY & GIỜ HẸN & BÁC SĨ */}
+                        {/* 3. GIỜ Ở TRÊN & NGÀY Ở DƯỚI & BÁC SĨ */}
                         <td className="py-4 px-4 whitespace-nowrap">
-                          <div className="font-mono font-black text-slate-900 bg-slate-100 px-2.5 py-1 rounded-xl border border-slate-200 text-xs inline-flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5 text-amber-600" />
-                            <span>{formatDateVN(apt.date)}</span>
-                            <span className="text-slate-400">•</span>
-                            <Clock className="w-3.5 h-3.5 text-blue-600" />
-                            <span className="text-emerald-700 font-bold">{apt.time}</span>
-                          </div>
-                          <div className="text-[11px] font-bold text-slate-600 flex items-center gap-1 mt-1">
-                            <UserCheck className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                            <span>{apt.doctorName}</span>
+                          <div className="space-y-1">
+                            {/* DÒNG TRÊN: GIỜ HẸN */}
+                            <div>
+                              <span className="font-mono font-black text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200 text-xs inline-flex items-center gap-1 shadow-2xs">
+                                <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span>{apt.time}</span>
+                              </span>
+                            </div>
+
+                            {/* DÒNG DƯỚI: NGÀY HẸN */}
+                            <div className="font-mono font-extrabold text-amber-900 text-xs flex items-center gap-1 pt-0.5">
+                              <Calendar className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                              <span>{formatDateVN(apt.date)}</span>
+                            </div>
+
+                            {/* BÁC SĨ PHỤ TRÁCH */}
+                            <div className="text-[11px] font-bold text-slate-500 flex items-center gap-1 pt-0.5">
+                              <UserCheck className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                              <span>{apt.doctorName}</span>
+                            </div>
                           </div>
                         </td>
 
@@ -709,9 +732,9 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
             </div>
           </div>
 
-          {/* B. MOBILE VIEW: LAYOUT GRID GỌN GÀNG, NỔI BẬT NGÀY GIỜ ĐẶT HẸN & CLICK XEM ĐẦY ĐỦ */}
+          {/* B. MOBILE VIEW: LAYOUT GRID GỌN GÀNG, NỔI BẬT GIỜ Ở TRÊN NGÀY Ở DƯỚI */}
           <div className="block md:hidden space-y-3.5">
-            {filteredAppointments.map((apt) => {
+            {paginatedAppointments.map((apt) => {
               const statusConfig = getStatusConfig(apt.status);
               const cleanPhone = apt.customerPhone.replace(/\D/g, "");
               const isExpanded = expandedMobileCardId === apt.id;
@@ -721,14 +744,19 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                   key={apt.id}
                   className="bg-white border border-slate-200 hover:border-amber-400 rounded-3xl p-4 shadow-sm transition space-y-3"
                 >
-                    {/* PROMINENT DATE & TIME BANNER - CHỈ GIỮ BORDER THEO YÊU CẦU */}
-                  <div className="border border-slate-300 bg-slate-50/50 p-2.5 rounded-2xl flex items-center justify-between">
-                    <div className="flex items-center gap-2 font-mono font-black text-xs">
-                      <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
-                      <span className="text-amber-800">{formatDateVN(apt.date)}</span>
-                      <span className="text-slate-300">•</span>
-                      <Clock className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span className="text-emerald-700">{apt.time}</span>
+                  {/* BANNER GIỜ Ở TRÊN - NGÀY Ở DƯỚI */}
+                  <div className="border border-slate-300 bg-slate-50/60 p-2.5 rounded-2xl flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      {/* GIỜ HẸN Ở TRÊN */}
+                      <div className="font-mono font-black text-xs text-emerald-800 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>{apt.time}</span>
+                      </div>
+                      {/* NGÀY HẸN Ở DƯỚI */}
+                      <div className="font-mono font-extrabold text-xs text-amber-900 flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span>{formatDateVN(apt.date)}</span>
+                      </div>
                     </div>
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${statusConfig.bg}`}>
                       {statusConfig.label}
@@ -879,6 +907,97 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
               );
             })}
           </div>
+
+          {/* PHÂN TRANG (PAGINATION CONTROLS) */}
+          {filteredAppointments.length > 0 && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-4 flex flex-col md:flex-row items-center justify-between gap-3 shadow-xs">
+              {/* Hiển thị số lượng */}
+              <div className="text-xs font-bold text-slate-600 flex items-center gap-2">
+                <span>
+                  Hiển thị <strong className="text-slate-900">{startIndex + 1}</strong> - <strong className="text-slate-900">{Math.min(startIndex + itemsPerPage, filteredAppointments.length)}</strong> trên tổng số <strong className="text-amber-700">{filteredAppointments.length}</strong> lịch hẹn
+                </span>
+                
+                {/* Dropdown chọn số dòng / trang */}
+                <div className="flex items-center gap-1 ml-2">
+                  <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">Số dòng:</span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                    className="bg-slate-50 border border-slate-300 rounded-xl px-2 py-1 text-xs font-black text-slate-800 focus:outline-none focus:border-amber-500 cursor-pointer"
+                  >
+                    <option value={10}>10 / trang</option>
+                    <option value={20}>20 / trang</option>
+                    <option value={50}>50 / trang</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Các nút chuyển trang */}
+              <div className="flex items-center gap-1">
+                {/* Nút Về Đầu */}
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="px-2.5 py-1.5 rounded-xl border text-xs font-extrabold transition disabled:opacity-40 disabled:cursor-not-allowed bg-slate-50 border-slate-200 text-slate-700 hover:bg-amber-100 hover:border-amber-300"
+                  title="Trang Đầu"
+                >
+                  «
+                </button>
+
+                {/* Nút Trang Trước */}
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-xl border text-xs font-extrabold transition disabled:opacity-40 disabled:cursor-not-allowed bg-slate-50 border-slate-200 text-slate-700 hover:bg-amber-100 hover:border-amber-300"
+                >
+                  ‹ Trước
+                </button>
+
+                {/* Số Trang */}
+                <div className="flex items-center gap-1 mx-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((page) => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1)
+                    .map((page, idx, arr) => {
+                      const showEllipsis = idx > 0 && page - arr[idx - 1] > 1;
+                      return (
+                        <React.Fragment key={page}>
+                          {showEllipsis && <span className="text-slate-400 font-bold px-1 text-xs">...</span>}
+                          <button
+                            onClick={() => setCurrentPage(page)}
+                            className={`w-8 h-8 rounded-xl text-xs font-black transition flex items-center justify-center ${
+                              currentPage === page
+                                ? "bg-amber-500 text-[#0B192C] shadow-md border border-amber-600"
+                                : "bg-slate-50 border border-slate-200 text-slate-700 hover:bg-amber-100"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        </React.Fragment>
+                      );
+                    })}
+                </div>
+
+                {/* Nút Trang Sau */}
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 rounded-xl border text-xs font-extrabold transition disabled:opacity-40 disabled:cursor-not-allowed bg-slate-50 border-slate-200 text-slate-700 hover:bg-amber-100 hover:border-amber-300"
+                >
+                  Sau ›
+                </button>
+
+                {/* Nút Đến Cuối */}
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="px-2.5 py-1.5 rounded-xl border text-xs font-extrabold transition disabled:opacity-40 disabled:cursor-not-allowed bg-slate-50 border-slate-200 text-slate-700 hover:bg-amber-100 hover:border-amber-300"
+                  title="Trang Cuối"
+                >
+                  »
+                </button>
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <div className="text-center py-12 bg-white rounded-3xl border border-slate-200 text-slate-500 text-xs font-medium space-y-3 shadow-xs">
