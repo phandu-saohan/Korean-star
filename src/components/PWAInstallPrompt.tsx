@@ -20,10 +20,11 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ config, onTo
   };
 
   useEffect(() => {
-    // 1. Check if running in standalone mode (already installed PWA)
+    // 1. Check if running in standalone mode (already installed PWA) or already recorded in localStorage
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone === true;
+      (window.navigator as any).standalone === true ||
+      localStorage.getItem("pwa_app_installed_success") === "true";
 
     if (isStandalone) {
       setIsInstalled(true);
@@ -52,6 +53,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ config, onTo
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setShowBanner(false);
+      localStorage.setItem("pwa_app_installed_success", "true");
       if (onToast) onToast("✨ Chúc mừng! Đã cài đặt ứng dụng KOREAN STAR thành công trên thiết bị!");
     };
 
@@ -79,6 +81,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ config, onTo
     if (choiceResult.outcome === "accepted") {
       if (onToast) onToast("Đang tiến hành cài đặt ứng dụng PWA...");
       setIsInstalled(true);
+      localStorage.setItem("pwa_app_installed_success", "true");
     }
     setDeferredPrompt(null);
     setShowBanner(false);
@@ -89,13 +92,9 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ config, onTo
     sessionStorage.setItem("pwa_install_dismissed", "true");
   };
 
+  // Ẩn hoàn toàn nút cài đặt khi ứng dụng đã được cài đặt trên thiết bị này
   if (isInstalled) {
-    return (
-      <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm">
-        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-        <span>Đã Cài Đặt App (PWA)</span>
-      </div>
-    );
+    return null;
   }
 
   return (
