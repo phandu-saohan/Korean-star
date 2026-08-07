@@ -226,7 +226,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const currentTabObj = menuItems.find((m) => m.id === activeTab) || menuItems[0];
 
   return (
-    <div className="min-h-screen bg-slate-100/80 flex flex-col md:flex-row font-sans -m-4 sm:-m-6">
+    <div className="min-h-screen bg-slate-100/80 flex flex-col md:flex-row font-sans">
       
       {/* 1. MOBILE HEADER BAR */}
       <div className="md:hidden bg-[#0B192C] text-white p-4 flex items-center justify-between border-b border-blue-900 sticky top-0 z-40 shadow-md">
@@ -399,7 +399,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       </aside>
 
       {/* 3. MAIN EXECUTIVE CONTENT AREA */}
-      <main className="flex-1 p-4 sm:p-6 md:p-8 space-y-6 overflow-x-hidden min-w-0">
+      <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-x-hidden min-w-0 flex justify-center">
+        <div className="w-full max-w-[1600px] mx-auto space-y-6">
         
         {/* EXECUTIVE CONTENT TOP HEADER */}
         <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
@@ -801,7 +802,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             />
           )}
         </div>
-      </main>
+      </div>
+    </main>
     </div>
   );
 };
