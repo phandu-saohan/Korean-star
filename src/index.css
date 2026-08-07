@@ -44,3 +44,14 @@ html, body {
     font-size: 16px !important; /* 16px tối thiểu trên Mobile ngăn iOS Safari auto-zoom gây tràn màn hình */
   }
 }
+
+/* Hỗ trợ khoảng trống an toàn cho PWA Mobile Status Bar (Notch, Dynamic Island, Cột sóng & Đồng hồ) */
+header {
+  padding-top: env(safe-area-inset-top, 0px) !important;
+}
+
+@supports (padding-top: env(safe-area-inset-top)) {
+  header {
+    padding-top: env(safe-area-inset-top, 0px) !important;
+  }
+}

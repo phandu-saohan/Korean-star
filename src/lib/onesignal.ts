@@ -113,7 +113,13 @@ export const requestNotificationPermission = async (): Promise<NotificationPermi
         if (OneSignal?.Notifications?.requestPermission) {
           await OneSignal.Notifications.requestPermission();
         }
-      } catch (e) {}
+        if (permission === "granted" && OneSignal?.User?.PushSubscription?.optIn) {
+          await OneSignal.User.PushSubscription.optIn();
+          console.log("[OneSignal] Push subscription opted in successfully");
+        }
+      } catch (e) {
+        console.warn("[OneSignal] Permission request error:", e);
+      }
     });
 
     return permission;

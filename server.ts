@@ -137,9 +137,10 @@ app.post("/api/onesignal/send-notification", async (req, res) => {
     }
 
     if (!targetApiKey) {
-      return res.status(400).json({
-        ok: false,
-        description: "Thiếu OneSignal REST API Key. Vui lòng cấu hình biến môi trường ONESIGNAL_REST_API_KEY."
+      return res.json({
+        ok: true,
+        localOnly: true,
+        description: "Chưa cấu hình OneSignal REST API Key. Thông báo đã được hiển thị trên giao diện Web & Trình duyệt local."
       });
     }
 
