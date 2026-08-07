@@ -31,6 +31,7 @@ import { PayoutModal } from "./components/PayoutModal";
 import { AuthModal } from "./components/AuthModal";
 import { AuthPage } from "./components/AuthPage";
 import { ProfileEditModal } from "./components/ProfileEditModal";
+import { HelpSupportModal } from "./components/HelpSupportModal";
 import { PullToRefresh } from "./components/PullToRefresh";
 import {
   updateUserProfile,
@@ -82,6 +83,8 @@ import {
   RefreshCw,
   Wrench,
   User,
+  UserCog,
+  Headphones,
   LogOut,
   Shield,
   Coins,
@@ -97,6 +100,7 @@ export default function App() {
   // Auth Modal, Profile Modal & Supabase User State
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [helpModalOpen, setHelpModalOpen] = useState(false);
   const [authUser, setAuthUser] = useState<any>(() => {
     const saved = localStorage.getItem("saohan_auth_user");
     return saved ? JSON.parse(saved) : null;
@@ -1720,26 +1724,26 @@ export default function App() {
             <span className="text-[9px] font-black text-amber-600 tracking-wide truncate w-full text-center">Đặt Lịch</span>
           </button>
 
-          {/* 4. Công Cụ */}
-          <button
-            onClick={() => { setMobileMenuOpen(!mobileMenuOpen); setAccountDrawerOpen(false); }}
-            className={`flex-1 min-w-0 flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition ${
-              mobileMenuOpen ? "text-[#0B192C] font-black scale-105" : "text-[#0B192C]/80 hover:text-[#0B192C] font-bold"
-            }`}
-          >
-            <Wrench className="w-5 h-5 shrink-0 text-[#0B192C]" />
-            <span className="text-[9px] font-extrabold truncate w-full text-center text-[#0B192C]">Công Cụ</span>
-          </button>
-
-          {/* 5. Tài Khoản */}
+          {/* 4. Thay Đổi Tài Khoản */}
           <button
             onClick={() => { setAccountDrawerOpen(!accountDrawerOpen); setMobileMenuOpen(false); }}
             className={`flex-1 min-w-0 flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition ${
               accountDrawerOpen ? "text-[#0B192C] font-black scale-105" : "text-[#0B192C]/80 hover:text-[#0B192C] font-bold"
             }`}
           >
-            <User className="w-5 h-5 shrink-0 text-[#0B192C]" />
-            <span className="text-[9px] font-extrabold truncate w-full text-center text-[#0B192C]">Tài Khoản</span>
+            <UserCog className="w-5 h-5 shrink-0 text-[#0B192C]" />
+            <span className="text-[9px] font-extrabold truncate w-full text-center text-[#0B192C]">Đổi Tai Khoản</span>
+          </button>
+
+          {/* 5. Trợ Giúp 24/7 */}
+          <button
+            onClick={() => { setHelpModalOpen(true); setMobileMenuOpen(false); setAccountDrawerOpen(false); }}
+            className={`flex-1 min-w-0 flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition ${
+              helpModalOpen ? "text-[#0B192C] font-black scale-105" : "text-[#0B192C]/80 hover:text-[#0B192C] font-bold"
+            }`}
+          >
+            <Headphones className="w-5 h-5 shrink-0 text-[#0B192C]" />
+            <span className="text-[9px] font-extrabold truncate w-full text-center text-[#0B192C]">Trợ Giúp</span>
           </button>
         </nav>
       )}
@@ -2016,6 +2020,12 @@ export default function App() {
           authUser={authUser}
           ctvUser={ctvUser}
           onSaveProfile={handleSaveProfile}
+        />
+
+        {/* 24/7 Support & Guidance Modal */}
+        <HelpSupportModal
+          isOpen={helpModalOpen}
+          onClose={() => setHelpModalOpen(false)}
         />
 
       </div>
