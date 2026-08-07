@@ -62,6 +62,43 @@ const convertVNToIsoDate = (dateStr: string): string => {
   return dateStr.split(" ")[0];
 };
 
+const isValidMediaUrl = (url?: string): boolean => {
+  if (!url) return false;
+  if (url.endsWith("...")) return false; // Loại bỏ các chuỗi media bị cắt dở
+  return true;
+};
+
+const compressImageDataUrl = (dataUrl: string, maxWidth = 800, quality = 0.7): Promise<string> => {
+  return new Promise((resolve) => {
+    if (!dataUrl || !dataUrl.startsWith("data:image")) {
+      resolve(dataUrl);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      } else {
+        resolve(dataUrl);
+      }
+    };
+    img.onerror = () => resolve("");
+    img.src = dataUrl;
+  });
+};
+
 export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
   appointments,
   services,
@@ -248,12 +285,22 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
 
     const isVideo = file.type.startsWith("video/");
     const reader = new FileReader();
-    reader.onload = (event) => {
-      setForm((prev) => ({
-        ...prev,
-        customerMedia: event.target?.result as string,
-        customerMediaType: isVideo ? "video" : "image"
-      }));
+    reader.onload = async (event) => {
+      const rawData = (event.target?.result as string) || "";
+      if (!isVideo && rawData.startsWith("data:image")) {
+        const compressed = await compressImageDataUrl(rawData);
+        setForm((prev) => ({
+          ...prev,
+          customerMedia: compressed,
+          customerMediaType: "image"
+        }));
+      } else {
+        setForm((prev) => ({
+          ...prev,
+          customerMedia: rawData,
+          customerMediaType: isVideo ? "video" : "image"
+        }));
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -584,7 +631,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                   </div>
 
                   {/* Customer Current Photo/Video Media Preview */}
-                  {apt.customerMedia && (
+                  {apt.customerMedia && isValidMediaUrl(apt.customerMedia) && (
                     <div className="space-y-1">
                       <div className="flex items-center justify-between text-[10px] font-extrabold text-slate-500 uppercase tracking-wide">
                         <span className="flex items-center gap-1 text-amber-700">
@@ -1151,7 +1198,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                 </label>
 
                 <div className="bg-slate-50 border border-dashed border-slate-300 rounded-2xl p-3 text-center space-y-2">
-                  {form.customerMedia ? (
+                  {form.customerMedia && isValidMediaUrl(form.customerMedia) ? (
                     <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-900">
                       {form.customerMediaType === "video" ? (
                         <video src={form.customerMedia} controls className="w-full h-36 object-cover" />

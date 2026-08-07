@@ -816,10 +816,10 @@ export const saveAppointmentToSupabase = async (apt: any) => {
       }
     }
 
-    // Rút gọn base64 media quá lớn để tránh lỗi 400/413 từ PostgREST
+    // Xử lý an toàn mediaUrl: loại bỏ các chuỗi media bị cắt dở trước đây để tránh lỗi ERR_INVALID_URL
     let mediaUrl = apt.customerMedia || "";
-    if (mediaUrl.length > 200000) {
-      mediaUrl = mediaUrl.startsWith("data:") ? mediaUrl.slice(0, 100) + "..." : mediaUrl;
+    if (mediaUrl.endsWith("...")) {
+      mediaUrl = "";
     }
 
     // 1. Full Payload: chứa đầy đủ thông tin CTV (bao gồm ctv_user_id UUID & updated_at)
