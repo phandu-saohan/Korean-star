@@ -57,6 +57,13 @@ export const initOneSignal = (config?: OneSignalConfig) => {
     document.head.appendChild(script);
   }
 
+  // Pre-register OneSignal Service Worker to prevent [WM] No SW registration for postMessage warning
+  if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+    try {
+      navigator.serviceWorker.register("/OneSignalSDKWorker.js", { scope: "/" }).catch(() => {});
+    } catch (e) {}
+  }
+
   // 2. Initialize OneSignal via Deferred Queue
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async (OneSignal: any) => {
