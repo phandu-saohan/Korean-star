@@ -438,9 +438,6 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-base sm:text-xl font-black uppercase tracking-wide text-white">Quản Lý Lịch Hẹn</h2>
-                <span className="bg-gradient-to-r from-amber-400 to-amber-500 text-[#0B192C] text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs uppercase tracking-wider">
-                  CRM THÔNG MINH
-                </span>
               </div>
               <p className="text-xs text-slate-300 font-medium mt-1">Theo dõi phác đồ khám, chọn nhiều dịch vụ trong bảng giá, chỉnh sửa lịch hẹn & quản lý CRM</p>
             </div>
