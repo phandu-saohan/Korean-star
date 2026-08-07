@@ -31,7 +31,11 @@ import {
   Check,
   DollarSign,
   AlertTriangle,
-  ShoppingBag
+  ShoppingBag,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  Info
 } from "lucide-react";
 
 import { formatDateVN, formatCurrencyInput } from "../utils/formatters";
@@ -99,6 +103,16 @@ const compressImageDataUrl = (dataUrl: string, maxWidth = 800, quality = 0.7): P
   });
 };
 
+const getStatusConfig = (status: string) => {
+  return {
+    "Đã xác nhận": { bg: "bg-emerald-100 text-emerald-800 border-emerald-300", label: "Đã xác nhận" },
+    "Chờ xác nhận": { bg: "bg-amber-100 text-amber-800 border-amber-300", label: "Chờ xác nhận" },
+    "Đang điều trị": { bg: "bg-blue-100 text-blue-800 border-blue-300", label: "Đang thăm khám" },
+    "Hoàn thành": { bg: "bg-teal-100 text-teal-800 border-teal-300", label: "Hoàn thành" },
+    "Đã hủy": { bg: "bg-rose-100 text-rose-800 border-rose-300", label: "Đã hủy" }
+  }[status] || { bg: "bg-slate-100 text-slate-700 border-slate-300", label: status };
+};
+
 export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
   appointments,
   services,
@@ -118,6 +132,8 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
   const [showModal, setShowModal] = useState(Boolean(initialServiceName));
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [deletingAppointmentId, setDeletingAppointmentId] = useState<string | null>(null);
+  const [selectedDetailAppointment, setSelectedDetailAppointment] = useState<Appointment | null>(null);
+  const [expandedMobileCardId, setExpandedMobileCardId] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -305,6 +321,21 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
     reader.readAsDataURL(file);
   };
 
+  const handleStatusChange = (apt: Appointment, newStatus: Appointment["status"]) => {
+    const ctvUserId = authUser?.id || ctvUser?.id || "";
+    notifyAppointmentStatusChanged(
+      { ...apt, ctvId: ctvUserId },
+      newStatus
+    );
+    const aptWithCtvInfo = {
+      ...apt,
+      ctvId: (apt as any).ctvId || (apt as any).userId || "",
+    };
+    const targetChatId = authUser?.zaloChatId || ctvUser?.zaloChatId;
+    notifyZaloAppointmentStatusChanged(aptWithCtvInfo, newStatus, targetChatId);
+    onUpdateStatus(apt.id, newStatus);
+  };
+
   const handleBookingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.customerName || !form.customerPhone) return;
@@ -342,9 +373,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
       }
 
       if (editingAppointment.status !== form.status) {
-        onUpdateStatus(editingAppointment.id, form.status);
-        notifyAppointmentStatusChanged({ ...updatedApt, ctvId: ctvUserId }, form.status);
-        notifyZaloAppointmentStatusChanged(updatedApt, form.status, authUser?.zaloChatId || ctvUser?.zaloChatId);
+        handleStatusChange(editingAppointment, form.status);
       }
     } else {
       // CREATE MODE
@@ -533,270 +562,475 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
         </div>
       </div>
 
-      {/* Appointments Grid List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredAppointments.length > 0 ? (
-          filteredAppointments.map((apt) => {
-            const statusConfig = {
-              "Đã xác nhận": { bg: "bg-emerald-100 text-emerald-800 border-emerald-300", label: "Đã xác nhận" },
-              "Chờ xác nhận": { bg: "bg-amber-100 text-amber-800 border-amber-300", label: "Chờ xác nhận" },
-              "Đang điều trị": { bg: "bg-blue-100 text-blue-800 border-blue-300", label: "Đang thăm khám" },
-              "Hoàn thành": { bg: "bg-teal-100 text-teal-800 border-teal-300", label: "Hoàn thành" },
-              "Đã hủy": { bg: "bg-rose-100 text-rose-800 border-rose-300", label: "Đã hủy" }
-            }[apt.status] || { bg: "bg-slate-100 text-slate-700 border-slate-300", label: apt.status };
-
-            const cleanPhone = apt.customerPhone.replace(/\D/g, "");
-
-            return (
-              <div
-                key={apt.id}
-                className="bg-white border border-slate-200 hover:border-amber-400 rounded-3xl p-5 text-slate-900 space-y-4 shadow-sm hover:shadow-md transition flex flex-col justify-between"
-              >
-                <div className="space-y-3.5">
-                  {/* Card Top Bar */}
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <span className="text-amber-700 font-black font-mono text-xs bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
-                      {apt.id}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-3 py-1 rounded-full text-[11px] font-black border ${statusConfig.bg}`}>
-                        {statusConfig.label}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Customer Info & Direct Contact Actions */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <h4 className="font-black text-base text-slate-900">{apt.customerName}</h4>
-                      
-                      {/* Action Buttons: Edit (CTV & Admin) & Delete (Admin Only) */}
-                      <div className="flex items-center gap-1 shrink-0">
-                        {/* Edit Button for BOTH CTV and Admin */}
-                        <button
-                          onClick={() => handleOpenEditModal(apt)}
-                          className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-extrabold text-[11px] px-2.5 py-1.5 rounded-xl transition flex items-center gap-1 shadow-xs"
-                          title="Chỉnh sửa lịch hẹn"
-                        >
-                          <Pencil className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Sửa</span>
-                        </button>
-
-                        {/* Delete Button for ADMIN ONLY */}
-                        {isUserAdmin && (
-                          <button
-                            onClick={() => setDeletingAppointmentId(apt.id)}
-                            className="bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 font-extrabold text-[11px] px-2.5 py-1.5 rounded-xl transition flex items-center gap-1 shadow-xs"
-                            title="Xóa lịch hẹn vĩnh viễn (Admin)"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                            <span>Xóa</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Customer Phone + Call & Zalo Action Buttons */}
-                    <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1 text-xs text-slate-800 font-mono font-extrabold truncate">
-                        <Phone className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                        <span>{apt.customerPhone}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <a
-                          href={`tel:${cleanPhone || apt.customerPhone}`}
-                          className="bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-black px-2.5 py-1.5 rounded-xl transition shadow-xs flex items-center gap-1"
-                          title="Gọi Điện Trực Tiếp"
-                        >
-                          <PhoneCall className="w-3 h-3" />
-                          <span>Gọi</span>
-                        </a>
-
-                        <a
-                          href={`https://zalo.me/${cleanPhone || apt.customerPhone}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-black px-2.5 py-1.5 rounded-xl transition shadow-xs flex items-center gap-1"
-                          title="Mở Chat Zalo Với Khách Hàng"
-                        >
-                          <MessageCircle className="w-3 h-3" />
-                          <span>Zalo</span>
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Customer Current Photo/Video Media Preview */}
-                  {apt.customerMedia && isValidMediaUrl(apt.customerMedia) && (
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-[10px] font-extrabold text-slate-500 uppercase tracking-wide">
-                        <span className="flex items-center gap-1 text-amber-700">
-                          {apt.customerMediaType === "video" ? <Video className="w-3 h-3 text-rose-500" /> : <ImageIcon className="w-3 h-3 text-blue-500" />}
-                          Ảnh / Video Hiện Tại Của Khách:
-                        </span>
-                      </div>
-                      
-                      <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-xs bg-slate-900 group">
-                        {apt.customerMediaType === "video" || (apt.customerMedia && apt.customerMedia.startsWith("data:video")) ? (
-                          <video
-                            src={apt.customerMedia}
-                            controls
-                            className="w-full h-36 object-cover"
-                          />
-                        ) : (
-                          <img
-                            src={apt.customerMedia}
-                            alt={`Khách hàng ${apt.customerName}`}
-                            className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Service & Doctor Box */}
-                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 text-xs space-y-2 font-medium">
-                    <div>
-                      <span className="text-[10px] text-slate-500 font-bold uppercase block">Dịch vụ thẩm mỹ đã chọn:</span>
-                      <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                        {apt.serviceName.split(/\s*\+\s*|\s*,\s*/).map((srvName, idx) => (
-                          <span key={idx} className="bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-black px-2.5 py-1 rounded-lg">
-                            ✨ {srvName.trim()}
-                          </span>
-                        ))}
-                        {apt.appointmentType && (
-                          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
-                            apt.appointmentType === "Lịch tư vấn"
-                              ? "bg-blue-50 text-blue-700 border-blue-200"
-                              : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          }`}>
-                            {apt.appointmentType === "Lịch tư vấn" ? "💬" : "🔄"} {apt.appointmentType}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between items-center pt-2 border-t border-slate-200/60">
-                      <span className="text-slate-500 font-bold">Bác sĩ phụ trách:</span>
-                      <span className="font-bold text-amber-800 flex items-center gap-1">
-                        <UserCheck className="w-3.5 h-3.5 text-amber-600" /> {apt.doctorName}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-500 font-bold">Thời gian hẹn:</span>
-                      <span className="font-mono font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                        {formatDateVN(apt.date)} - {apt.time}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* CTV Contact Box */}
-                  {(() => {
-                    const ctvPhone = apt.ctvPhone || "";
-                    const cleanCtvPhone = ctvPhone.replace(/\D/g, "");
-                    const ctvName = apt.ctvName || "Cộng Tác Viên";
-                    const ctvCode = apt.ctvCode || "SAOHAN-CTV";
+      {/* APPOINTMENTS CONTAINER: TABLE ON DESKTOP & GRID CARDS ON MOBILE */}
+      {filteredAppointments.length > 0 ? (
+        <>
+          {/* A. DESKTOP VIEW: BẢNG DỮ LIỆU BÁC SĨ & CRM CHUYÊN NGHIỆP */}
+          <div className="hidden md:block bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-[#0B192C] text-white text-[11px] font-black uppercase tracking-wider border-b border-slate-800">
+                    <th className="py-3.5 px-4">Mã LH & Loại</th>
+                    <th className="py-3.5 px-4">Khách Hàng & SĐT</th>
+                    <th className="py-3.5 px-4">Dịch Vụ Đăng Ký</th>
+                    <th className="py-3.5 px-4">Bác Sĩ & Ngày Giờ</th>
+                    <th className="py-3.5 px-4">CTV Giới Thiệu</th>
+                    <th className="py-3.5 px-4 text-center">Trạng Thái CRM</th>
+                    <th className="py-3.5 px-4 text-right">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs text-slate-800 font-medium">
+                  {filteredAppointments.map((apt) => {
+                    const statusConfig = getStatusConfig(apt.status);
+                    const cleanPhone = apt.customerPhone.replace(/\D/g, "");
+                    const ctvPhone = (apt.ctvPhone || "").replace(/\D/g, "");
 
                     return (
-                      <div className="bg-blue-50/70 p-3 rounded-2xl border border-blue-200/80 space-y-2 text-xs">
+                      <tr key={apt.id} className="hover:bg-amber-50/40 transition">
+                        {/* 1. Mã LH & Loại */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="font-mono font-black text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 inline-block text-[11px]">
+                            {apt.id}
+                          </div>
+                          <div className="mt-1">
+                            <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                              apt.appointmentType === "Lịch tư vấn"
+                                ? "bg-blue-50 text-blue-700 border-blue-200"
+                                : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            }`}>
+                              {apt.appointmentType === "Lịch tư vấn" ? "💬" : "🔄"} {apt.appointmentType || "Lịch tư vấn"}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* 2. Khách Hàng & SĐT */}
+                        <td className="py-3.5 px-4">
+                          <div className="font-black text-slate-900 text-xs">{apt.customerName}</div>
+                          <div className="font-mono font-bold text-slate-600 text-[11px] flex items-center gap-1.5 mt-0.5">
+                            <span>📞 {apt.customerPhone}</span>
+                            <a
+                              href={`tel:${cleanPhone}`}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black px-1.5 py-0.5 rounded transition shadow-2xs"
+                              title="Gọi Khách"
+                            >
+                              Gọi
+                            </a>
+                            <a
+                              href={`https://zalo.me/${cleanPhone}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-black px-1.5 py-0.5 rounded transition shadow-2xs"
+                              title="Zalo Khách"
+                            >
+                              Zalo
+                            </a>
+                          </div>
+                        </td>
+
+                        {/* 3. Dịch Vụ Đăng Ký */}
+                        <td className="py-3.5 px-4 max-w-xs">
+                          <div className="flex flex-wrap gap-1">
+                            {apt.serviceName.split(/\s*\+\s*|\s*,\s*/).map((srv, idx) => (
+                              <span key={idx} className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black px-2 py-0.5 rounded-md">
+                                ✨ {srv.trim()}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+
+                        {/* 4. Bác Sĩ & Ngày Giờ */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="font-mono font-black text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 text-[11px] inline-block">
+                            📅 {formatDateVN(apt.date)} - ⏰ {apt.time}
+                          </div>
+                          <div className="text-[11px] font-bold text-slate-700 flex items-center gap-1 mt-1">
+                            <UserCheck className="w-3.5 h-3.5 text-amber-600" /> {apt.doctorName}
+                          </div>
+                        </td>
+
+                        {/* 5. CTV Giới Thiệu */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="font-extrabold text-slate-900 text-xs">{apt.ctvName || "CTV"}</div>
+                          <div className="font-mono text-[10px] font-bold text-blue-800 flex items-center gap-1 mt-0.5">
+                            <span className="bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded">{apt.ctvCode || "SAOHAN-CTV"}</span>
+                            {ctvPhone && (
+                              <a
+                                href={`https://zalo.me/${ctvPhone}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-blue-600 hover:underline font-bold"
+                              >
+                                Chat Zalo
+                              </a>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* 6. Trạng Thái CRM */}
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                          <select
+                            value={apt.status}
+                            onChange={(e) => handleStatusChange(apt, e.target.value as any)}
+                            className="bg-white border border-amber-300 rounded-xl px-2.5 py-1 text-xs font-black text-amber-900 focus:outline-none focus:border-amber-500 shadow-xs cursor-pointer"
+                          >
+                            <option value="Chờ xác nhận">⏳ Chờ xác nhận</option>
+                            <option value="Đã xác nhận">✅ Đã xác nhận</option>
+                            <option value="Đang điều trị">🏥 Đang điều trị</option>
+                            <option value="Hoàn thành">🎉 Hoàn thành</option>
+                            <option value="Đã hủy">❌ Đã hủy</option>
+                          </select>
+                        </td>
+
+                        {/* 7. Thao Tác */}
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => setSelectedDetailAppointment(apt)}
+                              className="bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 font-extrabold text-[11px] px-2 py-1 rounded-xl transition flex items-center gap-1 shadow-2xs"
+                              title="Xem chi tiết đầy đủ"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-blue-600" />
+                              <span>Chi tiết</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleOpenEditModal(apt)}
+                              className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-extrabold text-[11px] px-2 py-1 rounded-xl transition flex items-center gap-1 shadow-2xs"
+                              title="Chỉnh sửa lịch hẹn"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-amber-600" />
+                              <span>Sửa</span>
+                            </button>
+
+                            {isUserAdmin && (
+                              <button
+                                onClick={() => setDeletingAppointmentId(apt.id)}
+                                className="bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 font-extrabold text-[11px] px-2 py-1 rounded-xl transition flex items-center gap-1 shadow-2xs"
+                                title="Xóa lịch hẹn vĩnh viễn"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                <span>Xóa</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* B. MOBILE VIEW: LAYOUT GRID GỌN GÀNG, NỔI BẬT NGÀY GIỜ ĐẶT HẸN & CLICK XEM ĐẦY ĐỦ */}
+          <div className="block md:hidden space-y-3.5">
+            {filteredAppointments.map((apt) => {
+              const statusConfig = getStatusConfig(apt.status);
+              const cleanPhone = apt.customerPhone.replace(/\D/g, "");
+              const isExpanded = expandedMobileCardId === apt.id;
+
+              return (
+                <div
+                  key={apt.id}
+                  className="bg-white border border-slate-200 hover:border-amber-400 rounded-3xl p-4 shadow-sm transition space-y-3"
+                >
+                  {/* PROMINENT DATE & TIME BANNER - THỐNG TIN NỔI BẬT NGÀY GIỜ HẸN */}
+                  <div className="bg-gradient-to-r from-[#0B192C] via-[#1E3A8A] to-[#0B192C] text-white p-3 rounded-2xl flex items-center justify-between shadow-md">
+                    <div className="flex items-center gap-2 font-mono font-black text-xs">
+                      <Calendar className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span className="text-amber-300">{formatDateVN(apt.date)}</span>
+                      <span className="text-slate-400">•</span>
+                      <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span className="text-emerald-400">{apt.time}</span>
+                    </div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${statusConfig.bg}`}>
+                      {statusConfig.label}
+                    </span>
+                  </div>
+
+                  {/* Customer Header Info */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <div className="font-black text-slate-900 text-sm">{apt.customerName}</div>
+                      <div className="font-mono text-xs font-bold text-slate-600 mt-0.5">📞 {apt.customerPhone}</div>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      <a
+                        href={`tel:${cleanPhone}`}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black px-2.5 py-1.5 rounded-xl transition flex items-center gap-1 shadow-2xs"
+                        title="Gọi Khách"
+                      >
+                        <PhoneCall className="w-3 h-3" />
+                        <span>Gọi</span>
+                      </a>
+                      <a
+                        href={`https://zalo.me/${cleanPhone}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black px-2.5 py-1.5 rounded-xl transition flex items-center gap-1 shadow-2xs"
+                        title="Zalo Khách"
+                      >
+                        <MessageCircle className="w-3 h-3" />
+                        <span>Zalo</span>
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Primary Service Bar & Expand Click Bar */}
+                  <div
+                    onClick={() => setExpandedMobileCardId(isExpanded ? null : apt.id)}
+                    className="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-2xl border border-slate-200 cursor-pointer hover:bg-amber-50/50 transition"
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase">Dịch vụ:</span>
+                      <span className="font-black text-slate-900 text-xs truncate">{apt.serviceName}</span>
+                    </div>
+
+                    <div className="text-amber-700 font-extrabold text-[11px] flex items-center gap-1 shrink-0">
+                      <span>{isExpanded ? "Thu gọn" : "Xem thêm"}</span>
+                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    </div>
+                  </div>
+
+                  {/* EXPANDABLE FULL DETAILS SECTION (HIỂN THỊ ĐẦY ĐỦ THÔNG TIN KHI CLICK) */}
+                  {isExpanded && (
+                    <div className="pt-2 border-t border-slate-100 space-y-3 animate-fadeIn text-xs">
+                      {/* Doctor Info */}
+                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-1.5">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-slate-500 font-bold">Bác sĩ phụ trách:</span>
+                          <span className="font-bold text-amber-800 flex items-center gap-1">
+                            <UserCheck className="w-3.5 h-3.5 text-amber-600" /> {apt.doctorName}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs pt-1 border-t border-slate-200">
+                          <span className="text-slate-500 font-bold">Loại lịch hẹn:</span>
+                          <span className="font-bold text-slate-900">{apt.appointmentType || "Lịch tư vấn"}</span>
+                        </div>
+                      </div>
+
+                      {/* CTV Info */}
+                      <div className="bg-blue-50/70 p-3 rounded-2xl border border-blue-200 space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-blue-900 font-extrabold uppercase tracking-wide flex items-center gap-1">
+                          <span className="text-[10px] text-blue-900 font-extrabold uppercase flex items-center gap-1">
                             <User className="w-3.5 h-3.5 text-blue-600" /> CTV Giới Thiệu:
                           </span>
                           <span className="font-mono text-[10px] font-black text-blue-800 bg-white px-2 py-0.5 rounded-md border border-blue-200">
-                            {ctvCode}
+                            {apt.ctvCode || "SAOHAN-CTV"}
                           </span>
                         </div>
+                        <div className="font-extrabold text-slate-900 text-xs">{apt.ctvName || "CTV"} • {apt.ctvPhone}</div>
+                      </div>
 
-                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-blue-100">
-                          <div className="min-w-0">
-                            <div className="font-extrabold text-slate-900 text-xs truncate">{ctvName}</div>
-                            <div className="text-[11px] text-blue-700 font-mono font-bold flex items-center gap-1">
-                              <Phone className="w-3 h-3 text-blue-500 shrink-0" /> {ctvPhone}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-1 shrink-0">
-                            <a
-                              href={`tel:${cleanCtvPhone}`}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black px-2 py-1 rounded-lg transition flex items-center gap-1 shadow-2xs"
-                              title="Gọi điện trực tiếp cho CTV"
-                            >
-                              <PhoneCall className="w-3 h-3" />
-                              <span>Gọi CTV</span>
-                            </a>
-
-                            <a
-                              href={`https://zalo.me/${cleanCtvPhone}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black px-2 py-1 rounded-lg transition flex items-center gap-1 shadow-2xs"
-                              title="Chat Zalo với CTV"
-                            >
-                              <MessageCircle className="w-3 h-3" />
-                              <span>Zalo CTV</span>
-                            </a>
+                      {/* Customer Photo/Video Preview */}
+                      {apt.customerMedia && isValidMediaUrl(apt.customerMedia) && (
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-extrabold text-slate-500 uppercase">Ảnh / Video hiện tại:</span>
+                          <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-900">
+                            {apt.customerMediaType === "video" || apt.customerMedia.startsWith("data:video") ? (
+                              <video src={apt.customerMedia} controls className="w-full h-36 object-cover" />
+                            ) : (
+                              <img src={apt.customerMedia} alt={apt.customerName} className="w-full h-36 object-cover" />
+                            )}
                           </div>
                         </div>
-                      </div>
-                    );
-                  })()}
+                      )}
 
-                  {/* Notes */}
-                  {apt.notes && (
-                    <div className="bg-amber-50/80 border border-amber-200/80 p-3 rounded-xl text-[11px] text-slate-700 italic font-medium leading-relaxed">
-                      "{apt.notes}"
+                      {/* Notes */}
+                      {apt.notes && (
+                        <div className="bg-amber-50/80 border border-amber-200 p-2.5 rounded-xl text-[11px] text-slate-700 italic">
+                          "{apt.notes}"
+                        </div>
+                      )}
+
+                      {/* Actions Bar */}
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleOpenEditModal(apt)}
+                            className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-extrabold text-[11px] px-3 py-1.5 rounded-xl transition flex items-center gap-1"
+                          >
+                            <Pencil className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Sửa</span>
+                          </button>
+
+                          {isUserAdmin && (
+                            <button
+                              onClick={() => setDeletingAppointmentId(apt.id)}
+                              className="bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 font-extrabold text-[11px] px-3 py-1.5 rounded-xl transition flex items-center gap-1"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                              <span>Xóa</span>
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <select
+                            value={apt.status}
+                            onChange={(e) => handleStatusChange(apt, e.target.value as any)}
+                            className="bg-white border border-amber-300 rounded-xl px-2 py-1 text-xs font-black text-amber-900"
+                          >
+                            <option value="Chờ xác nhận">⏳ Chờ xác nhận</option>
+                            <option value="Đã xác nhận">✅ Đã xác nhận</option>
+                            <option value="Đang điều trị">🏥 Đang điều trị</option>
+                            <option value="Hoàn thành">🎉 Hoàn thành</option>
+                            <option value="Đã hủy">❌ Đã hủy</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <div className="text-center py-12 bg-white rounded-3xl border border-slate-200 text-slate-500 text-xs font-medium space-y-3 shadow-xs">
+          <p>Không tìm thấy lịch hẹn khám nào phù hợp với bộ lọc.</p>
+          <button
+            onClick={handleOpenCreateModal}
+            className="bg-amber-500 text-[#0B192C] px-5 py-2.5 rounded-xl font-bold text-xs shadow-md"
+          >
+            + Đặt Lịch Hẹn Mới
+          </button>
+        </div>
+      )}
 
-                {/* Quick Status Update Bar */}
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs bg-slate-50 -mx-5 -mb-5 p-3 rounded-b-3xl">
-                  <span className="text-slate-600 font-extrabold text-[11px]">Đổi trạng thái CRM:</span>
-                  <select
-                    value={apt.status}
-                    onChange={(e) => {
-                      const newStatus = e.target.value as any;
-                      notifyAppointmentStatusChanged(
-                        { ...apt, ctvId: authUser?.id || ctvUser?.id },
-                        newStatus
-                      );
-                      const aptWithCtvInfo = {
-                        ...apt,
-                        ctvId: (apt as any).ctvId || (apt as any).userId || "",
-                      };
-                      const targetChatId = authUser?.zaloChatId || ctvUser?.zaloChatId;
-                      notifyZaloAppointmentStatusChanged(aptWithCtvInfo, newStatus, targetChatId);
-                      onUpdateStatus(apt.id, newStatus);
-                    }}
-                    className="bg-white border border-amber-300 rounded-xl px-2.5 py-1 text-xs font-black text-amber-900 focus:outline-none focus:border-amber-500 shadow-xs cursor-pointer"
+      {/* DETAIL MODAL (XEM ĐẦY ĐỦ THÔNG TIN DÀNH CHO CẢ DESKTOP & MOBILE) */}
+      {selectedDetailAppointment && (
+        <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 text-slate-900 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
+                <Info className="w-5 h-5 text-blue-600" /> Chi Tiết Lịch Hẹn {selectedDetailAppointment.id}
+              </h3>
+              <button
+                onClick={() => setSelectedDetailAppointment(null)}
+                className="p-1 hover:bg-slate-100 rounded-full text-slate-400"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs font-medium">
+              {/* Ngày & Giờ banner */}
+              <div className="bg-gradient-to-r from-[#0B192C] via-[#1E3A8A] to-[#0B192C] text-white p-3.5 rounded-2xl flex items-center justify-between shadow-md">
+                <div className="font-mono font-black text-sm text-amber-300">
+                  📅 {formatDateVN(selectedDetailAppointment.date)} - ⏰ {selectedDetailAppointment.time}
+                </div>
+                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black border ${getStatusConfig(selectedDetailAppointment.status).bg}`}>
+                  {getStatusConfig(selectedDetailAppointment.status).label}
+                </span>
+              </div>
+
+              {/* Thông tin Khách Hàng */}
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
+                <div className="text-[10px] text-slate-400 font-extrabold uppercase">Khách Hàng:</div>
+                <div className="font-black text-slate-900 text-sm">{selectedDetailAppointment.customerName}</div>
+                <div className="font-mono font-bold text-blue-700 text-xs flex items-center gap-2">
+                  <span>📞 {selectedDetailAppointment.customerPhone}</span>
+                  <a
+                    href={`tel:${selectedDetailAppointment.customerPhone.replace(/\D/g, "")}`}
+                    className="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px] font-bold"
                   >
-                    <option value="Chờ xác nhận">⏳ Chờ xác nhận</option>
-                    <option value="Đã xác nhận">✅ Đã xác nhận</option>
-                    <option value="Đang điều trị">🏥 Đang điều trị</option>
-                    <option value="Hoàn thành">🎉 Hoàn thành</option>
-                    <option value="Đã hủy">❌ Đã hủy</option>
-                  </select>
+                    Gọi Ngay
+                  </a>
+                  <a
+                    href={`https://zalo.me/${selectedDetailAppointment.customerPhone.replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-bold"
+                  >
+                    Zalo Chat
+                  </a>
                 </div>
               </div>
-            );
-          })
-        ) : (
-          <div className="col-span-full text-center py-12 bg-white rounded-3xl border border-slate-200 text-slate-500 text-xs font-medium space-y-3 shadow-xs">
-            <p>Không tìm thấy lịch hẹn khám nào phù hợp với bộ lọc.</p>
-            <button
-              onClick={handleOpenCreateModal}
-              className="bg-amber-500 text-[#0B192C] px-5 py-2.5 rounded-xl font-bold text-xs shadow-md"
-            >
-              + Đặt Lịch Hẹn Mới
-            </button>
-          </div>
-        )}
-      </div>
 
-      {/* BOOKING / EDIT MODAL - WITH SMART MULTI-SERVICE SELECTION */}
+              {/* Dịch vụ đăng ký */}
+              <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 space-y-1.5">
+                <div className="text-[10px] text-amber-900 font-extrabold uppercase">Dịch vụ thẩm mỹ đăng ký:</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedDetailAppointment.serviceName.split(/\s*\+\s*|\s*,\s*/).map((srv, idx) => (
+                    <span key={idx} className="bg-white text-amber-900 border border-amber-300 font-extrabold text-xs px-2.5 py-1 rounded-xl shadow-2xs">
+                      ✨ {srv.trim()}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bác sĩ & Loại lịch */}
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Bác Sĩ Phụ Trách:</span>
+                  <span className="font-extrabold text-amber-900">{selectedDetailAppointment.doctorName}</span>
+                </div>
+
+                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Loại Lịch Hẹn:</span>
+                  <span className="font-extrabold text-slate-900">{selectedDetailAppointment.appointmentType || "Lịch tư vấn"}</span>
+                </div>
+              </div>
+
+              {/* CTV Info */}
+              <div className="bg-blue-50 p-3.5 rounded-2xl border border-blue-200 space-y-1">
+                <div className="text-[10px] text-blue-900 font-extrabold uppercase">Cộng Tác Viên Giới Thiệu:</div>
+                <div className="font-black text-slate-900 text-xs">{selectedDetailAppointment.ctvName || "CTV"} ({selectedDetailAppointment.ctvCode || "SAOHAN-CTV"})</div>
+                <div className="font-mono text-blue-700 text-xs font-bold">📞 {selectedDetailAppointment.ctvPhone}</div>
+              </div>
+
+              {/* Customer Photo / Video */}
+              {selectedDetailAppointment.customerMedia && isValidMediaUrl(selectedDetailAppointment.customerMedia) && (
+                <div className="space-y-1">
+                  <span className="text-[10px] text-slate-500 font-extrabold uppercase">Ảnh / Video hiện tại:</span>
+                  <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-900">
+                    {selectedDetailAppointment.customerMediaType === "video" || selectedDetailAppointment.customerMedia.startsWith("data:video") ? (
+                      <video src={selectedDetailAppointment.customerMedia} controls className="w-full h-44 object-cover" />
+                    ) : (
+                      <img src={selectedDetailAppointment.customerMedia} alt="Media" className="w-full h-44 object-cover" />
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              {selectedDetailAppointment.notes && (
+                <div className="bg-amber-50 border border-amber-200 p-3 rounded-2xl italic text-slate-700 text-xs">
+                  "{selectedDetailAppointment.notes}"
+                </div>
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedDetailAppointment(null);
+                    handleOpenEditModal(selectedDetailAppointment);
+                  }}
+                  className="px-3.5 py-2 bg-amber-500 text-[#0B192C] font-black rounded-xl text-xs shadow-md"
+                >
+                  Sửa Lịch Hẹn
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedDetailAppointment(null)}
+                className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BOOKING / EDIT MODAL */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full p-6 text-slate-900 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl relative">
