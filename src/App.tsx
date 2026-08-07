@@ -622,9 +622,15 @@ export default function App() {
     } catch (_) {}
   }, []);
 
-  // Supabase Realtime WebSocket Listener cho Lịch Hẹn & Giải Ngân
+  // Supabase Realtime WebSocket Listener cho Lịch Hẹn & Giải Ngân (An toàn chống vòng lặp đệ quy removeChannel & WebSocket 503)
   useEffect(() => {
+    if ((import.meta as any).env?.VITE_ENABLE_REALTIME !== "true") {
+      return;
+    }
+
     let activeChannel: any = null;
+    let isCleanedUp = false;
+
     try {
       activeChannel = realtimeSupabase
         .channel("realtime-db-changes")
@@ -639,16 +645,15 @@ export default function App() {
           () => syncPayoutsWithNotification()
         )
         .subscribe((status) => {
-          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-            try {
-              if (activeChannel) realtimeSupabase.removeChannel(activeChannel);
-            } catch (e) {}
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            console.info("[Supabase Realtime] WSS fallback to HTTP Polling due to status:", status);
           }
         });
     } catch (e) {}
 
     return () => {
-      if (activeChannel) {
+      if (activeChannel && !isCleanedUp) {
+        isCleanedUp = true;
         try {
           realtimeSupabase.removeChannel(activeChannel);
         } catch (e) {}
