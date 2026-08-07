@@ -35,8 +35,11 @@ export const supabase = createClient(SUPABASE_PROXY_URL, SUPABASE_ANON_KEY, {
   },
 });
 
-// Client Supabase Realtime dùng trực tiếp SUPABASE_REAL_URL cho kết nối WebSocket wss://
-export const realtimeSupabase = createClient(SUPABASE_REAL_URL, SUPABASE_ANON_KEY);
+// Client Supabase Realtime (chỉ kết nối WebSocket wss:// khi môi trường bật VITE_ENABLE_REALTIME="true")
+const isRealtimeEnabled = (import.meta as any).env?.VITE_ENABLE_REALTIME === "true";
+export const realtimeSupabase = isRealtimeEnabled
+  ? createClient(SUPABASE_REAL_URL, SUPABASE_ANON_KEY)
+  : (supabase as any);
 
 export interface AuthUserProfile {
   id: string;

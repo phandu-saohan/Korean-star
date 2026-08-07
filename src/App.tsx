@@ -412,10 +412,14 @@ export default function App() {
     return () => window.removeEventListener("onesignal-notification-toast", handleOsToast);
   }, []);
 
-  // Supabase Realtime WebSocket Listener cho Lịch Hẹn CRM (với tự động ngắt kết nối khi server 503)
+  // Supabase Realtime WebSocket Listener cho Lịch Hẹn CRM (với xử lý ngắt kết nối an toàn khi 503)
   useEffect(() => {
     let activeChannel: any = null;
     try {
+      if ((import.meta as any).env?.VITE_ENABLE_REALTIME !== "true") {
+        return;
+      }
+
       activeChannel = realtimeSupabase
         .channel("realtime-appointment-bookings")
         .on(
@@ -433,10 +437,13 @@ export default function App() {
           }
         )
         .subscribe((status) => {
-          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-            // Ngắt channel tự động nếu self-hosted Supabase Realtime wss:// bị 503
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+            // Ngắt hẳn socket kết nối nếu self-hosted Supabase Realtime wss:// bị 503 Service Unavailable
             try {
               if (activeChannel) realtimeSupabase.removeChannel(activeChannel);
+              if ((realtimeSupabase as any).realtime) {
+                (realtimeSupabase as any).realtime.disconnect();
+              }
             } catch (e) {}
           }
         });
@@ -446,6 +453,9 @@ export default function App() {
       if (activeChannel) {
         try {
           realtimeSupabase.removeChannel(activeChannel);
+          if ((realtimeSupabase as any).realtime) {
+            (realtimeSupabase as any).realtime.disconnect();
+          }
         } catch (e) {}
       }
     };
