@@ -544,38 +544,104 @@ export default function App() {
     updateAppBadgeFromUnread(unreadCount);
   }, [notifications]);
 
-  // Supabase Realtime WebSocket Listener cho Lịch Hẹn CRM (với xử lý ngắt kết nối an toàn khi 503)
+  // Refs theo dõi trạng thái dữ liệu Supabase để bắn thông báo Chuông Realtime khi có biến động
+  const knownAptMapRef = useRef<Map<string, string>>(new Map());
+  const knownPayoutMapRef = useRef<Map<string, string>>(new Map());
+
+  // Đồng bộ Lịch Hẹn CRM từ Supabase DB & Bắn thông báo Chuông khi có Lịch mới / Trạng thái đổi
+  const syncAppointmentsWithNotification = useCallback(async () => {
+    try {
+      const remote = await fetchAppointmentsFromSupabase();
+      if (remote !== null) {
+        if (knownAptMapRef.current.size > 0) {
+          remote.forEach((apt) => {
+            const prevStatus = knownAptMapRef.current.get(apt.id);
+            if (!prevStatus) {
+              addSystemNotification({
+                title: "⚡ Supabase Realtime: Lịch Hẹn Mới",
+                text: `🔥 Khách hàng ${apt.customerName} vừa đặt dịch vụ "${apt.serviceName}"!`,
+                type: "lead"
+              });
+            } else if (prevStatus !== apt.status) {
+              addSystemNotification({
+                title: "⚡ Supabase Realtime: Trạng Thái Lịch Hẹn",
+                text: `📅 Lịch hẹn của ${apt.customerName} đã chuyển trạng thái sang "${apt.status}".`,
+                type: apt.status === "Hoàn thành" ? "commission" : "lead"
+              });
+            }
+          });
+        }
+
+        const newMap = new Map<string, string>();
+        remote.forEach((a) => newMap.set(a.id, a.status));
+        knownAptMapRef.current = newMap;
+
+        setAppointments(remote);
+        safeSetLocalStorage("saohan_appointments", JSON.stringify(remote));
+      }
+    } catch (_) {}
+  }, []);
+
+  // Đồng bộ Yêu Cầu Rút Tiền từ Supabase DB & Bắn thông báo Chuông khi có Lệnh mới / Duyệt giải ngân
+  const syncPayoutsWithNotification = useCallback(async () => {
+    try {
+      const remotePayouts = await fetchPayoutRequestsFromSupabase();
+      if (remotePayouts !== null) {
+        if (knownPayoutMapRef.current.size > 0) {
+          remotePayouts.forEach((payout) => {
+            const prevStatus = knownPayoutMapRef.current.get(payout.id);
+            if (!prevStatus) {
+              addSystemNotification({
+                title: "⚡ Supabase Realtime: Yêu Cầu Rút Tiền",
+                text: `💸 Yêu cầu rút ${payout.amount.toLocaleString("vi-VN")}đ của CTV ${payout.ctvName} đã ghi nhận trên hệ thống.`,
+                type: "system"
+              });
+            } else if (prevStatus !== payout.status) {
+              const text = payout.status === "Đã duyệt"
+                ? `🎉 Yêu cầu rút ${payout.amount.toLocaleString("vi-VN")}đ của CTV ${payout.ctvName} ĐÃ ĐƯỢC DUYỆT GIẢI NGÂN!`
+                : payout.status === "Từ chối"
+                ? `⚠️ Yêu cầu rút ${payout.amount.toLocaleString("vi-VN")}đ của CTV ${payout.ctvName} đã BỊ TỪ CHỐI.`
+                : `🔄 Yêu cầu rút ${payout.amount.toLocaleString("vi-VN")}đ chuyển trạng thái sang "${payout.status}".`;
+
+              addSystemNotification({
+                title: "⚡ Supabase Realtime: Giải Ngân Rút Tiền",
+                text,
+                type: payout.status === "Đã duyệt" ? "commission" : "system"
+              });
+            }
+          });
+        }
+
+        const newMap = new Map<string, string>();
+        remotePayouts.forEach((p) => newMap.set(p.id, p.status));
+        knownPayoutMapRef.current = newMap;
+
+        setPayoutRequests(remotePayouts);
+        safeSetLocalStorage("saohan_payout_requests", JSON.stringify(remotePayouts));
+      }
+    } catch (_) {}
+  }, []);
+
+  // Supabase Realtime WebSocket Listener cho Lịch Hẹn & Giải Ngân
   useEffect(() => {
     let activeChannel: any = null;
     try {
-      if ((import.meta as any).env?.VITE_ENABLE_REALTIME !== "true") {
-        return;
-      }
-
       activeChannel = realtimeSupabase
-        .channel("realtime-appointment-bookings")
+        .channel("realtime-db-changes")
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "appointment_bookings" },
-          async (payload) => {
-            console.log("⚡ [Supabase Realtime Event]:", payload);
-            try {
-              const remote = await fetchAppointmentsFromSupabase();
-              if (remote !== null) {
-                setAppointments(remote);
-                safeSetLocalStorage("saohan_appointments", JSON.stringify(remote));
-              }
-            } catch (_) {}
-          }
+          () => syncAppointmentsWithNotification()
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "payout_requests" },
+          () => syncPayoutsWithNotification()
         )
         .subscribe((status) => {
           if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-            // Ngắt hẳn socket kết nối nếu self-hosted Supabase Realtime wss:// bị 503 Service Unavailable
             try {
               if (activeChannel) realtimeSupabase.removeChannel(activeChannel);
-              if ((realtimeSupabase as any).realtime) {
-                (realtimeSupabase as any).realtime.disconnect();
-              }
             } catch (e) {}
           }
         });
@@ -585,50 +651,23 @@ export default function App() {
       if (activeChannel) {
         try {
           realtimeSupabase.removeChannel(activeChannel);
-          if ((realtimeSupabase as any).realtime) {
-            (realtimeSupabase as any).realtime.disconnect();
-          }
         } catch (e) {}
       }
     };
-  }, []);
+  }, [syncAppointmentsWithNotification, syncPayoutsWithNotification]);
 
-  // Auto-polling: đồng bộ dự phòng lịch hẹn từ Supabase mỗi 30 giây
+  // Auto-polling: Đồng bộ liên tục Lịch Hẹn & Giải Ngân từ Supabase mỗi 10 giây
   useEffect(() => {
-    const syncAppointments = async () => {
-      try {
-        const remote = await fetchAppointmentsFromSupabase();
-        if (remote !== null) {
-          setAppointments(remote);
-          safeSetLocalStorage("saohan_appointments", JSON.stringify(remote));
-        }
-      } catch (_) {
-        // Silent fail - không làm gián đoạn UX
-      }
-    };
+    syncAppointmentsWithNotification();
+    syncPayoutsWithNotification();
 
-    const interval = setInterval(syncAppointments, 30000); // 30 giây
+    const interval = setInterval(() => {
+      syncAppointmentsWithNotification();
+      syncPayoutsWithNotification();
+    }, 10000); // 10 giây đồng bộ Realtime
+
     return () => clearInterval(interval);
-  }, []);
-
-  // Auto-polling: đồng bộ yêu cầu rút tiền (payoutRequests) từ Supabase mỗi 15 giây
-  useEffect(() => {
-    const syncPayouts = async () => {
-      try {
-        const remotePayouts = await fetchPayoutRequestsFromSupabase();
-        if (remotePayouts && remotePayouts.length > 0) {
-          setPayoutRequests(remotePayouts);
-          safeSetLocalStorage("saohan_payout_requests", JSON.stringify(remotePayouts));
-        }
-      } catch (_) {
-        // Silent fail
-      }
-    };
-
-    syncPayouts();
-    const interval = setInterval(syncPayouts, 15000); // 15 giây
-    return () => clearInterval(interval);
-  }, []);
+  }, [syncAppointmentsWithNotification, syncPayoutsWithNotification]);
 
   // Tự động chuyển đổi appointments thành leads để hiển thị đầy đủ trên Dashboard CTVHub
   useEffect(() => {
