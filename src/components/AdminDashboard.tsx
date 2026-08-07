@@ -28,6 +28,8 @@ import {
   Award,
   BarChart3,
   CheckCircle2,
+  LogOut,
+  ArrowLeftRight,
   UserCheck,
   Plus,
   ArrowUpRight,
@@ -60,6 +62,8 @@ interface AdminDashboardProps {
   onBookAppointment?: (serviceName: string, notes: string) => void;
   onGenerateServiceLink?: (serviceName: string) => void;
   onRefreshAppointments?: () => void;
+  onRoleChange?: (role: any) => void;
+  onSignOut?: () => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -85,7 +89,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onViewBeforeAfter,
   onBookAppointment,
   onGenerateServiceLink,
-  onRefreshAppointments
+  onRefreshAppointments,
+  onRoleChange,
+  onSignOut
 }) => {
   const [activeTab, setActiveTab] = useState<"analytics" | "crm" | "payouts" | "services" | "feedbacks" | "settings">("analytics");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -364,10 +370,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {onRefreshAppointments && (
               <button
                 onClick={onRefreshAppointments}
-                className="w-full bg-blue-900/80 hover:bg-amber-500 hover:text-[#0B192C] text-amber-300 font-extrabold text-[11px] py-2 rounded-xl transition flex items-center justify-center gap-1.5 border border-blue-800 cursor-pointer"
+                className="w-full bg-blue-900/80 hover:bg-blue-800 text-amber-300 font-extrabold text-[11px] py-1.5 rounded-xl transition flex items-center justify-center gap-1.5 border border-blue-800 cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span>Tải Lại CSDL Ngay</span>
+                <span>Tải Lại CSDL</span>
+              </button>
+            )}
+            {onRoleChange && (
+              <button
+                onClick={() => onRoleChange("ctv")}
+                className="w-full bg-amber-500 hover:bg-amber-400 text-[#0B192C] font-black text-[11px] py-2 rounded-xl transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <ArrowLeftRight className="w-3.5 h-3.5" />
+                <span>Chuyển Màn CTV</span>
+              </button>
+            )}
+            {onSignOut && (
+              <button
+                onClick={onSignOut}
+                className="w-full bg-rose-950/80 hover:bg-rose-900 text-rose-300 font-extrabold text-[11px] py-1.5 rounded-xl transition flex items-center justify-center gap-1.5 border border-rose-800 cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Đăng Xuất</span>
               </button>
             )}
           </div>
@@ -393,14 +417,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <p className="text-xs text-slate-500 font-medium mt-0.5">{currentTabObj.description}</p>
             </div>
 
-            <div className="flex items-center gap-2 self-stretch sm:self-auto">
+            <div className="flex items-center gap-2 self-stretch sm:self-auto flex-wrap">
+              {onRoleChange && (
+                <button
+                  onClick={() => onRoleChange("ctv")}
+                  className="bg-amber-500 hover:bg-amber-600 text-[#0B192C] font-black text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  title="Chuyển sang giao diện Cộng tác viên"
+                >
+                  <ArrowLeftRight className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Chuyển Màn CTV</span>
+                </button>
+              )}
               {onRefreshAppointments && (
                 <button
                   onClick={onRefreshAppointments}
-                  className="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-black text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-300 font-black text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
                 >
                   <RefreshCw className="w-3.5 h-3.5 text-amber-600" />
                   <span>Đồng Bộ CSDL</span>
+                </button>
+              )}
+              {onSignOut && (
+                <button
+                  onClick={onSignOut}
+                  className="bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 font-black text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                  title="Đăng xuất tài khoản"
+                >
+                  <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                  <span className="hidden sm:inline">Đăng Xuất</span>
                 </button>
               )}
             </div>

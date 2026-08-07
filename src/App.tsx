@@ -964,37 +964,75 @@ export default function App() {
         </div>
       )}
 
-      {/* Real WebApp Top Header Navigation */}
-      <Header
-        currentRole={currentRole}
-        onRoleChange={(role) => {
-          setCurrentRole(role);
-          if (role === "admin") setActiveTab("admin");
-          else if (role === "editor") setActiveTab("editor");
-          else if (role === "accountant") setActiveTab("accountant");
-          else if (role === "customer") setActiveTab("service-catalog");
-          else setActiveTab("ctv-dashboard");
-        }}
-        onSignOut={handleSignOut}
-        ctvUser={ctvUser}
-        notifications={notifications}
-        onOpenPayout={() => setPayoutModalOpen(true)}
-        activeTab={activeTab}
-        onTabChange={(tab) => setActiveTab(tab)}
-        onOpenAuthModal={() => setAuthModalOpen(true)}
-        onOpenProfileModal={() => setProfileModalOpen(true)}
-        authUser={authUser}
-        onClearNotifications={() => setNotifications([])}
-        onMarkAllRead={() => setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))}
-        onNotificationClick={(notif) =>
-          setNotifications((prev) =>
-            prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
-          )
-        }
-      />
+      {/* Real WebApp Top Header Navigation (Ẩn khi ở Admin Dashboard để Admin Full Screen) */}
+      {activeTab !== "admin" && (
+        <Header
+          currentRole={currentRole}
+          onRoleChange={(role) => {
+            setCurrentRole(role);
+            if (role === "admin") setActiveTab("admin");
+            else if (role === "editor") setActiveTab("editor");
+            else if (role === "accountant") setActiveTab("accountant");
+            else if (role === "customer") setActiveTab("service-catalog");
+            else setActiveTab("ctv-dashboard");
+          }}
+          onSignOut={handleSignOut}
+          ctvUser={ctvUser}
+          notifications={notifications}
+          onOpenPayout={() => setPayoutModalOpen(true)}
+          activeTab={activeTab}
+          onTabChange={(tab) => setActiveTab(tab)}
+          onOpenAuthModal={() => setAuthModalOpen(true)}
+          onOpenProfileModal={() => setProfileModalOpen(true)}
+          authUser={authUser}
+          onClearNotifications={() => setNotifications([])}
+          onMarkAllRead={() => setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))}
+          onNotificationClick={(notif) =>
+            setNotifications((prev) =>
+              prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
+            )
+          }
+        />
+      )}
 
-      {/* Main WebApp Envelope Container */}
-      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 flex-1 flex flex-col space-y-5">
+      {/* Main WebApp Envelope Container (Full Screen riêng cho Admin Dashboard) */}
+      {activeTab === "admin" ? (
+        <div className="w-full min-h-screen flex-1 flex flex-col bg-slate-100/80">
+          <AdminDashboard
+            ctvUser={ctvUser}
+            leads={leads}
+            appointments={appointments}
+            services={services}
+            feedbacks={feedbacks}
+            payoutRequests={payoutRequests}
+            authUser={authUser}
+            onApproveLead={handleApproveLead}
+            onAddService={handleAddService}
+            onUpdateService={handleUpdateService}
+            onDeleteService={handleDeleteService}
+            onAddFeedback={handleAddFeedback}
+            onUpdateFeedback={handleUpdateFeedback}
+            onDeleteFeedback={handleDeleteFeedback}
+            onAddAppointment={handleAddAppointment}
+            onUpdateAppointment={handleUpdateAppointment}
+            onDeleteAppointment={handleDeleteAppointment}
+            onUpdateStatus={handleUpdateStatus}
+            onUpdatePayoutRequest={handleUpdatePayoutRequest}
+            onViewBeforeAfter={(serviceId) => handleViewBeforeAfter(serviceId)}
+            onBookAppointment={(serviceName, notes) => handleBookFromComponent(serviceName, notes)}
+            onGenerateServiceLink={(serviceName) => handleGenerateServiceLink(serviceName)}
+            onRefreshAppointments={handleRefreshAppointments}
+            onRoleChange={(role) => {
+              setCurrentRole(role);
+              if (role === "ctv") setActiveTab("ctv-dashboard");
+              else if (role === "customer") setActiveTab("service-catalog");
+              else setActiveTab("admin");
+            }}
+            onSignOut={handleSignOut}
+          />
+        </div>
+      ) : (
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 flex-1 flex flex-col space-y-5">
         
         {/* User Status Summary Banner - Tailored per role */}
         {activeTab === "ctv-dashboard" && (
@@ -1296,34 +1334,6 @@ export default function App() {
             />
           )}
 
-          {activeTab === "admin" && (
-            <AdminDashboard
-              ctvUser={ctvUser}
-              leads={leads}
-              appointments={appointments}
-              services={services}
-              feedbacks={feedbacks}
-              payoutRequests={payoutRequests}
-              authUser={authUser}
-              onApproveLead={handleApproveLead}
-              onAddService={handleAddService}
-              onUpdateService={handleUpdateService}
-              onDeleteService={handleDeleteService}
-              onAddFeedback={handleAddFeedback}
-              onUpdateFeedback={handleUpdateFeedback}
-              onDeleteFeedback={handleDeleteFeedback}
-              onAddAppointment={handleAddAppointment}
-              onUpdateAppointment={handleUpdateAppointment}
-              onDeleteAppointment={handleDeleteAppointment}
-              onUpdateStatus={handleUpdateStatus}
-              onUpdatePayoutRequest={handleUpdatePayoutRequest}
-              onViewBeforeAfter={(serviceId) => handleViewBeforeAfter(serviceId)}
-              onBookAppointment={(serviceName, notes) => handleBookFromComponent(serviceName, notes)}
-              onGenerateServiceLink={(serviceName) => handleGenerateServiceLink(serviceName)}
-              onRefreshAppointments={handleRefreshAppointments}
-            />
-          )}
-
           {activeTab === "editor" && (
             <EditorDashboard
               services={services}
@@ -1357,8 +1367,11 @@ export default function App() {
           )}
 
         </main>
+      </div>
+    )}
 
-        {/* Mobile Navigation Bottom Dock (5 Items: Trang Chủ | Dịch Vụ | Đặt Lịch [Nút Nổi Nền Xanh Chữ Vàng Gold] | Công Cụ | Tài Khoản) */}
+      {/* Mobile Navigation Bottom Dock (Ẩn khi ở Admin Dashboard để Admin Full Screen) */}
+      {activeTab !== "admin" && (
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 border-t border-slate-200/90 z-40 backdrop-blur-xl px-1 py-1 shadow-2xl flex items-center justify-around text-[10px] text-[#0B192C] w-full max-w-full overflow-visible pb-[calc(0.375rem+env(safe-area-inset-bottom,0px))]">
           
           {/* 1. Trang Chủ */}
@@ -1420,6 +1433,7 @@ export default function App() {
             <span className="text-[9px] font-extrabold truncate w-full text-center text-[#0B192C]">Tài Khoản</span>
           </button>
         </nav>
+      )}
 
         {/* Mobile Payout Modal */}
         {payoutModalOpen && (
@@ -1729,7 +1743,6 @@ export default function App() {
         />
 
       </div>
-    </div>
   );
 }
 
