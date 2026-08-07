@@ -234,10 +234,11 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
     setServiceCategoryFilter("ALL");
 
     // Match existing service names with catalog items
-    const rawServices = (apt.serviceName || "").split(/\s*\+\s*|\s*,\s*/);
-    const matched = catalogServices.filter((srv) =>
-      rawServices.some((rs) => rs.toLowerCase().trim() === srv.name.toLowerCase().trim() || srv.name.toLowerCase().includes(rs.toLowerCase().trim()))
-    );
+    const rawServices = (apt.serviceName || "").split(/\s*\+\s*|\s*,\s*/).map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const matched = catalogServices.filter((srv) => {
+      const sName = srv.name.toLowerCase().trim();
+      return rawServices.some((rs) => rs === sName || sName.includes(rs) || rs.includes(sName));
+    });
     setSelectedServiceItems(matched);
 
     setForm({
@@ -271,7 +272,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
     const combinedNames = updated.map((s) => s.name).join(" + ");
     setForm((prev) => ({
       ...prev,
-      serviceName: combinedNames || prev.serviceName
+      serviceName: combinedNames
     }));
   };
 
@@ -347,7 +348,11 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
     const assignedCtvCode = form.ctvCode || ctvUser?.code || authUser?.ctvCode || "";
     const ctvUserId = authUser?.id || ctvUser?.id || "";
 
-    const finalServiceName = form.serviceName || (selectedServiceItems.length > 0 ? selectedServiceItems.map(s => s.name).join(" + ") : "Dịch Vụ Thẩm Mỹ");
+    const selectedCombinedName = selectedServiceItems.length > 0
+      ? selectedServiceItems.map((s) => s.name).join(" + ")
+      : "";
+
+    const finalServiceName = selectedCombinedName || form.serviceName || "Dịch Vụ Thẩm Mỹ";
 
     if (editingAppointment) {
       // EDIT MODE
@@ -369,6 +374,10 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
 
       (updatedApt as any).ctvId = ctvUserId;
       (updatedApt as any).userId = ctvUserId;
+
+      if (selectedDetailAppointment && selectedDetailAppointment.id === updatedApt.id) {
+        setSelectedDetailAppointment(updatedApt);
+      }
 
       if (onUpdateAppointment) {
         onUpdateAppointment(updatedApt);
@@ -793,18 +802,30 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                   </div>
 
                   {/* Primary Service Bar & Expand Click Bar */}
-                  <div
-                    onClick={() => setExpandedMobileCardId(isExpanded ? null : apt.id)}
-                    className="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-2xl border border-slate-200 cursor-pointer hover:bg-amber-50/50 transition"
-                  >
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase">Dịch vụ:</span>
-                      <span className="font-black text-slate-900 text-xs truncate">{apt.serviceName}</span>
+                  <div className="bg-amber-50/80 p-3 rounded-2xl border border-amber-200 space-y-2">
+                    <div className="flex items-center justify-between text-[10px] font-extrabold text-amber-900 uppercase">
+                      <span className="flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        Dịch Vụ Thẩm Mỹ ({apt.serviceName.split(/\s*\+\s*|\s*,\s*/).filter(Boolean).length}):
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedMobileCardId(isExpanded ? null : apt.id)}
+                        className="text-amber-700 hover:text-amber-900 font-extrabold text-[11px] flex items-center gap-1"
+                      >
+                        <span>{isExpanded ? "Thu gọn" : "Chi tiết"}</span>
+                        {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      </button>
                     </div>
-
-                    <div className="text-amber-700 font-extrabold text-[11px] flex items-center gap-1 shrink-0">
-                      <span>{isExpanded ? "Thu gọn" : "Xem thêm"}</span>
-                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    <div className="flex flex-wrap gap-1.5">
+                      {apt.serviceName.split(/\s*\+\s*|\s*,\s*/).map((srv, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-white border border-amber-300 text-amber-950 text-xs font-black px-2.5 py-1 rounded-xl shadow-2xs flex items-center gap-1 leading-snug"
+                        >
+                          ✨ {srv.trim()}
+                        </span>
+                      ))}
                     </div>
                   </div>
 
