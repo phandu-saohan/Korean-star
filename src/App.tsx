@@ -1060,38 +1060,7 @@ export default function App() {
           </div>
         )}
 
-        {/* Personalized Admin Banner */}
-        {activeTab === "admin" && (
-          <div className="bg-gradient-to-r from-[#0B192C] via-red-950 to-[#0B192C] text-white rounded-3xl p-4 sm:p-6 shadow-xl border border-red-900/50 relative overflow-hidden">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
-              <div className="flex items-center gap-4">
-                <img
-                  src={authUser?.avatarUrl || authUser?.avatar || ctvUser.avatar}
-                  alt={authUser?.fullName || "Admin"}
-                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-4 border-red-500 shadow-md shrink-0 bg-slate-800"
-                />
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="font-black text-base sm:text-xl text-white">{authUser?.fullName || "Ban Quản Trị Admin"}</h2>
-                    <span className="bg-red-600 text-white font-extrabold text-xs px-2.5 py-0.5 rounded-full font-mono shadow-xs uppercase">
-                      👑 BAN QUẢN TRỊ ADMIN
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-300 font-medium mt-1">
-                    Hệ thống điều hành Bệnh viện Korean Star • Quản lý tài khoản, duyệt hoa hồng & ma trận phân quyền CRUD
-                  </p>
-                </div>
-              </div>
 
-              <div className="flex items-center gap-3">
-                <div className="text-right hidden sm:block font-mono">
-                  <span className="text-[10px] text-slate-400 uppercase block font-semibold">Tài khoản Supabase:</span>
-                  <span className="text-sm font-extrabold text-amber-400">{authUser?.email || "admin@saohan.vn"}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Personalized Editor Banner */}
         {activeTab === "editor" && (
