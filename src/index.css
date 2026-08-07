@@ -27,10 +27,14 @@
   }
 }
 
-/* Ngăn tràn màn hình & tự động phóng to viewport khi gõ bàn phím trên điện thoại (iOS Safari & Android Chrome) */
-html, body {
-  overflow-x: hidden !important;
-  max-width: 100vw !important;
+/* Ngăn tràn màn hình mà KHÔNG phá vỡ position: sticky của Header */
+html {
+  overflow-x: clip;
+}
+
+body {
+  overflow-x: clip;
+  max-width: 100vw;
 }
 
 @media screen and (max-width: 768px) {

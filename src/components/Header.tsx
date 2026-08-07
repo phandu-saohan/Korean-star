@@ -128,7 +128,7 @@ export const Header: React.FC<HeaderProps> = ({
   const activeRoleInfo = getRoleLabel(currentRole);
 
   return (
-    <header className="bg-gradient-to-r from-[#0B192C] via-[#1E3A8A] to-[#0B192C] text-white border-b border-blue-900/50 sticky top-0 z-40 shadow-xl pt-[env(safe-area-inset-top,0px)]">
+    <header className="bg-gradient-to-r from-[#0B192C] via-[#1E3A8A] to-[#0B192C] text-white border-b border-blue-900/50 sticky top-0 z-50 shadow-xl pt-[env(safe-area-inset-top,0px)] w-full">
       {/* Main Navigation Bar */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5">
         <div className="flex items-center justify-between gap-2 min-w-0">
