@@ -1107,12 +1107,44 @@ export default function App() {
     showToast(`Đã duyệt đơn và cộng ${lead.commission.toLocaleString("vi-VN")}đ hoa hồng vào tài khoản CTV!`);
   };
   // Helper: Execute payout
-  const handleConfirmPayout = (amount: number) => {
+  const handleConfirmPayout = (amount: number, bankDetails?: { bankName: string; accountNumber: string; accountHolder: string }) => {
+    const nowStr = formatDateTimeVN(new Date().toISOString().replace("T", " ").slice(0, 16));
+    const reqId = `req-[#PAY-${Math.floor(100 + Math.random() * 900)}]`;
+    const finalBankName = bankDetails?.bankName || ctvUser.bankAccount?.bankName || (ctvUser as any).bankName || "MBBank (Ngân Hàng Quân Đội)";
+    const finalAccNo = bankDetails?.accountNumber || ctvUser.bankAccount?.accountNumber || (ctvUser as any).accountNumber || "";
+    const finalAccHolder = bankDetails?.accountHolder || ctvUser.bankAccount?.accountHolder || (ctvUser as any).accountHolder || ctvUser.name;
+
+    const newReq: PayoutRequest = {
+      id: reqId,
+      ctvCode: ctvUser.code,
+      ctvName: ctvUser.name,
+      amount,
+      bankName: finalBankName,
+      accountNumber: finalAccNo,
+      accountHolder: finalAccHolder,
+      requestedAt: nowStr,
+      status: "Chờ kế toán kiểm tra",
+      logs: [
+        {
+          id: `log-${Date.now()}`,
+          payoutId: reqId,
+          timestamp: nowStr,
+          actorRole: "ctv",
+          actorName: ctvUser.name,
+          action: "Khởi tạo yêu cầu rút ví hoa hồng",
+          newStatus: "Chờ kế toán kiểm tra",
+          notes: `CTV tạo lệnh rút ${amount.toLocaleString("vi-VN")}đ về ${finalBankName} (${finalAccNo} - ${finalAccHolder})`
+        }
+      ]
+    };
+
+    setPayoutRequests((prev) => [newReq, ...prev]);
     setCtvUser((prev) => ({
       ...prev,
-      availableBalance: prev.availableBalance - amount
+      availableBalance: Math.max(0, prev.availableBalance - amount),
+      pendingBalance: prev.pendingBalance + amount
     }));
-    showToast(`Đã rút ${amount.toLocaleString("vi-VN")}đ tự động về tài khoản ngân hàng!`);
+    showToast(`Đã gửi lệnh rút tiền ${reqId} về ${finalBankName} (${finalAccNo}) thành công!`);
   };
 
   // Navigate to Before-After gallery filtered by service
@@ -1897,40 +1929,7 @@ export default function App() {
           <PayoutModal
             ctvUser={effectiveCtvUser}
             onClose={() => setPayoutModalOpen(false)}
-            onConfirmPayout={(amount) => {
-              const nowStr = formatDateTimeVN(new Date().toISOString().replace("T", " ").slice(0, 16));
-              const reqId = `req-[#PAY-${Math.floor(100 + Math.random() * 900)}]`;
-              const newReq: PayoutRequest = {
-                id: reqId,
-                ctvCode: ctvUser.code,
-                ctvName: ctvUser.name,
-                amount,
-                bankName: ctvUser.bankAccount.bankName,
-                accountNumber: ctvUser.bankAccount.accountNumber,
-                accountHolder: ctvUser.bankAccount.accountHolder,
-                requestedAt: nowStr,
-                status: "Chờ kế toán kiểm tra",
-                logs: [
-                  {
-                    id: `log-${Date.now()}`,
-                    payoutId: reqId,
-                    timestamp: nowStr,
-                    actorRole: "ctv",
-                    actorName: ctvUser.name,
-                    action: "Khởi tạo yêu cầu rút ví hoa hồng",
-                    newStatus: "Chờ kế toán kiểm tra",
-                    notes: `CTV tạo lệnh rút ${amount.toLocaleString("vi-VN")}đ về ${ctvUser.bankAccount.bankName}`
-                  }
-                ]
-              };
-              setPayoutRequests((prev) => [newReq, ...prev]);
-              setCtvUser((prev) => ({
-                ...prev,
-                availableBalance: prev.availableBalance - amount,
-                pendingBalance: prev.pendingBalance + amount
-              }));
-              showToast(`Đã gửi lệnh rút tiền ${reqId} thành công! Kế toán & Admin sẽ phê duyệt.`);
-            }}
+            onConfirmPayout={handleConfirmPayout}
           />
         )}
 
