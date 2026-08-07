@@ -565,19 +565,19 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
       {/* APPOINTMENTS CONTAINER: TABLE ON DESKTOP & GRID CARDS ON MOBILE */}
       {filteredAppointments.length > 0 ? (
         <>
-          {/* A. DESKTOP VIEW: BẢNG DỮ LIỆU BÁC SĨ & CRM CHUYÊN NGHIỆP */}
+          {/* A. DESKTOP VIEW: BẢNG CRM CHUYÊN NGHIỆP ƯU TIÊN TÊN KHÁCH HÀNG & DỊCH VỤ */}
           <div className="hidden md:block bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-[#0B192C] text-white text-[11px] font-black uppercase tracking-wider border-b border-slate-800">
-                    <th className="py-3.5 px-4">Mã LH & Loại</th>
-                    <th className="py-3.5 px-4">Khách Hàng & SĐT</th>
-                    <th className="py-3.5 px-4">Dịch Vụ Đăng Ký</th>
-                    <th className="py-3.5 px-4">Bác Sĩ & Ngày Giờ</th>
-                    <th className="py-3.5 px-4">CTV Giới Thiệu</th>
-                    <th className="py-3.5 px-4 text-center">Trạng Thái CRM</th>
-                    <th className="py-3.5 px-4 text-right">Thao Tác</th>
+                  <tr className="bg-gradient-to-r from-[#0B192C] via-[#1E3A8A] to-[#0B192C] text-white text-[11px] font-black uppercase tracking-wider border-b border-slate-800">
+                    <th className="py-4 px-4 w-1/4">👤 Khách Hàng & SĐT</th>
+                    <th className="py-4 px-4 w-1/3">✨ Dịch Vụ Thẩm Mỹ</th>
+                    <th className="py-4 px-4">📅 Ngày & Giờ Hẹn</th>
+                    <th className="py-4 px-4">📋 Mã LH & Loại</th>
+                    <th className="py-4 px-4">🤝 CTV Giới Thiệu</th>
+                    <th className="py-4 px-4 text-center">Trạng Thái</th>
+                    <th className="py-4 px-4 text-right">Thao Tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs text-slate-800 font-medium">
@@ -585,12 +585,74 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                     const statusConfig = getStatusConfig(apt.status);
                     const cleanPhone = apt.customerPhone.replace(/\D/g, "");
                     const ctvPhone = (apt.ctvPhone || "").replace(/\D/g, "");
+                    const initials = apt.customerName ? apt.customerName.trim().charAt(0).toUpperCase() : "K";
 
                     return (
-                      <tr key={apt.id} className="hover:bg-amber-50/40 transition">
-                        {/* 1. Mã LH & Loại */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="font-mono font-black text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 inline-block text-[11px]">
+                      <tr key={apt.id} className="hover:bg-amber-50/50 transition">
+                        {/* 1. KHÁCH HÀNG & SĐT (ƯU TIÊN NỔI BẬT #1) */}
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 text-[#0B192C] font-black flex items-center justify-center text-sm shadow-xs shrink-0">
+                              {initials}
+                            </div>
+                            <div>
+                              <div className="font-black text-sm text-slate-900 leading-tight">{apt.customerName}</div>
+                              <div className="font-mono font-bold text-slate-600 text-[11px] flex items-center gap-1.5 mt-1">
+                                <span>📞 {apt.customerPhone}</span>
+                                <a
+                                  href={`tel:${cleanPhone}`}
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black px-1.5 py-0.5 rounded transition shadow-2xs"
+                                  title="Gọi điện cho khách"
+                                >
+                                  Gọi
+                                </a>
+                                <a
+                                  href={`https://zalo.me/${cleanPhone}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-black px-1.5 py-0.5 rounded transition shadow-2xs"
+                                  title="Mở Zalo khách"
+                                >
+                                  Zalo
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* 2. DỊCH VỤ THẨM MỸ (ƯU TIÊN NỔI BẬT #2) */}
+                        <td className="py-4 px-4">
+                          <div className="flex flex-wrap gap-1.5">
+                            {apt.serviceName.split(/\s*\+\s*|\s*,\s*/).map((srv, idx) => (
+                              <span
+                                key={idx}
+                                className="bg-amber-50 border border-amber-300/80 text-amber-950 text-xs font-black px-3 py-1.5 rounded-xl shadow-2xs flex items-center gap-1 leading-snug"
+                              >
+                                <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                <span>{srv.trim()}</span>
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+
+                        {/* 3. NGÀY & GIỜ HẸN */}
+                        <td className="py-4 px-4 whitespace-nowrap">
+                          <div className="font-mono font-black text-slate-900 bg-slate-100 px-2.5 py-1 rounded-xl border border-slate-200 text-xs inline-flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-amber-600" />
+                            <span>{formatDateVN(apt.date)}</span>
+                            <span className="text-slate-400">•</span>
+                            <Clock className="w-3.5 h-3.5 text-blue-600" />
+                            <span className="text-emerald-700 font-bold">{apt.time}</span>
+                          </div>
+                          <div className="text-[11px] font-bold text-slate-600 flex items-center gap-1 mt-1">
+                            <UserCheck className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                            <span>{apt.doctorName}</span>
+                          </div>
+                        </td>
+
+                        {/* 4. MÃ LH & LOẠI */}
+                        <td className="py-4 px-4 whitespace-nowrap">
+                          <div className="font-mono font-black text-amber-800 bg-amber-50/80 px-2 py-0.5 rounded-md border border-amber-200 inline-block text-[11px]">
                             {apt.id}
                           </div>
                           <div className="mt-1">
@@ -604,53 +666,8 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                           </div>
                         </td>
 
-                        {/* 2. Khách Hàng & SĐT */}
-                        <td className="py-3.5 px-4">
-                          <div className="font-black text-slate-900 text-xs">{apt.customerName}</div>
-                          <div className="font-mono font-bold text-slate-600 text-[11px] flex items-center gap-1.5 mt-0.5">
-                            <span>📞 {apt.customerPhone}</span>
-                            <a
-                              href={`tel:${cleanPhone}`}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black px-1.5 py-0.5 rounded transition shadow-2xs"
-                              title="Gọi Khách"
-                            >
-                              Gọi
-                            </a>
-                            <a
-                              href={`https://zalo.me/${cleanPhone}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-black px-1.5 py-0.5 rounded transition shadow-2xs"
-                              title="Zalo Khách"
-                            >
-                              Zalo
-                            </a>
-                          </div>
-                        </td>
-
-                        {/* 3. Dịch Vụ Đăng Ký */}
-                        <td className="py-3.5 px-4 max-w-xs">
-                          <div className="flex flex-wrap gap-1">
-                            {apt.serviceName.split(/\s*\+\s*|\s*,\s*/).map((srv, idx) => (
-                              <span key={idx} className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black px-2 py-0.5 rounded-md">
-                                ✨ {srv.trim()}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-
-                        {/* 4. Bác Sĩ & Ngày Giờ */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="font-mono font-black text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 text-[11px] inline-block">
-                            📅 {formatDateVN(apt.date)} - ⏰ {apt.time}
-                          </div>
-                          <div className="text-[11px] font-bold text-slate-700 flex items-center gap-1 mt-1">
-                            <UserCheck className="w-3.5 h-3.5 text-amber-600" /> {apt.doctorName}
-                          </div>
-                        </td>
-
-                        {/* 5. CTV Giới Thiệu */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
+                        {/* 5. CTV GIỚI THIỆU */}
+                        <td className="py-4 px-4 whitespace-nowrap">
                           <div className="font-extrabold text-slate-900 text-xs">{apt.ctvName || "CTV"}</div>
                           <div className="font-mono text-[10px] font-bold text-blue-800 flex items-center gap-1 mt-0.5">
                             <span className="bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded">{apt.ctvCode || "SAOHAN-CTV"}</span>
@@ -661,18 +678,18 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                                 rel="noreferrer"
                                 className="text-blue-600 hover:underline font-bold"
                               >
-                                Chat Zalo
+                                Chat
                               </a>
                             )}
                           </div>
                         </td>
 
-                        {/* 6. Trạng Thái CRM */}
-                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        {/* 6. TRẠNG THÁI CRM */}
+                        <td className="py-4 px-4 text-center whitespace-nowrap">
                           <select
                             value={apt.status}
                             onChange={(e) => handleStatusChange(apt, e.target.value as any)}
-                            className="bg-white border border-amber-300 rounded-xl px-2.5 py-1 text-xs font-black text-amber-900 focus:outline-none focus:border-amber-500 shadow-xs cursor-pointer"
+                            className="bg-white border border-amber-300 rounded-xl px-2.5 py-1.5 text-xs font-black text-amber-900 focus:outline-none focus:border-amber-500 shadow-2xs cursor-pointer"
                           >
                             <option value="Chờ xác nhận">⏳ Chờ xác nhận</option>
                             <option value="Đã xác nhận">✅ Đã xác nhận</option>
@@ -682,12 +699,12 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                           </select>
                         </td>
 
-                        {/* 7. Thao Tác */}
-                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        {/* 7. THAO TÁC */}
+                        <td className="py-4 px-4 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => setSelectedDetailAppointment(apt)}
-                              className="bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 font-extrabold text-[11px] px-2 py-1 rounded-xl transition flex items-center gap-1 shadow-2xs"
+                              className="bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 font-extrabold text-[11px] px-2.5 py-1.5 rounded-xl transition flex items-center gap-1 shadow-2xs"
                               title="Xem chi tiết đầy đủ"
                             >
                               <Eye className="w-3.5 h-3.5 text-blue-600" />
@@ -696,7 +713,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
 
                             <button
                               onClick={() => handleOpenEditModal(apt)}
-                              className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-extrabold text-[11px] px-2 py-1 rounded-xl transition flex items-center gap-1 shadow-2xs"
+                              className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-extrabold text-[11px] px-2.5 py-1.5 rounded-xl transition flex items-center gap-1 shadow-2xs"
                               title="Chỉnh sửa lịch hẹn"
                             >
                               <Pencil className="w-3.5 h-3.5 text-amber-600" />
@@ -706,7 +723,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                             {isUserAdmin && (
                               <button
                                 onClick={() => setDeletingAppointmentId(apt.id)}
-                                className="bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 font-extrabold text-[11px] px-2 py-1 rounded-xl transition flex items-center gap-1 shadow-2xs"
+                                className="bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 font-extrabold text-[11px] px-2.5 py-1.5 rounded-xl transition flex items-center gap-1 shadow-2xs"
                                 title="Xóa lịch hẹn vĩnh viễn"
                               >
                                 <Trash2 className="w-3.5 h-3.5 text-rose-600" />
