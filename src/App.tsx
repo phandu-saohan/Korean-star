@@ -157,7 +157,14 @@ export default function App() {
 
   const [leads, setLeads] = useState<ReferralLead[]>(() => {
     const saved = localStorage.getItem("saohan_leads");
-    return saved ? JSON.parse(saved) : INITIAL_LEADS;
+    if (!saved) return [];
+    try {
+      const parsed: ReferralLead[] = JSON.parse(saved);
+      const clean = parsed.filter((l) => l && l.id && !l.id.includes("1785") && !l.id.startsWith("lead-0") && !l.id.startsWith("lead-apt-0"));
+      return clean;
+    } catch {
+      return [];
+    }
   });
 
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
@@ -246,6 +253,21 @@ export default function App() {
 
     setNotifications((prev) => [newNotif, ...prev]);
     showToast(`🎉 Đã cộng +${amount.toLocaleString("vi-VN")} VNĐ hoa hồng vào ví CTV ${ctvCode}!`);
+  };
+
+  const handleDeleteLead = (leadId: string) => {
+    setLeads((prev) => {
+      const updated = prev.filter((l) => l.id !== leadId);
+      safeSetLocalStorage("saohan_leads", JSON.stringify(updated));
+      return updated;
+    });
+    showToast("Đã xóa khách hàng khỏi danh sách!");
+  };
+
+  const handleClearAllLeads = () => {
+    setLeads([]);
+    safeSetLocalStorage("saohan_leads", JSON.stringify([]));
+    showToast("Đã xóa toàn bộ danh sách khách hàng mẫu trên Dashboard CTV!");
   };
 
   const [payoutModalOpen, setPayoutModalOpen] = useState(false);
@@ -1380,6 +1402,8 @@ export default function App() {
               onBookAppointment={(serviceName, notes) => handleBookFromComponent(serviceName, notes)}
               onGenerateServiceLink={(serviceName) => handleGenerateServiceLink(serviceName)}
               onViewBeforeAfter={(serviceId) => handleViewBeforeAfter(serviceId)}
+              onDeleteLead={handleDeleteLead}
+              onClearAllLeads={handleClearAllLeads}
             />
           )}
 

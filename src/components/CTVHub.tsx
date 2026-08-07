@@ -29,7 +29,8 @@ import {
   CalendarHeart,
   HeartPulse,
   Flame,
-  LayoutGrid
+  LayoutGrid,
+  Trash2
 } from "lucide-react";
 import {
   AreaChart,
@@ -59,6 +60,8 @@ interface CTVHubProps {
   onBookAppointment?: (serviceName: string, notes: string) => void;
   onGenerateServiceLink?: (serviceName: string) => void;
   onViewBeforeAfter?: (serviceId: string) => void;
+  onDeleteLead?: (leadId: string) => void;
+  onClearAllLeads?: () => void;
 }
 
 export const CTVHub: React.FC<CTVHubProps> = ({
@@ -73,7 +76,9 @@ export const CTVHub: React.FC<CTVHubProps> = ({
   onSelectTab,
   onBookAppointment,
   onGenerateServiceLink,
-  onViewBeforeAfter
+  onViewBeforeAfter,
+  onDeleteLead,
+  onClearAllLeads
 }) => {
   const PERFORMANCE_DATA = ctvUser.totalRevenue > 0 || ctvUser.successfulReferrals > 0
     ? [
@@ -336,6 +341,22 @@ export const CTVHub: React.FC<CTVHubProps> = ({
               <option value="Đã đặt lịch">Đã đặt lịch</option>
               <option value="Đã tư vấn">Đã tư vấn</option>
             </select>
+
+            {leads.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm("Bạn có chắc chắn muốn xóa toàn bộ danh sách khách hàng giới thiệu mẫu này để chạy dữ liệu thực tế?")) {
+                    if (onClearAllLeads) onClearAllLeads();
+                  }
+                }}
+                className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 transition cursor-pointer"
+                title="Xóa danh sách khách hàng mẫu"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Xóa Danh Sách</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -345,11 +366,27 @@ export const CTVHub: React.FC<CTVHubProps> = ({
             {paginatedLeads.map((lead) => (
               <div 
                 key={lead.id} 
-                className="bg-slate-50/80 hover:bg-white border border-slate-200 hover:border-amber-300 rounded-2xl p-4 transition shadow-xs flex flex-col justify-between space-y-3"
+                className="bg-slate-50/80 hover:bg-white border border-slate-200 hover:border-amber-300 rounded-2xl p-4 transition shadow-xs flex flex-col justify-between space-y-3 relative group"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h4 className="font-extrabold text-sm text-slate-900 truncate">{lead.customerName}</h4>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-extrabold text-sm text-slate-900 truncate">{lead.customerName}</h4>
+                      {onDeleteLead && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`Xóa khách hàng ${lead.customerName} khỏi danh sách?`)) {
+                              onDeleteLead(lead.id);
+                            }
+                          }}
+                          className="p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition cursor-pointer shrink-0"
+                          title="Xóa khách hàng này"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1 text-slate-500 text-xs mt-0.5">
                       <Phone className="w-3 h-3 text-slate-400 shrink-0" />
                       <span className="font-mono text-[11px] truncate">{lead.customerPhone}</span>
