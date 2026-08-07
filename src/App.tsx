@@ -579,6 +579,117 @@ export default function App() {
     }
   }, [activeTab]);
 
+  // Tính toán thời gian thực các chỉ số CTV (Hoa hồng thực nhận, Chờ duyệt, Doanh số tích lũy, Hạng cấp bậc, Tỷ lệ chuyển đổi)
+  const effectiveCtvUser = useMemo(() => {
+    const ctvCode = (ctvUser.code || "").toLowerCase().trim();
+    const ctvName = (ctvUser.name || "").toLowerCase().trim();
+
+    // 1. Danh sách Hóa đơn thuộc CTV
+    const ctvInvoices = invoices.filter(inv => 
+      (inv.ctvCode && inv.ctvCode.toLowerCase().trim() === ctvCode) ||
+      (ctvName && inv.ctvName?.toLowerCase().trim() === ctvName)
+    );
+
+    // 2. Danh sách Lịch hẹn thuộc CTV
+    const ctvAppointments = appointments.filter(apt => 
+      (apt.ctvCode && apt.ctvCode.toLowerCase().trim() === ctvCode) ||
+      (ctvName && apt.ctvName?.toLowerCase().trim() === ctvName)
+    );
+
+    // 3. Danh sách Lead thuộc CTV
+    const ctvLeads = leads.filter(lead => 
+      (lead.ctvCode && lead.ctvCode.toLowerCase().trim() === ctvCode) ||
+      (ctvName && lead.ctvName?.toLowerCase().trim() === ctvName)
+    );
+
+    // 4. Lệnh rút tiền đã giải ngân thành công
+    const ctvPayouts = payoutRequests.filter(p => 
+      ((p.ctvCode && p.ctvCode.toLowerCase().trim() === ctvCode) || (ctvName && p.ctvName?.toLowerCase().trim() === ctvName)) &&
+      (p.status === "Giải ngân thành công" || p.status === "Đã chuyển tiền" || p.status === "Đã duyệt")
+    );
+
+    const totalPaidOut = ctvPayouts.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+    // Metric 1: HOA HỒNG THỰC NHẬN (Ví khả dụng)
+    const completedComm = ctvInvoices
+      .filter(i => i.paymentStatus === "Đã thu đủ (Hoàn thành)")
+      .reduce((sum, i) => sum + (i.commissionAmount || 0), 0);
+
+    const computedAvailable = Math.max(0, completedComm - totalPaidOut);
+    const availableBalance = completedComm > 0 ? computedAvailable : ctvUser.availableBalance;
+
+    const totalCommission = completedComm > 0 ? completedComm : ctvUser.totalCommission;
+
+    // Metric 2: CHỜ DUYỆT (Hoa hồng đã đặt cọc + hoa hồng từ các lịch hẹn đã xác nhận chưa xuất hóa đơn)
+    const depositedComm = ctvInvoices
+      .filter(i => i.paymentStatus === "Đã cọc")
+      .reduce((sum, i) => sum + (i.commissionAmount || 0), 0);
+
+    const invoiceAptIds = new Set(ctvInvoices.map(i => i.appointmentId).filter(Boolean));
+
+    const pendingAptComm = ctvAppointments
+      .filter(a => !invoiceAptIds.has(a.id) && (a.status === "Chờ xác nhận" || a.status === "Đã xác nhận" || a.status === "Đang điều trị"))
+      .reduce((sum, a) => sum + Math.round(35000000 * 0.15), 0);
+
+    const computedPending = depositedComm + pendingAptComm;
+    const pendingBalance = computedPending > 0 ? computedPending : ctvUser.pendingBalance;
+
+    // Metric 3: DOANH SỐ TÍCH LŨY
+    const invoiceRevenue = ctvInvoices
+      .filter(i => i.paymentStatus === "Đã cọc" || i.paymentStatus === "Đã thu đủ (Hoàn thành)")
+      .reduce((sum, i) => sum + (i.totalAmount || 0), 0);
+
+    const aptRevenue = ctvAppointments
+      .filter(a => !invoiceAptIds.has(a.id) && (a.status === "Hoàn thành" || a.status === "Đã xác nhận"))
+      .reduce((sum, a) => sum + 35000000, 0);
+
+    const computedRevenue = invoiceRevenue + aptRevenue;
+    const totalRevenue = computedRevenue > 0 ? computedRevenue : ctvUser.totalRevenue;
+
+    // Tính Cấp Bạc / Vàng / Bạch Kim / Kim Cương động theo doanh số tích lũy
+    let tier = "Bạc";
+    if (totalRevenue >= 500000000) {
+      tier = "Kim Cương";
+    } else if (totalRevenue >= 200000000) {
+      tier = "Bạch Kim";
+    } else if (totalRevenue >= 50000000) {
+      tier = "Vàng";
+    } else {
+      tier = ctvUser.tier || "Kim Cương";
+    }
+
+    // Metric 4: TỶ LỆ CHUYỂN ĐỔI (Số ca chốt thành công / Tổng số ca giới thiệu)
+    const uniqueReferralIds = new Set([
+      ...ctvAppointments.map(a => a.id),
+      ...ctvLeads.map(l => l.id),
+      ...ctvInvoices.map(i => i.appointmentId || i.id)
+    ]);
+    const totalReferrals = Math.max(uniqueReferralIds.size, ctvUser.totalReferrals || 0);
+
+    const successfulIds = new Set([
+      ...ctvInvoices.map(i => i.appointmentId || i.id),
+      ...ctvAppointments.filter(a => a.status === "Đã xác nhận" || a.status === "Đang điều trị" || a.status === "Hoàn thành").map(a => a.id),
+      ...ctvLeads.filter(l => l.status === "Đã đặt lịch" || l.status === "Đã hoàn thành" || l.status === "Đã tư vấn").map(l => l.id)
+    ]);
+    const successfulReferrals = Math.max(successfulIds.size, ctvUser.successfulReferrals || 0);
+
+    const conversionRate = totalReferrals > 0
+      ? Math.round((successfulReferrals / totalReferrals) * 100)
+      : (ctvUser.conversionRate || 0);
+
+    return {
+      ...ctvUser,
+      availableBalance,
+      pendingBalance,
+      totalRevenue,
+      totalCommission,
+      tier,
+      totalReferrals,
+      successfulReferrals,
+      conversionRate
+    };
+  }, [ctvUser, invoices, appointments, leads, payoutRequests]);
+
   // Sync state changes to LocalStorage
   useEffect(() => {
     safeSetLocalStorage("saohan_ctv_user", JSON.stringify(ctvUser));
@@ -1098,14 +1209,14 @@ export default function App() {
                 />
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="font-black text-base sm:text-xl text-white">{ctvUser.name}</h2>
+                    <h2 className="font-black text-base sm:text-xl text-white">{effectiveCtvUser.name}</h2>
                     <span className="bg-gradient-to-r from-amber-400 to-amber-500 text-[#0B192C] font-extrabold text-xs px-2.5 py-0.5 rounded-full font-mono shadow-xs">
-                      Cấp {ctvUser.tier}
+                      Cấp {effectiveCtvUser.tier}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-slate-300 font-mono mt-1">
                     <span>Mã Giới Thiệu:</span>
-                    <strong className="text-amber-400 font-extrabold text-sm">{ctvUser.code}</strong>
+                    <strong className="text-amber-400 font-extrabold text-sm">{effectiveCtvUser.code}</strong>
                     <button
                       onClick={copyCode}
                       className="p-1.5 hover:bg-white/10 rounded-lg transition text-slate-300 hover:text-white"
@@ -1122,14 +1233,14 @@ export default function App() {
                 <div>
                   <span className="text-[10px] sm:text-xs text-slate-300 uppercase block font-semibold">Ví khả dụng:</span>
                   <span className="text-lg sm:text-2xl font-black font-mono text-amber-400">
-                    {ctvUser.availableBalance.toLocaleString("vi-VN")} <span className="text-xs">VNĐ</span>
+                    {effectiveCtvUser.availableBalance.toLocaleString("vi-VN")} <span className="text-xs">VNĐ</span>
                   </span>
                 </div>
 
                 <div>
                   <span className="text-[10px] sm:text-xs text-slate-300 uppercase block font-semibold">Tổng hoa hồng:</span>
                   <span className="text-base sm:text-xl font-bold font-mono text-emerald-400">
-                    {ctvUser.totalCommission.toLocaleString("vi-VN")} <span className="text-xs">VNĐ</span>
+                    {effectiveCtvUser.totalCommission.toLocaleString("vi-VN")} <span className="text-xs">VNĐ</span>
                   </span>
                 </div>
 
@@ -1257,8 +1368,11 @@ export default function App() {
           
           {activeTab === "ctv-dashboard" && (
             <CTVHub
-              ctvUser={ctvUser}
+              ctvUser={effectiveCtvUser}
               leads={leads}
+              appointments={appointments}
+              invoices={invoices}
+              payoutRequests={payoutRequests}
               services={services}
               feedbacks={feedbacks}
               onOpenPayoutModal={() => setPayoutModalOpen(true)}

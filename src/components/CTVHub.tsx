@@ -49,6 +49,9 @@ import { BeforeAfterGallery } from "./BeforeAfterGallery";
 interface CTVHubProps {
   ctvUser: CTVUser;
   leads: ReferralLead[];
+  appointments?: Appointment[];
+  invoices?: AppointmentInvoice[];
+  payoutRequests?: PayoutRequest[];
   services?: ServiceItem[];
   feedbacks?: ServiceFeedback[];
   onOpenPayoutModal: () => void;
@@ -61,6 +64,9 @@ interface CTVHubProps {
 export const CTVHub: React.FC<CTVHubProps> = ({
   ctvUser,
   leads,
+  appointments = [],
+  invoices = [],
+  payoutRequests = [],
   services = [],
   feedbacks = [],
   onOpenPayoutModal,
@@ -222,7 +228,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
             {ctvUser.totalRevenue.toLocaleString("vi-VN")} <span className="text-xs font-normal">đ</span>
           </div>
           <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">
-            Hạng Kim Cương
+            Hạng {ctvUser.tier || "Kim Cương"}
           </div>
         </div>
 
