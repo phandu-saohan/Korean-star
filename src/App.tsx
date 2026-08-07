@@ -33,6 +33,7 @@ import { AuthPage } from "./components/AuthPage";
 import { ProfileEditModal } from "./components/ProfileEditModal";
 import { HelpSupportModal } from "./components/HelpSupportModal";
 import { PullToRefresh } from "./components/PullToRefresh";
+import { updateAppBadgeFromUnread, clearBadge } from "./lib/badge";
 import {
   updateUserProfile,
   fetchServicesFromSupabase,
@@ -531,6 +532,12 @@ export default function App() {
     window.addEventListener("onesignal-notification-toast", handleOsToast);
     return () => window.removeEventListener("onesignal-notification-toast", handleOsToast);
   }, []);
+
+  // Đồng bộ số đếm Badge trên Icon ứng dụng PWA (Android Chrome & iOS 16.4+ Add-to-Home-Screen)
+  useEffect(() => {
+    const unreadCount = notifications.filter((n) => !n.isRead).length;
+    updateAppBadgeFromUnread(unreadCount);
+  }, [notifications]);
 
   // Supabase Realtime WebSocket Listener cho Lịch Hẹn CRM (với xử lý ngắt kết nối an toàn khi 503)
   useEffect(() => {

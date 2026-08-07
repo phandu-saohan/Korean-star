@@ -81,6 +81,24 @@ self.addEventListener('push', (event) => {
     }
   }
 
+  // App Badging API Extraction
+  const unreadCount = 
+    payload.custom?.a?.unreadCount || 
+    payload.additionalData?.unreadCount || 
+    payload.data?.unreadCount || 
+    payload.unreadCount;
+
+  if (unreadCount !== undefined && unreadCount !== null && 'setAppBadge' in navigator) {
+    const count = parseInt(unreadCount, 10);
+    if (!isNaN(count)) {
+      if (count > 0) {
+        navigator.setAppBadge(count).catch((err) => console.warn('[PWA SW] Failed setAppBadge:', err));
+      } else {
+        navigator.clearAppBadge().catch((err) => console.warn('[PWA SW] Failed clearAppBadge:', err));
+      }
+    }
+  }
+
   const options = {
     body: payload.body || payload.message,
     icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="%230B192C"/><text y=".75em" x="50%" text-anchor="middle" font-size="60">✨</text></svg>',
