@@ -250,16 +250,11 @@ export default function App() {
       return updated;
     });
 
-    const newNotif: RealtimeNotification = {
-      id: `notif-${Date.now()}`,
+    addSystemNotification({
       title: "Cộng Tiền Hoa Hồng Vào Ví",
       text: `🎉 Bạn vừa nhận +${amount.toLocaleString("vi-VN")} VNĐ hoa hồng từ ca dịch vụ "${serviceName}"!`,
-      time: "Vừa xong",
-      type: "commission",
-      isRead: false
-    };
-
-    setNotifications((prev) => [newNotif, ...prev]);
+      type: "commission"
+    });
     showToast(`🎉 Đã cộng +${amount.toLocaleString("vi-VN")} VNĐ hoa hồng vào ví CTV ${ctvCode}!`);
   };
 
@@ -493,38 +488,48 @@ export default function App() {
     }
   }, [authUser]);
 
+  // Helper: Thêm thông báo mới vào biểu tượng Chuông Header & lưu localStorage
+  const addSystemNotification = (notif: {
+    title?: string;
+    text: string;
+    type?: "commission" | "lead" | "system" | "promo" | "postop";
+  }) => {
+    const newNotif: RealtimeNotification = {
+      id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      title: notif.title || (notif.type === "commission" ? "Hoa Hồng & Ví" : notif.type === "lead" ? "Lịch Hẹn & Khách Hàng" : "Thông Báo Hệ Thống"),
+      text: notif.text,
+      time: "Vừa xong",
+      type: notif.type || "system",
+      isRead: false
+    };
+
+    setNotifications((prev) => {
+      const updated = [newNotif, ...prev];
+      safeSetLocalStorage("saohan_notifications", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   // Đăng ký nhận Event thông báo Realtime OneSignal để bật Toast & lưu vào biểu tượng Chuông trên Header
   useEffect(() => {
     const handleOsToast = (e: any) => {
-      const { title, message, data } = e.detail || {};
-      if (title || message) {
-        // 1. Hiển thị Toast nổi góc trên bên phải
-        showToast(`${title}: ${message}`);
+      const detail = e.detail || {};
+      const title = detail.title || detail.heading || "Thông Báo KOREAN STAR";
+      const text = detail.message || detail.body || detail.text || "";
 
-        // 2. Tạo đối tượng thông báo mới và lưu vào biểu tượng Chuông trên Header
-        const notifType = data?.type === "COMMISSION" 
-          ? "commission" 
-          : data?.type === "PAYOUT" 
-          ? "system" 
+      if (title || text) {
+        showToast(`${title}: ${text}`);
+
+        const notifType = detail.data?.type === "COMMISSION"
+          ? "commission"
+          : detail.data?.type === "PAYOUT"
+          ? "system"
           : "lead";
 
-        const newNotif: RealtimeNotification = {
-          id: `os-notif-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-          title: title || "Thông Báo OneSignal",
-          text: message || "",
-          time: "Vừa xong",
-          type: notifType,
-          isRead: false
-        };
-
-        setNotifications((prev) => {
-          // Tránh lặp trùng cùng ID thông báo trong 2 giây
-          if (prev.length > 0 && prev[0].title === newNotif.title && prev[0].text === newNotif.text) {
-            return prev;
-          }
-          const updated = [newNotif, ...prev];
-          safeSetLocalStorage("saohan_notifications", JSON.stringify(updated));
-          return updated;
+        addSystemNotification({
+          title,
+          text,
+          type: notifType
         });
       }
     };
@@ -1070,13 +1075,11 @@ export default function App() {
     };
     setLeads([newLead, ...leads]);
 
-    const newNotif: RealtimeNotification = {
-      id: `notif-${Date.now()}`,
-      time: "Vừa xong",
+    addSystemNotification({
+      title: "Lịch Hẹn Mới Khách Hàng",
       text: `🔥 Khách hàng ${newApt.customerName} vừa đặt lịch "${newApt.serviceName}" qua mã ${ctvUser.code}!`,
       type: "lead"
-    };
-    setNotifications([newNotif, ...notifications]);
+    });
 
     showToast(`Tạo lịch hẹn thành công cho khách hàng ${newApt.customerName}!`);
   };
@@ -1175,13 +1178,11 @@ export default function App() {
       successfulReferrals: prev.successfulReferrals + 1
     }));
 
-    const newNotif: RealtimeNotification = {
-      id: `notif-${Date.now()}`,
-      time: "Vừa xong",
+    addSystemNotification({
+      title: "Admin Duyệt Đơn Hoa Hồng",
       text: `🎉 Admin vừa duyệt đơn ${lead.customerName}! Hoa hồng +${lead.commission.toLocaleString("vi-VN")}đ đã cộng vào ví.`,
       type: "commission"
-    };
-    setNotifications([newNotif, ...notifications]);
+    });
 
     showToast(`Đã duyệt đơn và cộng ${lead.commission.toLocaleString("vi-VN")}đ hoa hồng vào tài khoản CTV!`);
   };

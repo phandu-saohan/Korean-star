@@ -181,37 +181,40 @@ export const Header: React.FC<HeaderProps> = ({
             <PWAInstallPrompt />
 
             {/* Notification Bell Dropdown */}
-            <div className="relative" ref={notifRef}>
-              <button
-                onClick={() => setNotifOpen(!notifOpen)}
-                className="relative p-2 sm:p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition cursor-pointer"
-                title="Thông báo hệ thống"
-              >
-                <Bell className="w-4 h-4 text-amber-400" />
-                {notifications.filter((n) => n.isRead === false || (n.isRead === undefined && notifications.length > 0)).length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white font-mono text-[9px] font-extrabold flex items-center justify-center animate-pulse shadow-xs">
-                    {notifications.filter((n) => n.isRead === false || (n.isRead === undefined && notifications.length > 0)).length}
-                  </span>
-                )}
-              </button>
+            {(() => {
+              const unreadNotificationsCount = notifications.filter((n) => n.isRead !== true).length;
+              return (
+                <div className="relative" ref={notifRef}>
+                  <button
+                    onClick={() => setNotifOpen(!notifOpen)}
+                    className="relative p-2 sm:p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition cursor-pointer"
+                    title="Thông báo hệ thống"
+                  >
+                    <Bell className="w-4 h-4 text-amber-400" />
+                    {unreadNotificationsCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-red-500 text-white font-mono text-[9px] font-extrabold flex items-center justify-center animate-pulse shadow-xs border border-white/20">
+                        {unreadNotificationsCount > 99 ? "99+" : unreadNotificationsCount}
+                      </span>
+                    )}
+                  </button>
 
-              {notifOpen && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-24px)] bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl z-50 p-3.5 space-y-3 animate-scaleUp text-xs">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
-                        <Bell className="w-4 h-4 text-amber-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-extrabold text-slate-900 text-xs">Thông Báo Thời Gian Thực</h4>
-                        <span className="text-[10px] text-slate-500 font-medium">Cập nhật biến động CRM & Hoa hồng</span>
-                      </div>
-                    </div>
+                  {notifOpen && (
+                    <div className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-24px)] bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl z-50 p-3.5 space-y-3 animate-scaleUp text-xs">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                            <Bell className="w-4 h-4 text-amber-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-extrabold text-slate-900 text-xs">Thông Báo Thời Gian Thực</h4>
+                            <span className="text-[10px] text-slate-500 font-medium">Cập nhật biến động CRM & Hoa hồng</span>
+                          </div>
+                        </div>
 
-                    <span className="text-[10px] text-amber-700 font-mono font-black bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 shrink-0">
-                      {notifications.filter((n) => !n.isRead).length} chưa đọc
-                    </span>
-                  </div>
+                        <span className="text-[10px] text-amber-700 font-mono font-black bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 shrink-0">
+                          {unreadNotificationsCount} chưa đọc
+                        </span>
+                      </div>
 
                   {/* Browser Push Permission Banner */}
                   {pushPerm !== "granted" && (
@@ -334,6 +337,8 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
               )}
             </div>
+          );
+        })()}
 
             {/* Account Dropdown Menu (Gồm Tên, Đổi mật khẩu & Đăng xuất) */}
             <div className="relative" ref={dropdownRef}>
