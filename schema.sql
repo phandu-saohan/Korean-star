@@ -53,16 +53,28 @@ CREATE POLICY "Public Update User Profiles" ON public.user_profiles FOR UPDATE U
 
 
 
--- 2. BẢNG CMS_SETTINGS (Cấu hình thương hiệu, Logo, Hotline, Địa chỉ & Tỷ lệ hoa hồng)
+-- 2. BẢNG CMS_SETTINGS (Cấu hình thương hiệu, Logo PWA, Hotline, Địa chỉ & Tỷ lệ hoa hồng)
 CREATE TABLE IF NOT EXISTS public.cms_settings (
   id INT PRIMARY KEY DEFAULT 1,
   hospital_name TEXT DEFAULT 'KOREAN STAR',
   logo_url TEXT,
+  pwa_logo_url TEXT,
+  pwa_app_name TEXT DEFAULT 'KOREAN STAR - Hệ Thống CTV & Thẩm Mỹ',
+  pwa_short_name TEXT DEFAULT 'KOREAN STAR',
+  pwa_theme_color TEXT DEFAULT '#F59E0B',
+  pwa_bg_color TEXT DEFAULT '#0B192C',
+  pwa_description TEXT DEFAULT 'Hệ thống quản lý Cộng tác viên & Đặt lịch dịch vụ thẩm mỹ KOREAN STAR 24/7',
+  pwa_enable_install_prompt BOOLEAN DEFAULT TRUE,
   tagline TEXT DEFAULT 'Hệ Thống Bệnh Viện Thẩm Mỹ Quốc Tế & Quản Lý CTV 24/7',
   hotline TEXT DEFAULT '1900 8888 - 0901 888 999',
+  zalo_support TEXT DEFAULT '0901 888 999',
+  email_support TEXT DEFAULT 'cskh@koreanstar.vn',
   address TEXT DEFAULT 'Số 88 Phố Huế, Q. Hai Bà Trưng, Hà Nội',
   base_commission_rate NUMERIC DEFAULT 15,
+  min_payout_amount NUMERIC DEFAULT 100000,
+  max_single_payout NUMERIC DEFAULT 100000000,
   auto_payout_threshold NUMERIC DEFAULT 50000000,
+  payout_ref_prefix TEXT DEFAULT 'KS-PAY-',
   system_currency TEXT DEFAULT 'VNĐ',
   one_signal_app_id TEXT,
   one_signal_api_key TEXT,
@@ -72,6 +84,47 @@ CREATE TABLE IF NOT EXISTS public.cms_settings (
   ctv_tiers JSONB,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Thêm các cột PWA và Tài chính nếu chưa có trong public.cms_settings
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cms_settings' AND column_name = 'pwa_logo_url') THEN
+        ALTER TABLE public.cms_settings ADD COLUMN pwa_logo_url TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cms_settings' AND column_name = 'pwa_app_name') THEN
+        ALTER TABLE public.cms_settings ADD COLUMN pwa_app_name TEXT DEFAULT 'KOREAN STAR - Hệ Thống CTV & Thẩm Mỹ';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cms_settings' AND column_name = 'pwa_short_name') THEN
+        ALTER TABLE public.cms_settings ADD COLUMN pwa_short_name TEXT DEFAULT 'KOREAN STAR';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cms_settings' AND column_name = 'pwa_theme_color') THEN
+        ALTER TABLE public.cms_settings ADD COLUMN pwa_theme_color TEXT DEFAULT '#F59E0B';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cms_settings' AND column_name = 'pwa_bg_color') THEN
+        ALTER TABLE public.cms_settings ADD COLUMN pwa_bg_color TEXT DEFAULT '#0B192C';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cms_settings' AND column_name = 'pwa_description') THEN
+        ALTER TABLE public.cms_settings ADD COLUMN pwa_description TEXT DEFAULT 'Hệ thống quản lý Cộng tác viên & Đặt lịch dịch vụ thẩm mỹ KOREAN STAR 24/7';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cms_settings' AND column_name = 'pwa_enable_install_prompt') THEN
+        ALTER TABLE public.cms_settings ADD COLUMN pwa_enable_install_prompt BOOLEAN DEFAULT TRUE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cms_settings' AND column_name = 'min_payout_amount') THEN
+        ALTER TABLE public.cms_settings ADD COLUMN min_payout_amount NUMERIC DEFAULT 100000;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cms_settings' AND column_name = 'max_single_payout') THEN
+        ALTER TABLE public.cms_settings ADD COLUMN max_single_payout NUMERIC DEFAULT 100000000;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cms_settings' AND column_name = 'payout_ref_prefix') THEN
+        ALTER TABLE public.cms_settings ADD COLUMN payout_ref_prefix TEXT DEFAULT 'KS-PAY-';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cms_settings' AND column_name = 'zalo_support') THEN
+        ALTER TABLE public.cms_settings ADD COLUMN zalo_support TEXT DEFAULT '0901 888 999';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cms_settings' AND column_name = 'email_support') THEN
+        ALTER TABLE public.cms_settings ADD COLUMN email_support TEXT DEFAULT 'cskh@koreanstar.vn';
+    END IF;
+END $$;
 
 ALTER TABLE public.cms_settings DISABLE ROW LEVEL SECURITY;
 
