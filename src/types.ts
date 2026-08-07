@@ -240,4 +240,5 @@ export interface AppointmentInvoice {
   commissionAmount: number;
   createdAt: string;
   notes?: string;
+  transferProofImage?: string;
 }

@@ -437,9 +437,23 @@ CREATE TABLE IF NOT EXISTS public.appointment_invoices (
   final_paid_at TEXT,
   payment_method TEXT DEFAULT 'VietQR / Chuyển khoản',
   notes TEXT,
+  transfer_proof_image TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Thêm cột transfer_proof_image nếu chưa có
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'appointment_invoices' 
+        AND column_name = 'transfer_proof_image'
+    ) THEN
+        ALTER TABLE public.appointment_invoices ADD COLUMN transfer_proof_image TEXT;
+    END IF;
+END $$;
 
 ALTER TABLE public.appointment_invoices DISABLE ROW LEVEL SECURITY;
 

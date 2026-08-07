@@ -28,7 +28,11 @@ import {
   Stethoscope,
   Copy,
   Check,
-  Banknote
+  Banknote,
+  Upload,
+  Camera,
+  Eye,
+  Image as ImageIcon
 } from "lucide-react";
 
 interface RevenueInvoiceModuleProps {
@@ -78,6 +82,31 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
   const [customCtvCode, setCustomCtvCode] = useState("");
   const [customCtvName, setCustomCtvName] = useState("");
   const [customNotes, setCustomNotes] = useState("");
+
+  // Bank Transfer Proof Image states
+  const [depositProofImage, setDepositProofImage] = useState<string>("");
+  const [finalProofImage, setFinalProofImage] = useState<string>("");
+  const [createProofImage, setCreateProofImage] = useState<string>("");
+  const [viewProofModalUrl, setViewProofModalUrl] = useState<string | null>(null);
+
+  const handleImageFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setter: (base64: string) => void
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Dung lượng ảnh tối đa là 10MB!");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setter(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSelectAppointmentForCreate = (aptId: string) => {
     setSelectedAppointmentId(aptId);
@@ -133,7 +162,8 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
       ctvName: customCtvName || ctvUser?.name || "Kế Toán / Admin",
       createdAt: new Date().toLocaleString("vi-VN"),
       paymentMethod: customPaymentMethod,
-      notes: customNotes
+      notes: customNotes,
+      transferProofImage: createProofImage || undefined
     };
 
     if (onAddInvoice) {
@@ -154,6 +184,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
     }
 
     setIsCreateModalOpen(false);
+    setCreateProofImage("");
   };
 
   // Sync / Auto-generate invoices for appointments that don't have invoices yet
@@ -288,7 +319,8 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
       remainingAmount: Math.max(0, selectedInvoiceForDeposit.totalAmount - depVal),
       paymentStatus: "Đã cọc",
       depositPaidAt: new Date().toLocaleString("vi-VN"),
-      paymentMethod: depositPaymentMethod
+      paymentMethod: depositPaymentMethod,
+      transferProofImage: depositProofImage || selectedInvoiceForDeposit.transferProofImage
     };
 
     onUpdateInvoice(updated);
@@ -300,6 +332,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
 
     setSelectedInvoiceForDeposit(null);
     setDepositInputValue("");
+    setDepositProofImage("");
   };
 
   // Handle Final Payment Settlement Submission
@@ -312,7 +345,8 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
       remainingAmount: 0,
       paymentStatus: "Đã thu đủ (Hoàn thành)",
       remainingPaidAt: new Date().toLocaleString("vi-VN"),
-      paymentMethod: finalPaymentMethod
+      paymentMethod: finalPaymentMethod,
+      transferProofImage: finalProofImage || selectedInvoiceForFinal.transferProofImage
     };
 
     onUpdateInvoice(updated);
@@ -332,6 +366,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
     }
 
     setSelectedInvoiceForFinal(null);
+    setFinalProofImage("");
   };
 
   return (
@@ -605,7 +640,19 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                           </button>
                         )}
 
-                        {/* 3. In Hóa Đơn */}
+                        {/* 3. Xem Bill Chuyển Khoản nếu có */}
+                        {inv.transferProofImage && (
+                          <button
+                            onClick={() => setViewProofModalUrl(inv.transferProofImage!)}
+                            className="bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold text-[11px] px-2 py-1.5 rounded-xl transition inline-flex items-center gap-1 border border-blue-300 cursor-pointer"
+                            title="Xem ảnh bill chuyển khoản đã đính kèm"
+                          >
+                            <Camera className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Xem Bill</span>
+                          </button>
+                        )}
+
+                        {/* 4. In Hóa Đơn */}
                         <button
                           onClick={() => setPrintInvoiceModal(inv)}
                           className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] px-2 py-1.5 rounded-xl transition inline-flex items-center gap-1 border border-slate-300 cursor-pointer"
@@ -677,6 +724,15 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                     className="flex-1 bg-emerald-600 text-white font-black text-xs py-2 rounded-xl text-center"
                   >
                     Thu Đủ & Trích CTV
+                  </button>
+                )}
+                {inv.transferProofImage && (
+                  <button
+                    onClick={() => setViewProofModalUrl(inv.transferProofImage!)}
+                    className="bg-blue-50 text-blue-800 font-bold text-xs px-3 py-2 rounded-xl border border-blue-300 flex items-center gap-1"
+                  >
+                    <Camera className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Xem Bill</span>
                   </button>
                 )}
                 <button
@@ -813,6 +869,57 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                         </span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Upload Bill Chuyển Khoản */}
+                  <div className="bg-blue-950/60 border border-blue-800 rounded-xl p-2.5 space-y-1.5 text-xs text-white">
+                    <label className="block text-[10px] font-extrabold uppercase flex items-center justify-between text-amber-400">
+                      <span className="flex items-center gap-1.5">
+                        <Camera className="w-3.5 h-3.5 text-amber-400" /> TẢI LÊN ẢNH BILL / BIÊN NHẬN CHUYỂN KHOẢN:
+                      </span>
+                    </label>
+                    {depositProofImage ? (
+                      <div className="bg-white text-slate-900 rounded-lg p-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2 truncate">
+                          <img src={depositProofImage} alt="Bill cọc" className="w-12 h-12 object-cover rounded border shrink-0" />
+                          <div className="truncate">
+                            <span className="text-[11px] font-bold text-emerald-700 block truncate">✓ Đã đính kèm ảnh bill</span>
+                            <span className="text-[9px] text-slate-500 block">Bấm mắt kính để xem phóng to</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setViewProofModalUrl(depositProofImage)}
+                            className="p-1.5 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200"
+                            title="Xem ảnh"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDepositProofImage("")}
+                            className="p-1.5 bg-rose-100 text-rose-800 rounded-md hover:bg-rose-200"
+                            title="Xóa ảnh"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="border border-dashed border-blue-700 hover:border-amber-400 bg-blue-900/40 rounded-lg p-2.5 text-center cursor-pointer block transition">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageFileChange(e, setDepositProofImage)}
+                        />
+                        <div className="flex items-center justify-center gap-2 text-slate-200">
+                          <Upload className="w-4 h-4 text-amber-400" />
+                          <span className="text-[11px] font-bold">Bấm vào đây để tải ảnh bill chuyển khoản</span>
+                        </div>
+                      </label>
+                    )}
                   </div>
                 </div>
               )}
@@ -988,6 +1095,57 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                       </div>
                     </div>
                   </div>
+
+                  {/* Upload Bill Chuyển Khoản Thu Đủ */}
+                  <div className="bg-blue-950/60 border border-blue-800 rounded-xl p-2.5 space-y-1.5 text-xs text-white">
+                    <label className="block text-[10px] font-extrabold uppercase flex items-center justify-between text-amber-400">
+                      <span className="flex items-center gap-1.5">
+                        <Camera className="w-3.5 h-3.5 text-amber-400" /> TẢI LÊN ẢNH BILL / BIÊN NHẬN THU ĐỦ TIỀN:
+                      </span>
+                    </label>
+                    {finalProofImage ? (
+                      <div className="bg-white text-slate-900 rounded-lg p-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2 truncate">
+                          <img src={finalProofImage} alt="Bill thu đủ" className="w-12 h-12 object-cover rounded border shrink-0" />
+                          <div className="truncate">
+                            <span className="text-[11px] font-bold text-emerald-700 block truncate">✓ Đã đính kèm ảnh bill</span>
+                            <span className="text-[9px] text-slate-500 block">Bấm mắt kính để xem phóng to</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setViewProofModalUrl(finalProofImage)}
+                            className="p-1.5 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200"
+                            title="Xem ảnh"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFinalProofImage("")}
+                            className="p-1.5 bg-rose-100 text-rose-800 rounded-md hover:bg-rose-200"
+                            title="Xóa ảnh"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="border border-dashed border-blue-700 hover:border-amber-400 bg-blue-900/40 rounded-lg p-2.5 text-center cursor-pointer block transition">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageFileChange(e, setFinalProofImage)}
+                        />
+                        <div className="flex items-center justify-center gap-2 text-slate-200">
+                          <Upload className="w-4 h-4 text-amber-400" />
+                          <span className="text-[11px] font-bold">Bấm vào đây để tải ảnh bill chuyển khoản</span>
+                        </div>
+                      </label>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -1098,6 +1256,31 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                 </tr>
               </tbody>
             </table>
+
+            {/* Ảnh biên nhận chuyển khoản nếu có */}
+            {printInvoiceModal.transferProofImage && (
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 space-y-1.5">
+                <div className="text-[10px] font-extrabold text-blue-900 uppercase flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5 text-blue-600" /> BILL / XÁC NHẬN CHUYỂN KHOẢN ĐÍNH KÈM:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setViewProofModalUrl(printInvoiceModal.transferProofImage!)}
+                    className="text-blue-600 font-bold hover:underline print:hidden flex items-center gap-1 text-[10px]"
+                  >
+                    <Eye className="w-3 h-3" /> Phóng to
+                  </button>
+                </div>
+                <div className="flex justify-center bg-white p-2 rounded-xl border border-slate-200">
+                  <img
+                    src={printInvoiceModal.transferProofImage}
+                    alt="Biên nhận chuyển khoản"
+                    className="max-h-40 w-auto object-contain rounded-lg shadow-2xs"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Footer signatures */}
             <div className="grid grid-cols-2 text-center text-xs pt-4">
@@ -1305,6 +1488,59 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                 </select>
               </div>
 
+              {/* Upload Bill Chuyển Khoản khi tạo Hóa đơn mới */}
+              {customPaymentMethod === "VietQR / Chuyển khoản" && (
+                <div className="bg-blue-50/80 border border-blue-200 rounded-2xl p-3 space-y-2">
+                  <label className="block text-[10px] font-extrabold text-blue-900 uppercase flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Camera className="w-4 h-4 text-blue-600" /> Upload Bill / Ảnh Xác Nhận Chuyển Khoản:
+                    </span>
+                  </label>
+                  {createProofImage ? (
+                    <div className="bg-white rounded-xl border border-emerald-300 p-2 flex items-center justify-between">
+                      <div className="flex items-center gap-2 truncate">
+                        <img src={createProofImage} alt="Bill tạo mới" className="w-12 h-12 object-cover rounded border shrink-0" />
+                        <div className="truncate">
+                          <span className="text-[11px] font-bold text-emerald-700 block truncate">✓ Đã đính kèm ảnh bill</span>
+                          <span className="text-[9px] text-slate-500 block">Bấm để phóng to hoặc xóa</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setViewProofModalUrl(createProofImage)}
+                          className="p-1.5 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200"
+                          title="Xem ảnh"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCreateProofImage("")}
+                          className="p-1.5 bg-rose-100 text-rose-800 rounded-md hover:bg-rose-200"
+                          title="Xóa ảnh"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="border border-dashed border-blue-300 hover:border-blue-500 bg-white rounded-xl p-2.5 text-center cursor-pointer block transition">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleImageFileChange(e, setCreateProofImage)}
+                      />
+                      <div className="flex items-center justify-center gap-2 text-slate-700">
+                        <Upload className="w-4 h-4 text-blue-600" />
+                        <span className="text-[11px] font-bold">Tải ảnh biên nhận / bill chuyển khoản lên</span>
+                      </div>
+                    </label>
+                  )}
+                </div>
+              )}
+
               {/* Ghi chú */}
               <div>
                 <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
@@ -1336,6 +1572,43 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 9. MODAL XEM ẢNH BILL CHUYỂN KHOẢN PHÓNG TO */}
+      {viewProofModalUrl && (
+        <div className="fixed inset-0 z-[60] bg-[#0B192C]/90 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-4 shadow-2xl space-y-3 relative border border-slate-300">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <span className="font-black text-xs text-slate-900 flex items-center gap-1.5 uppercase">
+                <Camera className="w-4 h-4 text-blue-600" /> ẢNH BILL CHUYỂN KHOẢN NGÂN HÀNG
+              </span>
+              <button
+                onClick={() => setViewProofModalUrl(null)}
+                className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="bg-slate-950 rounded-2xl p-2 flex items-center justify-center max-h-[70vh] overflow-hidden">
+              <img src={viewProofModalUrl} alt="Bill chuyển khoản phóng to" className="max-h-[65vh] w-auto object-contain rounded-lg" />
+            </div>
+            <div className="flex items-center justify-between text-xs pt-1">
+              <a
+                href={viewProofModalUrl}
+                download="bill-chuyen-khoan.png"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 text-[11px]"
+              >
+                <Upload className="w-3.5 h-3.5 rotate-180" /> Tải Ảnh Bill Về Máy
+              </a>
+              <button
+                onClick={() => setViewProofModalUrl(null)}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold px-4 py-2 rounded-xl text-[11px] cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}
