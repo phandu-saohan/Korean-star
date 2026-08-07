@@ -45,10 +45,22 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
   const [fullName, setFullName] = useState(authUser?.fullName || ctvUser.name || "");
   const [email] = useState(authUser?.email || "user@koreanstar.vn");
   const [phone, setPhone] = useState(authUser?.phone || ctvUser.phone || "");
-  const [bankAccount, setBankAccount] = useState(authUser?.accountNumber || ctvUser.bankAccount || "");
-  const [bankName, setBankName] = useState(authUser?.bankName || ctvUser.bankName || "MB Bank");
-  const [idCardNumber, setIdCardNumber] = useState(authUser?.idCardNumber || "");
-  const [facilityName, setFacilityName] = useState(authUser?.facilityName || "");
+  const [bankAccount, setBankAccount] = useState(
+    authUser?.accountNumber ||
+    (typeof ctvUser.bankAccount === "object" ? ctvUser.bankAccount?.accountNumber : ctvUser.bankAccount) ||
+    ""
+  );
+  const [bankName, setBankName] = useState(
+    authUser?.bankName ||
+    (typeof ctvUser.bankAccount === "object" ? ctvUser.bankAccount?.bankName : "") ||
+    "MB Bank"
+  );
+  const [idCardNumber, setIdCardNumber] = useState(
+    authUser?.idCardNumber || (ctvUser as any).idCardNumber || ""
+  );
+  const [facilityName, setFacilityName] = useState(
+    authUser?.facilityName || (ctvUser as any).facilityName || ""
+  );
   const [zaloChatId, setZaloChatId] = useState(authUser?.zaloChatId || ctvUser.zaloChatId || "");
   const [avatarPreview, setAvatarPreview] = useState<string>(
     authUser?.avatarUrl || authUser?.avatar || ctvUser.avatar || ""

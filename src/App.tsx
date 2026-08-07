@@ -327,25 +327,34 @@ export default function App() {
       localStorage.setItem("saohan_active_tab", "ctv-dashboard");
     }
 
-    if (userProfile.fullName) {
+    if (userProfile && userProfile.fullName) {
       setCtvUser((prev) => ({
         ...prev,
+        id: userProfile.id || prev.id,
         name: userProfile.fullName,
         code: userProfile.ctvCode || prev.code,
         phone: userProfile.phone || prev.phone,
+        email: userProfile.email || (prev as any).email,
         tier: userProfile.tier || prev.tier,
         avatar: userProfile.avatarUrl || userProfile.avatar || prev.avatar,
         availableBalance: userProfile.availableBalance ?? prev.availableBalance,
         pendingBalance: userProfile.pendingBalance ?? prev.pendingBalance,
         totalRevenue: userProfile.totalRevenue ?? prev.totalRevenue,
-        totalCommission: userProfile.totalCommission ?? prev.totalCommission
+        totalCommission: userProfile.totalCommission ?? prev.totalCommission,
+        idCardNumber: userProfile.idCardNumber || (prev as any).idCardNumber,
+        facilityName: userProfile.facilityName || (prev as any).facilityName,
+        bankAccount: {
+          bankName: userProfile.bankName || prev.bankAccount?.bankName || "MB Bank",
+          accountNumber: userProfile.accountNumber || prev.bankAccount?.accountNumber || "",
+          accountHolder: userProfile.accountHolder || userProfile.fullName?.toUpperCase() || prev.bankAccount?.accountHolder || ""
+        }
       }));
     }
 
-    showToast(`Đăng nhập Supabase thành công! Chào mừng ${userProfile.fullName}`);
+    showToast(`Đăng nhập thành công! Chào mừng CTV ${userProfile.fullName}`);
   };
 
-  // Sync authUser to ctvUser state & role/tab persistence
+  // Sync authUser to ctvUser state & role/tab persistence (Lưu đầy đủ 8 trường đăng ký cá nhân)
   useEffect(() => {
     if (authUser) {
       if (authUser.role && authUser.role !== currentRole) {
@@ -355,15 +364,24 @@ export default function App() {
 
       setCtvUser((prev) => ({
         ...prev,
+        id: authUser.id || prev.id,
         name: authUser.fullName || prev.name,
         code: authUser.ctvCode || prev.code,
         phone: authUser.phone || prev.phone,
+        email: authUser.email || (prev as any).email,
         tier: authUser.tier || prev.tier,
         avatar: authUser.avatarUrl || authUser.avatar || prev.avatar,
         availableBalance: authUser.availableBalance ?? prev.availableBalance,
         pendingBalance: authUser.pendingBalance ?? prev.pendingBalance,
         totalRevenue: authUser.totalRevenue ?? prev.totalRevenue,
-        totalCommission: authUser.totalCommission ?? prev.totalCommission
+        totalCommission: authUser.totalCommission ?? prev.totalCommission,
+        idCardNumber: authUser.idCardNumber || (prev as any).idCardNumber,
+        facilityName: authUser.facilityName || (prev as any).facilityName,
+        bankAccount: {
+          bankName: authUser.bankName || prev.bankAccount?.bankName || "MB Bank",
+          accountNumber: authUser.accountNumber || prev.bankAccount?.accountNumber || "",
+          accountHolder: authUser.accountHolder || (authUser.fullName ? authUser.fullName.toUpperCase() : prev.bankAccount?.accountHolder || "")
+        }
       }));
     }
   }, [authUser]);
