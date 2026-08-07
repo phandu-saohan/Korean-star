@@ -128,3 +128,18 @@ export const getBankLogo = (bankNameOrCode: string): string => {
   );
   return found ? found.logo : "https://api.vietqr.io/img/VCB.png";
 };
+
+export const generateVietQRUrl = (
+  bankCode: string = "MB",
+  accountNumber: string = "888899998888",
+  accountName: string = "BENH VIEN THAM MY KOREAN STAR",
+  amount: number = 0,
+  addInfo: string = "THANH TOAN THAM MY"
+): string => {
+  const cleanBank = (bankCode || "MB").toUpperCase();
+  const cleanAcc = encodeURIComponent((accountNumber || "888899998888").trim());
+  const cleanName = encodeURIComponent((accountName || "BENH VIEN THAM MY KOREAN STAR").trim());
+  const cleanInfo = encodeURIComponent((addInfo || "THANH TOAN THAM MY").trim());
+
+  return `https://img.vietqr.io/image/${cleanBank}-${cleanAcc}-compact2.png?amount=${amount}&addInfo=${cleanInfo}&accountName=${cleanName}`;
+};

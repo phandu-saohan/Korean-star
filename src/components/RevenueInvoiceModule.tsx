@@ -4,6 +4,7 @@ import {
   AppointmentInvoice, 
   CTVUser 
 } from "../types";
+import { generateVietQRUrl } from "../lib/banks";
 import { 
   DollarSign, 
   Receipt, 
@@ -23,7 +24,10 @@ import {
   ShieldCheck, 
   Wallet,
   AlertCircle,
-  Stethoscope
+  Stethoscope,
+  Copy,
+  Check,
+  Banknote
 } from "lucide-react";
 
 interface RevenueInvoiceModuleProps {
@@ -172,6 +176,8 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
 
     return { totalRev, totalDep, totalRem, totalComm };
   }, [effectiveInvoices]);
+
+  const [copiedAcc, setCopiedAcc] = useState(false);
 
   // Handle Deposit Submission
   const handleConfirmDepositSubmit = (e: React.FormEvent) => {
@@ -641,26 +647,117 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                 </span>
               </div>
 
+              {/* Chọn Phương Thức Thanh Toán */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                  Hình Thức Thanh Toán:
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+                  Phương Thức Thanh Toán:
                 </label>
-                <select
-                  value={depositPaymentMethod}
-                  onChange={(e) => setDepositPaymentMethod(e.target.value as any)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-2xl p-2.5 text-xs font-bold text-slate-800"
-                >
-                  <option value="VietQR / Chuyển khoản">VietQR / Chuyển khoản ngân hàng</option>
-                  <option value="Tiền mặt">Tiền mặt tại quầy thu ngân</option>
-                  <option value="Thẻ ATM/Visa">Thẻ ATM / Visa / Quẹt thẻ POS</option>
-                </select>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: "VietQR / Chuyển khoản", label: "VietQR Chuyển Khoản", icon: QrCode, color: "text-blue-600 bg-blue-50 border-blue-200" },
+                    { id: "Tiền mặt", label: "Tiền Mặt Quầy", icon: Banknote, color: "text-amber-600 bg-amber-50 border-amber-200" },
+                    { id: "Thẻ ATM/Visa", label: "Quẹt Thẻ POS", icon: CreditCard, color: "text-purple-600 bg-purple-50 border-purple-200" }
+                  ].map((m) => {
+                    const IconC = m.icon;
+                    const isSel = depositPaymentMethod === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setDepositPaymentMethod(m.id as any)}
+                        className={`p-2.5 rounded-2xl border text-center transition flex flex-col items-center gap-1 cursor-pointer ${
+                          isSel
+                            ? "bg-[#0B192C] text-amber-400 border-[#0B192C] shadow-md ring-2 ring-amber-400"
+                            : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                        }`}
+                      >
+                        <IconC className={`w-4 h-4 ${isSel ? "text-amber-400" : m.color.split(" ")[0]}`} />
+                        <span className="text-[10px] font-black leading-tight">{m.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+
+              {/* Dynamic VietQR Code Box */}
+              {depositPaymentMethod === "VietQR / Chuyển khoản" && (
+                <div className="bg-[#0B192C] text-white rounded-2xl p-3.5 space-y-3 border border-blue-900 shadow-inner animate-fadeIn">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black text-amber-400 uppercase flex items-center gap-1.5">
+                      <QrCode className="w-3.5 h-3.5" /> QUÉT MÃ VIETQR CHUYỂN KHOẢN TỰ ĐỘNG
+                    </span>
+                    <span className="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                      MB Bank
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-3 bg-white p-2.5 rounded-xl text-slate-900">
+                    <img
+                      src={generateVietQRUrl("MB", "888899998888", "BENH VIEN THAM MY KOREAN STAR", parseInt(depositInputValue) || 0, `COC ${selectedInvoiceForDeposit.id}`)}
+                      alt="VietQR Code"
+                      className="w-32 h-32 object-contain rounded-lg border border-slate-200 shadow-sm shrink-0"
+                    />
+                    <div className="space-y-1 text-xs text-left w-full">
+                      <div>
+                        <span className="text-slate-400 block text-[9px] font-extrabold uppercase">TÊN TÀI KHOẢN:</span>
+                        <strong className="text-slate-900 text-[11px] font-black uppercase">BỆNH VIỆN THẨM MỸ KOREAN STAR</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] font-extrabold uppercase">SỐ TÀI KHOẢN (MBBANK):</span>
+                        <div className="flex items-center gap-2">
+                          <strong className="text-blue-900 font-mono text-sm font-black">8888 9999 8888</strong>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText("888899998888");
+                              setCopiedAcc(true);
+                              setTimeout(() => setCopiedAcc(false), 2000);
+                            }}
+                            className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-blue-700"
+                            title="Sao chép số tài khoản"
+                          >
+                            {copiedAcc ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] font-extrabold uppercase">NỘI DUNG CHUYỂN KHOẢN:</span>
+                        <span className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-mono font-black text-[11px] inline-block">
+                          COC {selectedInvoiceForDeposit.id}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Cash Box */}
+              {depositPaymentMethod === "Tiền mặt" && (
+                <div className="bg-amber-50 border border-amber-300 rounded-2xl p-3 flex items-center gap-3 text-xs text-amber-900 animate-fadeIn">
+                  <Banknote className="w-8 h-8 text-amber-600 shrink-0" />
+                  <div>
+                    <strong className="font-black text-slate-900 block">Thanh toán Tiền mặt tại Quầy Thu Ngân</strong>
+                    <p className="text-[11px] text-slate-600 mt-0.5">Thu ngân kiểm đếm tiền mặt trực tiếp và xuất biên nhận giữ suất phẫu thuật.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* POS Card Box */}
+              {depositPaymentMethod === "Thẻ ATM/Visa" && (
+                <div className="bg-blue-50 border border-blue-300 rounded-2xl p-3 flex items-center gap-3 text-xs text-blue-950 animate-fadeIn">
+                  <CreditCard className="w-8 h-8 text-blue-600 shrink-0" />
+                  <div>
+                    <strong className="font-black text-slate-900 block">Quẹt Thẻ ATM / Visa / POS Quầy Thu Ngân</strong>
+                    <p className="text-[11px] text-slate-600 mt-0.5">Hỗ trợ tất cả các thẻ ngân hàng nội địa & quốc tế, miễn phí quẹt thẻ.</p>
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setSelectedInvoiceForDeposit(null)}
-                  className="flex-1 bg-slate-100 text-slate-700 font-extrabold text-xs py-3 rounded-2xl"
+                  className="flex-1 bg-slate-100 text-slate-700 font-extrabold text-xs py-3 rounded-2xl cursor-pointer"
                 >
                   Hủy Bỏ
                 </button>
@@ -724,20 +821,111 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
             </div>
 
             <div className="space-y-4">
+              {/* Chọn Phương Thức Thanh Toán */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                  Phương Thức Thu Tiền:
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+                  Phương Thức Thu Tiền Còn Lại:
                 </label>
-                <select
-                  value={finalPaymentMethod}
-                  onChange={(e) => setFinalPaymentMethod(e.target.value as any)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-2xl p-2.5 text-xs font-bold text-slate-800"
-                >
-                  <option value="VietQR / Chuyển khoản">VietQR / Chuyển khoản ngân hàng</option>
-                  <option value="Tiền mặt">Tiền mặt tại quầy thu ngân</option>
-                  <option value="Thẻ ATM/Visa">Thẻ ATM / Visa / Quẹt thẻ POS</option>
-                </select>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: "VietQR / Chuyển khoản", label: "VietQR Chuyển Khoản", icon: QrCode, color: "text-blue-600 bg-blue-50 border-blue-200" },
+                    { id: "Tiền mặt", label: "Tiền Mặt Quầy", icon: Banknote, color: "text-amber-600 bg-amber-50 border-amber-200" },
+                    { id: "Thẻ ATM/Visa", label: "Quẹt Thẻ POS", icon: CreditCard, color: "text-purple-600 bg-purple-50 border-purple-200" }
+                  ].map((m) => {
+                    const IconC = m.icon;
+                    const isSel = finalPaymentMethod === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setFinalPaymentMethod(m.id as any)}
+                        className={`p-2.5 rounded-2xl border text-center transition flex flex-col items-center gap-1 cursor-pointer ${
+                          isSel
+                            ? "bg-[#0B192C] text-amber-400 border-[#0B192C] shadow-md ring-2 ring-amber-400"
+                            : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                        }`}
+                      >
+                        <IconC className={`w-4 h-4 ${isSel ? "text-amber-400" : m.color.split(" ")[0]}`} />
+                        <span className="text-[10px] font-black leading-tight">{m.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+
+              {/* Dynamic VietQR Code Box */}
+              {finalPaymentMethod === "VietQR / Chuyển khoản" && (
+                <div className="bg-[#0B192C] text-white rounded-2xl p-3.5 space-y-3 border border-blue-900 shadow-inner animate-fadeIn">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black text-amber-400 uppercase flex items-center gap-1.5">
+                      <QrCode className="w-3.5 h-3.5" /> QUÉT MÃ VIETQR THU ĐỦ NỐT TIỀN
+                    </span>
+                    <span className="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                      MB Bank
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-3 bg-white p-2.5 rounded-xl text-slate-900">
+                    <img
+                      src={generateVietQRUrl("MB", "888899998888", "BENH VIEN THAM MY KOREAN STAR", selectedInvoiceForFinal.remainingAmount, `THU DU ${selectedInvoiceForFinal.id}`)}
+                      alt="VietQR Code"
+                      className="w-32 h-32 object-contain rounded-lg border border-slate-200 shadow-sm shrink-0"
+                    />
+                    <div className="space-y-1 text-xs text-left w-full">
+                      <div>
+                        <span className="text-slate-400 block text-[9px] font-extrabold uppercase">TÊN TÀI KHOẢN:</span>
+                        <strong className="text-slate-900 text-[11px] font-black uppercase">BỆNH VIỆN THẨM MỸ KOREAN STAR</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] font-extrabold uppercase">SỐ TÀI KHOẢN (MBBANK):</span>
+                        <div className="flex items-center gap-2">
+                          <strong className="text-blue-900 font-mono text-sm font-black">8888 9999 8888</strong>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText("888899998888");
+                              setCopiedAcc(true);
+                              setTimeout(() => setCopiedAcc(false), 2000);
+                            }}
+                            className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-blue-700"
+                            title="Sao chép số tài khoản"
+                          >
+                            {copiedAcc ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] font-extrabold uppercase">NỘI DUNG CHUYỂN KHOẢN:</span>
+                        <span className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-mono font-black text-[11px] inline-block">
+                          THU DU {selectedInvoiceForFinal.id}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Cash Box */}
+              {finalPaymentMethod === "Tiền mặt" && (
+                <div className="bg-amber-50 border border-amber-300 rounded-2xl p-3 flex items-center gap-3 text-xs text-amber-900 animate-fadeIn">
+                  <Banknote className="w-8 h-8 text-amber-600 shrink-0" />
+                  <div>
+                    <strong className="font-black text-slate-900 block">Thanh toán Tiền mặt tại Quầy Thu Ngân</strong>
+                    <p className="text-[11px] text-slate-600 mt-0.5">Thu ngân nhận đủ tiền mặt còn lại ({selectedInvoiceForFinal.remainingAmount.toLocaleString("vi-VN")} VNĐ) trước khi bác sĩ phẫu thuật.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* POS Card Box */}
+              {finalPaymentMethod === "Thẻ ATM/Visa" && (
+                <div className="bg-blue-50 border border-blue-300 rounded-2xl p-3 flex items-center gap-3 text-xs text-blue-950 animate-fadeIn">
+                  <CreditCard className="w-8 h-8 text-blue-600 shrink-0" />
+                  <div>
+                    <strong className="font-black text-slate-900 block">Quẹt Thẻ ATM / Visa / POS Quầy Thu Ngân</strong>
+                    <p className="text-[11px] text-slate-600 mt-0.5">Quẹt thẻ thu nốt {selectedInvoiceForFinal.remainingAmount.toLocaleString("vi-VN")} VNĐ, in bill máy POS dán kèm hóa đơn.</p>
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center gap-3 pt-2">
                 <button
