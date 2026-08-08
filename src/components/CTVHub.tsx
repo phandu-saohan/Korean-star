@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { formatCurrencyInput, parseCurrencyInput, formatDateTimeVN } from "../utils/formatters";
 import { CTVUser, ReferralLead, ServiceItem, ServiceFeedback, Appointment, AppointmentInvoice, PayoutRequest, TeamRevenueTransfer } from "../types";
-import { fetchUserProfileByCtvCode, updateTeamLeaderInSupabase } from "../lib/supabase";
+import { fetchUserProfileByCtvCode, updateTeamLeaderInSupabase, fetchMyTransferRequestsFromSupabase } from "../lib/supabase";
 import { 
   Wallet, 
   Crown, 
@@ -144,7 +144,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
         { month: "Hiện tại", revenue: ctvUser.totalRevenue, commission: ctvUser.totalCommission, referrals: ctvUser.successfulReferrals }
       ]
     : [];
-  const [activeSubTab, setActiveSubTab] = useState<"overview" | "services" | "feedbacks" | "team-members" | "team-transfers">("overview");
+  const [activeSubTab, setActiveSubTab] = useState<"overview" | "services" | "feedbacks" | "team-members" | "team-transfers" | "ctv-transfers">("overview");
   const [customCode, setCustomCode] = useState(ctvUser.code);
   const [customerDiscount, setCustomerDiscount] = useState("10");
   const [copiedLink, setCopiedLink] = useState(false);
@@ -152,6 +152,34 @@ export const CTVHub: React.FC<CTVHubProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
+
+  // My CTV Revenue Transfers state & Supabase sync
+  const [myTransfers, setMyTransfers] = useState<TeamRevenueTransfer[]>(() => {
+    try {
+      const raw = localStorage.getItem("saohan_team_transfers");
+      if (!raw) return [];
+      const all: TeamRevenueTransfer[] = JSON.parse(raw);
+      const codeUpper = (ctvUser?.code || "").trim().toUpperCase();
+      return all.filter((t) => (t.fromCtvCode || "").trim().toUpperCase() === codeUpper);
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    if (ctvUser?.code) {
+      fetchMyTransferRequestsFromSupabase(ctvUser.code).then((sbTransfers) => {
+        if (sbTransfers && sbTransfers.length > 0) {
+          setMyTransfers((prev) => {
+            const map = new Map<string, TeamRevenueTransfer>();
+            prev.forEach((t) => map.set(t.id, t));
+            sbTransfers.forEach((t) => map.set(t.id, t));
+            return Array.from(map.values());
+          });
+        }
+      });
+    }
+  }, [ctvUser?.code]);
 
   // Team Leader state & handlers
   const leaderCode = ctvUser?.code || "";
@@ -428,11 +456,10 @@ export const CTVHub: React.FC<CTVHubProps> = ({
         { id: "team-members", title: "Thành Viên Nhóm", sub: "Quản lý nhóm CTV", icon: Users, color: "from-blue-600 to-indigo-700" },
         { id: "team-transfers", title: "Chuyển Doanh Số", sub: "Duyệt doanh số nhóm", icon: ArrowUpRight, color: "from-amber-500 to-amber-600" }
       ]
-    : hasTeamLeader
-    ? [
-        { id: "send-team-transfer", title: "Chuyển Doanh Số", sub: "Gửi lên Trưởng nhóm", icon: ArrowUpRight, color: "from-blue-600 to-indigo-600" }
-      ]
-    : [];
+    : [
+        { id: "send-team-transfer", title: "Chuyển Doanh Số", sub: "Gửi lên Trưởng nhóm", icon: ArrowUpRight, color: "from-amber-500 to-orange-600" },
+        { id: "ctv-transfers", title: "Lịch Sử Chuyển", sub: "Theo dõi duyệt doanh số", icon: Clock, color: "from-blue-600 to-indigo-700" }
+      ];
 
   const ctvModules = [...baseModules, ...teamLeaderModules];
 
@@ -790,8 +817,123 @@ export const CTVHub: React.FC<CTVHubProps> = ({
           ) : (
             <div className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-2 shadow-sm">
               <ArrowUpRight className="w-12 h-12 mx-auto text-slate-300" />
-              <p className="font-bold text-slate-700">Chưa có yêu cầu chuyển doanh số nào</p>
-              <p className="text-xs text-slate-500">Các yêu cầu chuyển doanh số từ CTV thành viên sẽ xuất hiện tại đây dưới dạng Grid gọn gàng.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SUBTAB: LỊCH SỬ CHUYỂN DOANH SỐ CỦA CTV */}
+      {activeSubTab === "ctv-transfers" && (
+        <div className="space-y-4 animate-fadeIn">
+          {/* Header Bar */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setActiveSubTab("overview")}
+                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                title="Quay lại Dashboard"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h2 className="font-black text-slate-900 text-base sm:text-lg flex items-center gap-2">
+                  <ArrowUpRight className="w-5 h-5 text-amber-600" />
+                  Lịch Sử Chuyển Doanh Số ({myTransfers.length})
+                </h2>
+                <p className="text-xs text-slate-500 font-medium">Theo dõi các yêu cầu chuyển doanh số bạn đã gửi tới Trưởng nhóm</p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => { if (onOpenTeamTransferModal) onOpenTeamTransferModal(); }}
+              className="bg-[#0B192C] hover:bg-slate-800 text-amber-400 font-black text-xs px-4 py-2.5 rounded-2xl flex items-center gap-1.5 transition shadow-sm w-full sm:w-auto justify-center cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Chuyển doanh số mới
+            </button>
+          </div>
+
+          {/* Stat Summary Bar */}
+          <div className="grid grid-cols-3 gap-2.5">
+            <div className="bg-amber-50 border border-amber-200 p-3 rounded-2xl">
+              <span className="text-[10px] text-amber-700 font-extrabold uppercase block">⏳ Đang chờ duyệt</span>
+              <span className="text-base sm:text-lg font-black text-amber-900 font-mono">
+                {myTransfers.filter((t) => t.status === "pending").reduce((s, t) => s + (t.amount || 0), 0).toLocaleString("vi-VN")}đ
+              </span>
+            </div>
+            <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">
+              <span className="text-[10px] text-emerald-700 font-extrabold uppercase block">✓ Đã chấp nhận</span>
+              <span className="text-base sm:text-lg font-black text-emerald-900 font-mono">
+                {myTransfers.filter((t) => t.status === "accepted").reduce((s, t) => s + (t.amount || 0), 0).toLocaleString("vi-VN")}đ
+              </span>
+            </div>
+            <div className="bg-rose-50 border border-rose-200 p-3 rounded-2xl">
+              <span className="text-[10px] text-rose-700 font-extrabold uppercase block">✗ Đã từ chối</span>
+              <span className="text-base sm:text-lg font-black text-rose-900 font-mono">
+                {myTransfers.filter((t) => t.status === "rejected").reduce((s, t) => s + (t.amount || 0), 0).toLocaleString("vi-VN")}đ
+              </span>
+            </div>
+          </div>
+
+          {/* Grid Cards */}
+          {myTransfers.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {myTransfers.map((t) => (
+                <div key={t.id} className="bg-white border border-slate-200 rounded-3xl p-4 space-y-3 shadow-sm hover:border-amber-400 transition">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Gửi tới Trưởng nhóm:</span>
+                      <span className="font-mono font-black text-xs text-blue-700">{t.toLeaderCode}</span>
+                    </div>
+                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${
+                      t.status === "pending" ? "bg-amber-100 text-amber-900 border-amber-300 animate-pulse" :
+                      t.status === "accepted" ? "bg-emerald-100 text-emerald-900 border-emerald-300" :
+                      "bg-rose-100 text-rose-900 border-rose-300"
+                    }`}>
+                      {t.status === "pending" ? "⏳ Chờ duyệt" : t.status === "accepted" ? "✓ Chấp nhận" : "✗ Từ chối"}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-200 min-w-0">
+                      <span className="text-[10px] text-slate-400 font-bold block truncate">Dịch vụ</span>
+                      <span className="font-black text-slate-900 truncate block text-[11px]">{t.serviceName}</span>
+                    </div>
+                    <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-200 min-w-0">
+                      <span className="text-[10px] text-emerald-600 font-bold block truncate">Doanh số</span>
+                      <span className="font-mono font-black text-emerald-700 truncate block text-[11px]">{t.amount.toLocaleString("vi-VN")}đ</span>
+                    </div>
+                    <div className="bg-amber-50 p-2 rounded-xl border border-amber-200 min-w-0">
+                      <span className="text-[10px] text-amber-600 font-bold block truncate">Hoa hồng</span>
+                      <span className="font-mono font-black text-amber-700 truncate block text-[11px]">{t.commission.toLocaleString("vi-VN")}đ</span>
+                    </div>
+                  </div>
+
+                  {t.note && (
+                    <p className="text-[11px] text-slate-600 italic bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
+                      Ghi chú: "{t.note}"
+                    </p>
+                  )}
+
+                  <div className="text-[10px] text-slate-400 text-right font-medium">
+                    {t.transferredAt}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-3 shadow-sm">
+              <ArrowUpRight className="w-12 h-12 mx-auto text-slate-300" />
+              <div>
+                <p className="font-bold text-slate-700">Bạn chưa gửi yêu cầu chuyển doanh số nào</p>
+                <p className="text-xs text-slate-500 mt-1">Khi bạn gửi yêu cầu chuyển doanh số cho Trưởng nhóm, trạng thái phê duyệt sẽ hiển thị tại đây.</p>
+              </div>
+              <button
+                onClick={() => { if (onOpenTeamTransferModal) onOpenTeamTransferModal(); }}
+                className="bg-[#0B192C] text-amber-400 font-black px-5 py-2.5 rounded-2xl text-xs hover:bg-slate-800 transition cursor-pointer"
+              >
+                + Gửi yêu cầu chuyển doanh số mới
+              </button>
             </div>
           )}
         </div>
@@ -899,6 +1041,9 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   } else if (mod.id === "team-transfers") {
                     setActiveSubTab("team-transfers");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  } else if (mod.id === "ctv-transfers") {
+                    setActiveSubTab("ctv-transfers");
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   } else if (mod.id === "send-team-transfer") {
                     if (onOpenTeamTransferModal) onOpenTeamTransferModal();

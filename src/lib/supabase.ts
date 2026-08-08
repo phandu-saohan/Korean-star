@@ -452,6 +452,58 @@ export const updateTeamLeaderInSupabase = async (userCodeOrId: string, leaderId:
   }
 };
 
+// 5e. Save Transfer Request to Supabase DB Table team_revenue_transfers
+export const saveTransferRequestToSupabase = async (transfer: any) => {
+  try {
+    await supabase.from("team_revenue_transfers").upsert({
+      id: transfer.id,
+      from_ctv_code: transfer.fromCtvCode,
+      from_ctv_name: transfer.fromCtvName,
+      to_leader_code: transfer.toLeaderCode,
+      to_leader_name: transfer.toLeaderName || "",
+      amount: transfer.amount,
+      commission: transfer.commission,
+      service_name: transfer.serviceName,
+      note: transfer.note || null,
+      status: transfer.status || "pending"
+    });
+  } catch (e) {
+    console.error("Supabase save transfer error:", e);
+  }
+};
+
+// 5f. Fetch Transfer Requests sent by CTV from Supabase
+export const fetchMyTransferRequestsFromSupabase = async (ctvCode: string): Promise<any[]> => {
+  if (!ctvCode) return [];
+  try {
+    const clean = ctvCode.trim().toUpperCase();
+    const { data } = await supabase
+      .from("team_revenue_transfers")
+      .select("*")
+      .ilike("from_ctv_code", clean)
+      .order("transferred_at", { ascending: false });
+
+    if (data && Array.isArray(data)) {
+      return data.map((d: any) => ({
+        id: d.id,
+        fromCtvCode: d.from_ctv_code,
+        fromCtvName: d.from_ctv_name,
+        toLeaderCode: d.to_leader_code,
+        toLeaderName: d.to_leader_name || "",
+        amount: Number(d.amount) || 0,
+        commission: Number(d.commission) || 0,
+        serviceName: d.service_name,
+        note: d.note || undefined,
+        transferredAt: d.transferred_at ? new Date(d.transferred_at).toLocaleString("vi-VN") : "",
+        status: d.status || "pending"
+      }));
+    }
+  } catch (e) {
+    console.error("Fetch transfers error:", e);
+  }
+  return [];
+};
+
 // Memory Cache Variables to prevent repetitive network spam on 520 / CORS errors
 let _cachedProfiles: AuthUserProfile[] | null = null;
 let _lastProfilesFetchTime = 0;

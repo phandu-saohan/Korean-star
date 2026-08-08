@@ -18,8 +18,10 @@ import {
   Plus,
   Trash2,
   AlertCircle,
-  Crown
+  Crown,
+  Pencil
 } from "lucide-react";
+import { saveTransferRequestToSupabase } from "../lib/supabase";
 import { CTVUser, ReferralLead, TeamRevenueTransfer } from "../types";
 
 interface TeamLeaderDashboardProps {
@@ -526,6 +528,7 @@ interface SendTransferProps {
 }
 
 export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClose }) => {
+  const [targetLeaderCode, setTargetLeaderCode] = useState(ctvUser.teamLeaderId || "");
   const [amount, setAmount] = useState("");
   const [commission, setCommission] = useState("");
   const [serviceName, setServiceName] = useState("");
@@ -533,23 +536,10 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  const leaderCode = ctvUser.teamLeaderId;
-
-  if (!leaderCode) {
-    return (
-      <div className="fixed inset-0 z-50 bg-[#0B192C]/80 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl p-6 max-w-sm w-full text-center space-y-3">
-          <AlertCircle className="w-12 h-12 mx-auto text-slate-400" />
-          <p className="font-black text-slate-900">Bạn chưa thuộc nhóm nào</p>
-          <p className="text-xs text-slate-500">Liên hệ Trưởng nhóm để được thêm vào nhóm trước.</p>
-          <button onClick={onClose} className="w-full bg-slate-100 text-slate-700 font-bold py-2.5 rounded-2xl text-xs hover:bg-slate-200 transition">Đóng</button>
-        </div>
-      </div>
-    );
-  }
-
-  const handleSend = () => {
+  const handleSend = async () => {
     setError("");
+    const leaderCode = targetLeaderCode.trim().toUpperCase();
+    if (!leaderCode) { setError("Vui lòng nhập Mã Trưởng nhóm nhận doanh số"); return; }
     if (!serviceName.trim()) { setError("Vui lòng nhập tên dịch vụ"); return; }
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) { setError("Vui lòng nhập doanh số hợp lệ"); return; }
 
@@ -572,6 +562,10 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
       const all: TeamRevenueTransfer[] = raw ? JSON.parse(raw) : [];
       all.push(transfer);
       localStorage.setItem("saohan_team_transfers", JSON.stringify(all));
+
+      // Sync to Supabase DB
+      saveTransferRequestToSupabase(transfer).catch(console.error);
+
       setSuccess(true);
     } catch {
       setError("Lỗi khi gửi yêu cầu. Vui lòng thử lại.");
@@ -583,10 +577,10 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
       <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-slate-900">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <h3 className="font-black text-sm flex items-center gap-2">
-            <ArrowUpRight className="w-4 h-4 text-blue-600" />
-            Chuyển doanh số lên Trưởng nhóm
+            <ArrowUpRight className="w-4 h-4 text-amber-600" />
+            Chuyển Doanh Số Lên Trưởng Nhóm
           </h3>
-          <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-full">
+          <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-full cursor-pointer">
             <X className="w-5 h-5 text-slate-400" />
           </button>
         </div>
@@ -595,20 +589,27 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
           <div className="text-center space-y-3 py-4">
             <CheckCircle2 className="w-12 h-12 mx-auto text-emerald-600" />
             <p className="font-black text-emerald-800">Đã gửi yêu cầu thành công!</p>
-            <p className="text-xs text-slate-500">Trưởng nhóm sẽ xem xét và chấp nhận yêu cầu của bạn.</p>
-            <button onClick={onClose} className="w-full bg-emerald-600 text-white font-black py-2.5 rounded-2xl text-xs hover:bg-emerald-700 transition">Đóng</button>
+            <p className="text-xs text-slate-500">Trưởng nhóm {targetLeaderCode} sẽ xem xét và phê duyệt doanh số của bạn.</p>
+            <button onClick={onClose} className="w-full bg-emerald-600 text-white font-black py-2.5 rounded-2xl text-xs hover:bg-emerald-700 transition cursor-pointer">Đóng</button>
           </div>
         ) : (
           <div className="space-y-3 text-xs font-medium">
-            <div className="bg-blue-50 border border-blue-200 p-2.5 rounded-xl text-blue-900 text-[11px]">
-              Chuyển doanh số tới Trưởng nhóm: <strong className="font-black">{leaderCode}</strong>
+            <div>
+              <label className="block font-extrabold mb-1 text-slate-700">Mã Trưởng nhóm nhận doanh số (*):</label>
+              <input
+                type="text"
+                placeholder="VD: TRUONGNHOM01"
+                value={targetLeaderCode}
+                onChange={(e) => setTargetLeaderCode(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 uppercase"
+              />
             </div>
 
             <div>
               <label className="block font-extrabold mb-1 text-slate-700">Tên dịch vụ (*):</label>
               <input type="text" placeholder="VD: Nâng ngực Motiva..." value={serviceName}
                 onChange={(e) => setServiceName(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-900 focus:outline-none focus:border-blue-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-900 focus:outline-none focus:border-amber-500"
               />
             </div>
 
@@ -617,23 +618,23 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
                 <label className="block font-extrabold mb-1 text-slate-700">Doanh số (đ) (*):</label>
                 <input type="number" placeholder="VD: 50000000" value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500"
                 />
               </div>
               <div>
                 <label className="block font-extrabold mb-1 text-slate-700">Hoa hồng (đ):</label>
                 <input type="number" placeholder="VD: 7500000" value={commission}
                   onChange={(e) => setCommission(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500"
                 />
               </div>
             </div>
 
             <div>
               <label className="block font-extrabold mb-1 text-slate-700">Ghi chú (tùy chọn):</label>
-              <textarea rows={2} placeholder="Thêm ghi chú cho Trưởng nhóm..." value={note}
+              <textarea rows={2} placeholder="Thêm ghi chú gửi Trưởng nhóm..." value={note}
                 onChange={(e) => setNote(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 focus:outline-none focus:border-blue-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 focus:outline-none focus:border-amber-500"
               />
             </div>
 
@@ -645,10 +646,10 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
             )}
 
             <div className="flex items-center gap-2 pt-1">
-              <button onClick={onClose} className="flex-1 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition">
+              <button onClick={onClose} className="flex-1 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition cursor-pointer">
                 Hủy
               </button>
-              <button onClick={handleSend} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition shadow-sm flex items-center justify-center gap-1.5">
+              <button onClick={handleSend} className="flex-1 py-2.5 bg-[#0B192C] text-amber-400 font-black rounded-xl hover:bg-slate-800 transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
                 <ArrowUpRight className="w-4 h-4" />
                 Gửi yêu cầu
               </button>
