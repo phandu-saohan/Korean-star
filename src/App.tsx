@@ -1663,13 +1663,18 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* Hiển thị Mã nhóm & Tên nhóm tham gia ngay dưới Mã Giới Thiệu */}
+                  {/* Hiển thị Mã nhóm & Tên nhóm tham gia / Quản lý nhóm */}
                   <div className="flex items-center gap-1.5 text-xs text-slate-300 mt-1.5 flex-wrap">
-                    <span className="text-slate-400 font-medium">Nhóm tham gia:</span>
-                    {effectiveCtvUser.teamLeaderId ? (
+                    {effectiveCtvUser.role === "team_leader" || currentRole === "team_leader" || effectiveCtvUser.code?.toLowerCase().includes("truongnhom") ? (
+                      <div className="inline-flex items-center gap-1.5 bg-amber-500/20 border border-amber-400/60 px-2.5 py-1 rounded-lg text-amber-200 font-medium text-[11px] shadow-xs">
+                        <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                        <span>Nhóm Quản Lý: <strong className="font-mono font-black text-amber-300 text-xs">{effectiveCtvUser.teamName || "Nhóm CTV"}</strong></span>
+                        <span className="text-slate-300 font-mono">({effectiveCtvUser.code})</span>
+                      </div>
+                    ) : effectiveCtvUser.teamLeaderId ? (
                       <div className="inline-flex items-center gap-1.5 bg-blue-950/80 border border-blue-600/80 px-2.5 py-1 rounded-lg text-blue-200 font-medium text-[11px] shadow-xs">
                         <Users className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                        <span>Mã nhóm: <strong className="font-mono font-black text-amber-300 text-xs">{effectiveCtvUser.teamLeaderId}</strong></span>
+                        <span>Nhóm tham gia: <strong className="font-mono font-black text-amber-300 text-xs">{effectiveCtvUser.teamLeaderId}</strong></span>
                         {effectiveCtvUser.teamName && (
                           <span className="text-slate-200 font-semibold">({effectiveCtvUser.teamName})</span>
                         )}
@@ -1677,7 +1682,7 @@ export default function App() {
                     ) : (
                       <span className="inline-flex items-center gap-1 bg-slate-800/80 border border-slate-700/80 px-2.5 py-0.5 rounded-lg text-slate-400 text-[11px]">
                         <Users className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                        Chưa gia nhập nhóm
+                        Nhóm tham gia: Chưa gia nhập nhóm
                       </span>
                     )}
                   </div>

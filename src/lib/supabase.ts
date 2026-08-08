@@ -447,12 +447,55 @@ export const updateTeamLeaderInSupabase = async (
 
     const ctvCode = clean.toUpperCase();
 
-    // Tìm profile đã có trên Supabase
-    const { data: existing } = await supabase
+    // 1. Cập nhật LocalStorage saohan_registered_users
+    try {
+      const rawReg = localStorage.getItem("saohan_registered_users");
+      const regList: any[] = rawReg ? JSON.parse(rawReg) : [];
+      let found = regList.find((u) => (u.ctvCode || u.code || "").trim().toUpperCase() === ctvCode);
+      if (found) {
+        found.teamLeaderId = leaderId;
+        found.teamName = teamName;
+        if (extraProfileInfo?.fullName) found.fullName = extraProfileInfo.fullName;
+        if (extraProfileInfo?.phone) found.phone = extraProfileInfo.phone;
+        if (extraProfileInfo?.avatarUrl) found.avatarUrl = extraProfileInfo.avatarUrl;
+      } else {
+        found = {
+          id: `ctv-${Date.now()}`,
+          ctvCode: ctvCode,
+          fullName: extraProfileInfo?.fullName || `CTV ${ctvCode}`,
+          phone: extraProfileInfo?.phone || "",
+          avatarUrl: extraProfileInfo?.avatarUrl || "",
+          role: "ctv",
+          tier: "Bạc",
+          teamLeaderId: leaderId,
+          teamName: teamName,
+          totalRevenue: 0,
+          totalCommission: 0,
+          createdAt: new Date().toISOString()
+        };
+        regList.push(found);
+      }
+      localStorage.setItem("saohan_registered_users", JSON.stringify(regList));
+    } catch (e) {}
+
+    // 2. Tìm profile đã có trên Supabase
+    let existing: any = null;
+    const { data: byCode } = await supabase
       .from("user_profiles")
       .select("id, ctv_code")
-      .or(`ctv_code.eq.${ctvCode},id.eq.${clean}`)
+      .ilike("ctv_code", ctvCode)
       .maybeSingle();
+
+    if (byCode) {
+      existing = byCode;
+    } else {
+      const { data: byId } = await supabase
+        .from("user_profiles")
+        .select("id, ctv_code")
+        .eq("id", clean)
+        .maybeSingle();
+      if (byId) existing = byId;
+    }
 
     if (existing) {
       const updatePayload: any = {
