@@ -34,7 +34,8 @@ import {
   Plus,
   X,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  Pencil
 } from "lucide-react";
 import {
   AreaChart,
