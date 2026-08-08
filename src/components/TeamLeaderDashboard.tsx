@@ -21,7 +21,7 @@ import {
   Crown,
   Pencil
 } from "lucide-react";
-import { saveTransferRequestToSupabase } from "../lib/supabase";
+import { saveTransferRequestToSupabase, updateTeamLeaderInSupabase } from "../lib/supabase";
 import { CTVUser, ReferralLead, TeamRevenueTransfer } from "../types";
 
 interface TeamLeaderDashboardProps {
