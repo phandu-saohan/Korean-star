@@ -559,3 +559,148 @@ BEGIN
 END $$;
 
 
+-- ====================================================================
+-- MIGRATION v2.1 — THÊM VAI TRÒ TRƯỞNG NHÓM CTV (team_leader)
+-- Ngày: 2026-08-08
+-- Mô tả: Bổ sung cấu trúc nhóm CTV, phân quyền Trưởng nhóm và bảng
+--        quản lý yêu cầu chuyển doanh số từ CTV lên Trưởng nhóm.
+-- ====================================================================
+
+-- M1. Thêm cột nhóm vào bảng user_profiles (idempotent)
+DO $$
+BEGIN
+    -- team_leader_id: Mã ctv_code của Trưởng nhóm quản lý CTV này
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+        AND table_name = 'user_profiles'
+        AND column_name = 'team_leader_id'
+    ) THEN
+        ALTER TABLE public.user_profiles ADD COLUMN team_leader_id TEXT;
+        COMMENT ON COLUMN public.user_profiles.team_leader_id
+          IS 'Mã CTV (ctv_code) của Trưởng nhóm quản lý CTV này. NULL = chưa thuộc nhóm.';
+    END IF;
+
+    -- team_name: Tên nhóm CTV
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+        AND table_name = 'user_profiles'
+        AND column_name = 'team_name'
+    ) THEN
+        ALTER TABLE public.user_profiles ADD COLUMN team_name TEXT;
+        COMMENT ON COLUMN public.user_profiles.team_name
+          IS 'Tên nhóm CTV mà user này thuộc về (lưu cho tiện hiển thị).';
+    END IF;
+END $$;
+
+-- M2. Index tìm kiếm nhóm nhanh
+CREATE INDEX IF NOT EXISTS idx_user_profiles_team_leader_id
+  ON public.user_profiles(team_leader_id);
+
+CREATE INDEX IF NOT EXISTS idx_user_profiles_role
+  ON public.user_profiles(role);
+
+-- M3. Thêm vai trò team_leader vào bảng role_permissions
+INSERT INTO public.role_permissions (role_key, role_name, description, is_system, badge_color, permissions)
+VALUES (
+  'team_leader',
+  'Trưởng Nhóm CTV',
+  'Quản lý nhóm CTV trực thuộc, xem doanh số nhóm và duyệt chuyển doanh số từ CTV thành viên',
+  TRUE,
+  'bg-blue-700 text-white',
+  '{
+    "services":         {"create":false,"read":true, "update":false,"delete":false},
+    "crm_appointments": {"create":true, "read":true, "update":false,"delete":false},
+    "payouts":          {"create":true, "read":true, "update":false,"delete":false},
+    "content":          {"create":false,"read":true, "update":false,"delete":false},
+    "ctv_management":   {"create":false,"read":true, "update":false,"delete":false},
+    "ai_tools":         {"create":true, "read":true, "update":false,"delete":false},
+    "system_settings":  {"create":false,"read":false,"update":false,"delete":false},
+    "team_management":  {"create":true, "read":true, "update":true, "delete":false}
+  }'::jsonb
+)
+ON CONFLICT (role_key) DO UPDATE SET
+  role_name   = EXCLUDED.role_name,
+  description = EXCLUDED.description,
+  permissions = EXCLUDED.permissions,
+  updated_at  = NOW();
+
+-- M4. Bảng TEAM_REVENUE_TRANSFERS (Yêu cầu chuyển doanh số từ CTV lên Trưởng nhóm)
+CREATE TABLE IF NOT EXISTS public.team_revenue_transfers (
+  id                TEXT        PRIMARY KEY,
+  from_ctv_code     TEXT        NOT NULL,
+  from_ctv_name     TEXT        NOT NULL,
+  to_leader_code    TEXT        NOT NULL,
+  to_leader_name    TEXT,
+  amount            NUMERIC     NOT NULL DEFAULT 0,
+  commission        NUMERIC     NOT NULL DEFAULT 0,
+  service_name      TEXT        NOT NULL,
+  note              TEXT,
+  status            TEXT        NOT NULL DEFAULT 'pending',
+  transferred_at    TEXT,
+  processed_at      TIMESTAMPTZ,
+  created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+COMMENT ON TABLE public.team_revenue_transfers IS
+  'Yêu cầu CTV thành viên chuyển doanh số/hoa hồng lên Trưởng nhóm để tổng hợp doanh số nhóm.';
+
+-- Index bảng transfers
+CREATE INDEX IF NOT EXISTS idx_team_transfers_to_leader
+  ON public.team_revenue_transfers(to_leader_code);
+
+CREATE INDEX IF NOT EXISTS idx_team_transfers_from_ctv
+  ON public.team_revenue_transfers(from_ctv_code);
+
+CREATE INDEX IF NOT EXISTS idx_team_transfers_status
+  ON public.team_revenue_transfers(status);
+
+-- Bật Realtime cho bảng team_revenue_transfers
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname    = 'supabase_realtime'
+    AND   schemaname = 'public'
+    AND   tablename  = 'team_revenue_transfers'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.team_revenue_transfers;
+  END IF;
+END $$;
+
+ALTER TABLE public.team_revenue_transfers DISABLE ROW LEVEL SECURITY;
+
+-- M5. View tổng hợp doanh số nhóm theo Trưởng nhóm
+CREATE OR REPLACE VIEW public.v_team_stats AS
+SELECT
+  leader.ctv_code                             AS leader_code,
+  leader.full_name                            AS leader_name,
+  leader.team_name,
+  COUNT(member.id)                            AS member_count,
+  COALESCE(SUM(member.total_revenue), 0)      AS team_total_revenue,
+  COALESCE(SUM(member.total_commission), 0)   AS team_total_commission,
+  COALESCE(SUM(member.available_balance), 0)  AS team_available_balance
+FROM public.user_profiles leader
+LEFT JOIN public.user_profiles member
+  ON member.team_leader_id = leader.ctv_code
+WHERE leader.role = 'team_leader'
+GROUP BY leader.ctv_code, leader.full_name, leader.team_name;
+
+COMMENT ON VIEW public.v_team_stats IS
+  'Tổng hợp doanh số, hoa hồng và số thành viên theo từng Trưởng nhóm CTV.';
+
+-- M6. View danh sách yêu cầu chuyển doanh số đang chờ duyệt
+CREATE OR REPLACE VIEW public.v_pending_transfers AS
+SELECT
+  t.*,
+  leader.full_name AS leader_full_name,
+  leader.phone     AS leader_phone
+FROM public.team_revenue_transfers t
+JOIN public.user_profiles leader
+  ON leader.ctv_code = t.to_leader_code
+WHERE t.status = 'pending'
+ORDER BY t.created_at DESC;
+
+COMMENT ON VIEW public.v_pending_transfers IS
+  'Danh sách yêu cầu chuyển doanh số đang chờ Trưởng nhóm duyệt.';

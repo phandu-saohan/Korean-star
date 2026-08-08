@@ -12,7 +12,15 @@
 - Phân cấp CTV: Bạc → Vàng → Bạch Kim → Kim Cương
 - Lịch sử leads & trạng thái từng khách hàng
 
-### 📅 2. CRM Đặt Lịch Hẹn (Smart Booking)
+### 👑 2. Trưởng Nhóm CTV (Team Leader) *(v2.1 — mới)*
+- Dashboard riêng **Trưởng nhóm CTV** với 3 tab:
+  - **Tổng quan**: Tổng doanh số nhóm, hoa hồng, số thành viên, bảng xếp hạng
+  - **Thành viên**: Thêm/xem CTV theo Mã CTV, xem doanh số từng người
+  - **Chuyển doanh số**: Duyệt / từ chối yêu cầu chuyển doanh số từ CTV thành viên
+- CTV thành viên có thể gửi yêu cầu chuyển doanh số lên Trưởng nhóm qua modal
+- Realtime qua Supabase (`team_revenue_transfers`)
+
+### 📅 3. CRM Đặt Lịch Hẹn (Smart Booking)
 - CTV đặt lịch tư vấn / tái khám cho khách hàng
 - Gắn ảnh / video hiện tại của khách hàng khi đặt lịch
 - Admin xem **toàn bộ** lịch hẹn hệ thống
@@ -20,35 +28,36 @@
 - Đổi trạng thái CRM: Chờ xác nhận → Đã xác nhận → Đang điều trị → Hoàn thành / Đã hủy
 - Đồng bộ realtime qua **Supabase** (auto-sync mỗi 30 giây)
 
-### 🔔 3. Thông Báo Realtime (OneSignal + Zalo Bot)
+### 🔔 4. Thông Báo Realtime (OneSignal + Zalo Bot)
 | Sự kiện | OneSignal Push | Zalo Bot |
 |---|---|---|
 | CTV đặt lịch mới | ✅ CTV + Admin/Kế toán | ✅ CTV + Admin |
 | Admin đổi trạng thái lịch | ✅ CTV + Admin | ✅ CTV + Admin |
 | Yêu cầu rút hoa hồng | ✅ CTV + Admin/Kế toán | ✅ CTV + Admin |
 | Giải ngân hoa hồng hoàn tất | ✅ CTV + Admin | ✅ CTV + Admin |
+| CTV gửi chuyển doanh số | ✅ Trưởng nhóm | — |
 | Thành viên mới đăng ký | ✅ Admin | ✅ Admin |
 | Check-in hậu phẫu | ✅ Admin | ✅ Admin |
 
-### 💰 4. Giải Ngân Hoa Hồng (VietQR Flow 5 Bước)
+### 💰 5. Giải Ngân Hoa Hồng (VietQR Flow 5 Bước)
 - CTV gửi yêu cầu rút tiền → Kế toán kiểm tra → Admin phê duyệt → VietQR tự động
 - Audit log đầy đủ từng bước phê duyệt
 - Thông báo push tự động mỗi bước thay đổi
 
-### 🤖 5. AI Phân Tích Da (Gemini AI)
+### 🤖 6. AI Phân Tích Da (Gemini AI)
 - Upload ảnh da → AI phân tích 6 chỉ số (lỗ chân lông, sắc tố, độ ẩm, nếp nhăn, độ đàn hồi, mụn)
 - Đề xuất phác đồ điều trị cá nhân hóa
 - Hướng dẫn chăm sóc da tại nhà
 
-### 🧊 6. Mô Phỏng Chọn Size Túi Ngực 3D
+### 🧊 7. Mô Phỏng Chọn Size Túi Ngực 3D
 - Tương tác 3D xoay 360°, thu phóng, chọn size (cc), độ nhô, hình dáng
 - AI tư vấn size phù hợp dựa trên chỉ số cơ thể
 
-### 🏥 7. Chăm Sóc Hậu Phẫu 24/7
+### 🏥 8. Chăm Sóc Hậu Phẫu 24/7
 - Check-in ngày hậu phẫu, ghi nhận triệu chứng
 - AI đánh giá trạng thái phục hồi: An toàn / Cần theo dõi / Cảnh báo bác sĩ
 
-### 📋 8. Quản Lý Nội Dung (Editor Dashboard)
+### 📋 9. Quản Lý Nội Dung (Editor Dashboard)
 - Bảng giá dịch vụ CRUD (thêm/sửa/xóa)
 - Thư viện ảnh Trước/Sau lâm sàng
 - Video hướng dẫn tư vấn
@@ -148,7 +157,8 @@ Sau khi đăng nhập bằng tài khoản **Admin**, vào tab **Admin → Cài �
 | `admin` | Toàn quyền: CRM, giải ngân, cài đặt, phân quyền |
 | `accountant` | Duyệt giải ngân VietQR, xem lịch hẹn |
 | `editor` | Quản lý nội dung: dịch vụ, ảnh, video, ưu đãi |
-| `ctv` | Dashboard hoa hồng, đặt lịch, xem lịch của mình |
+| `team_leader` | Dashboard nhóm CTV, thêm thành viên, duyệt chuyển doanh số |
+| `ctv` | Dashboard hoa hồng, đặt lịch, xem lịch của mình, gửi chuyển doanh số lên Trưởng nhóm |
 
 ---
 
@@ -156,26 +166,30 @@ Sau khi đăng nhập bằng tài khoản **Admin**, vào tab **Admin → Cài �
 
 ```
 ├── api/
-│   ├── onesignal/send-notification.ts   # Proxy OneSignal (Vercel Serverless)
+│   ├── onesignal/send-notification.ts    # Proxy OneSignal (Vercel Serverless)
 │   └── zalo/
-│       ├── send-message.ts              # Proxy Zalo Bot sendMessage
-│       ├── set-webhook.ts               # Proxy Zalo setWebhook
-│       └── webhook.ts                   # Zalo webhook handler
+│       ├── send-message.ts               # Proxy Zalo Bot sendMessage
+│       ├── set-webhook.ts                # Proxy Zalo setWebhook
+│       └── webhook.ts                    # Zalo webhook handler
 ├── src/
 │   ├── components/
-│   │   ├── CRMAppointment.tsx           # Đặt lịch hẹn + thông báo
-│   │   ├── AdminDashboard.tsx           # Dashboard Admin
-│   │   ├── CTVHub.tsx                   # Dashboard CTV
-│   │   ├── SystemSettingsModule.tsx     # Cài đặt OneSignal, Zalo, Supabase
+│   │   ├── AdminDashboard.tsx            # Dashboard Admin
+│   │   ├── AccountantDashboard.tsx       # Dashboard Kế toán
+│   │   ├── TeamLeaderDashboard.tsx       # Dashboard Trưởng nhóm CTV (v2.1)
+│   │   ├── CTVHub.tsx                    # Dashboard CTV
+│   │   ├── CRMAppointment.tsx            # Đặt lịch hẹn + thông báo
+│   │   ├── PayoutManagementModule.tsx    # Giải ngân VietQR 5 bước
+│   │   ├── SystemSettingsModule.tsx      # Cài đặt OneSignal, Zalo, Supabase
 │   │   └── ...
 │   ├── lib/
-│   │   ├── onesignal.ts                 # OneSignal SDK + notification helpers
-│   │   └── supabase.ts                  # Supabase client + CRUD functions
-│   └── services/
-│       └── zaloService.ts               # Zalo Bot notification helpers
-├── server.ts                            # Express server (dev + production)
-├── schema.sql                           # Supabase database schema
-└── .env.example                         # Template biến môi trường
+│   │   ├── onesignal.ts                  # OneSignal SDK + notification helpers
+│   │   └── supabase.ts                   # Supabase client + CRUD functions
+│   ├── services/
+│   │   └── zaloService.ts                # Zalo Bot notification helpers
+│   └── types.ts                          # TypeScript interfaces & UserRole
+├── server.ts                             # Express server (dev + production)
+├── schema.sql                            # Supabase database schema (đầy đủ)
+└── .env.example                          # Template biến môi trường
 ```
 
 ---
@@ -189,15 +203,47 @@ Khởi tạo database bằng file [`schema.sql`](./schema.sql):
 psql -h your-db-host -U postgres -f schema.sql
 ```
 
-Các bảng chính:
-- `user_profiles` — Tài khoản CTV, Admin, Zalo Chat ID
-- `appointments` — Lịch hẹn khám (đồng bộ realtime)
-- `services` — Danh mục dịch vụ thẩm mỹ
-- `feedbacks` — Ảnh trước/sau lâm sàng
-- `cms_settings` — Cấu hình hệ thống (OneSignal, Zalo)
+### Các bảng chính:
+
+| Bảng | Mô tả |
+|---|---|
+| `user_profiles` | Tài khoản CTV, Admin, Kế toán, Biên tập viên, Trưởng nhóm |
+| `role_permissions` | Ma trận phân quyền CRUD từng vai trò |
+| `appointment_bookings` | Lịch hẹn khám (đồng bộ realtime) |
+| `appointment_invoices` | Hóa đơn & doanh thu phẫu thuật |
+| `payout_requests` | Yêu cầu rút hoa hồng (5 bước VietQR) |
+| `team_revenue_transfers` | Yêu cầu chuyển doanh số CTV → Trưởng nhóm *(v2.1)* |
+| `services` | Danh mục dịch vụ thẩm mỹ |
+| `service_feedbacks` | Ảnh trước/sau lâm sàng |
+| `promotions` | Chương trình ưu đãi & Flash Sale |
+| `video_guides` | Video & bài viết y khoa |
+| `cms_settings` | Cấu hình hệ thống (OneSignal, Zalo, thương hiệu) |
+
+### Views hỗ trợ:
+
+| View | Mô tả |
+|---|---|
+| `v_team_stats` | Tổng doanh số/hoa hồng theo từng Trưởng nhóm *(v2.1)* |
+| `v_pending_transfers` | Danh sách chuyển doanh số đang chờ duyệt *(v2.1)* |
+
+### Migration v2.1 (Trưởng nhóm CTV)
+
+Nếu database đã có sẵn, chỉ cần chạy phần migration ở cuối `schema.sql` (từ comment `MIGRATION v2.1`):
+
+```sql
+-- Chạy trong Supabase SQL Editor
+-- Phần từ dòng: "MIGRATION v2.1 — THÊM VAI TRÒ TRƯỞNG NHÓM CTV"
+-- Đến cuối file schema.sql
+```
+
+Các thay đổi của migration v2.1:
+- Thêm cột `team_leader_id`, `team_name` vào `user_profiles`
+- Thêm bản ghi `team_leader` vào `role_permissions`
+- Tạo bảng `team_revenue_transfers` (Realtime enabled)
+- Tạo view `v_team_stats` và `v_pending_transfers`
 
 ---
 
 ## 📄 Giấy Phép
 
-© 2025 **Bệnh Viện Thẩm Mỹ Quốc Tế Korean Star** — All rights reserved.
+© 2025–2026 **Bệnh Viện Thẩm Mỹ Quốc Tế Korean Star** — All rights reserved.
