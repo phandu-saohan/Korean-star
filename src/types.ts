@@ -78,7 +78,7 @@ export interface ReferralLead {
   ctvCode: string;
   ctvName: string;
   createdAt: string;
-  status: "Mới" | "Đã tư vấn" | "Đã đặt lịch" | "Đã hoàn thành" | "Hủy";
+  status: "Mới" | "Chờ xác nhận" | "Đã đặt lịch" | "Đã xác nhận" | "Đã tư vấn" | "Đang điều trị" | "Đã hoàn thành" | "Hủy" | "Đã hủy";
   estimatedValue: number;
   commission: number;
   doctorAssigned?: string;

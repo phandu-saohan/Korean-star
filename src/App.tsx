@@ -729,17 +729,17 @@ export default function App() {
     const mapStatus = (status: Appointment["status"]): ReferralLead["status"] => {
       switch (status) {
         case "Chờ xác nhận":
-          return "Mới";
+          return "Chờ xác nhận";
         case "Đã xác nhận":
-          return "Đã đặt lịch";
+          return "Đã xác nhận";
         case "Đang điều trị":
-          return "Đã tư vấn";
+          return "Đang điều trị";
         case "Hoàn thành":
           return "Đã hoàn thành";
         case "Đã hủy":
-          return "Hủy";
+          return "Đã hủy";
         default:
-          return "Đã đặt lịch";
+          return status || "Chờ xác nhận";
       }
     };
 
