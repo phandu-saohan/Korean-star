@@ -1960,15 +1960,15 @@ export default function App() {
             <span className="text-[9px] font-black text-amber-600 tracking-wide truncate w-full text-center">Đặt Lịch</span>
           </button>
 
-          {/* 4. Thay Đổi Tài Khoản */}
+          {/* 4. Bộ Công Cụ Hỗ Trợ */}
           <button
-            onClick={() => { setAccountDrawerOpen(!accountDrawerOpen); setMobileMenuOpen(false); }}
+            onClick={() => { setMobileMenuOpen(!mobileMenuOpen); setAccountDrawerOpen(false); }}
             className={`flex-1 min-w-0 flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition ${
-              accountDrawerOpen ? "text-[#0B192C] font-black scale-105" : "text-[#0B192C]/80 hover:text-[#0B192C] font-bold"
+              mobileMenuOpen ? "text-[#0B192C] font-black scale-105" : "text-[#0B192C]/80 hover:text-[#0B192C] font-bold"
             }`}
           >
-            <UserCog className="w-5 h-5 shrink-0 text-[#0B192C]" />
-            <span className="text-[9px] font-extrabold truncate w-full text-center text-[#0B192C]">Đổi Tai Khoản</span>
+            <Wrench className="w-5 h-5 shrink-0 text-[#0B192C]" />
+            <span className="text-[9px] font-extrabold truncate w-full text-center text-[#0B192C]">Công Cụ</span>
           </button>
 
           {/* 5. Trợ Giúp 24/7 */}
@@ -2039,6 +2039,20 @@ export default function App() {
                     </button>
                   );
                 })}
+
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setAccountDrawerOpen(true);
+                  }}
+                  className="w-full p-3.5 rounded-xl border font-bold flex items-center justify-between transition bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100 mt-1"
+                >
+                  <div className="flex items-center gap-3">
+                    <UserCog className="w-4 h-4 text-blue-700" />
+                    <span>Chuyển Vai Trò & Đổi Tài Khoản</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-blue-700 opacity-70" />
+                </button>
               </div>
             </div>
           </div>
