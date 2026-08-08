@@ -135,7 +135,7 @@ export default function App() {
     const savedTab = localStorage.getItem("saohan_active_tab");
     if (savedTab) {
       if (savedTab === "admin" && userRole !== "admin") {
-        return userRole === "editor" ? "editor" : userRole === "accountant" ? "accountant" : userRole === "team_leader" ? "team-leader" : "ctv-dashboard";
+        return userRole === "editor" ? "editor" : userRole === "accountant" ? "accountant" : "ctv-dashboard";
       }
       if (savedTab === "editor" && userRole !== "editor" && userRole !== "admin") return "ctv-dashboard";
       if (savedTab === "accountant" && userRole !== "accountant" && userRole !== "admin") return "ctv-dashboard";
@@ -146,7 +146,7 @@ export default function App() {
     if (userRole === "admin") return "admin";
     if (userRole === "editor") return "editor";
     if (userRole === "accountant") return "accountant";
-    if (userRole === "team_leader") return "team-leader";
+    // team_leader đăng nhập vào ctv-dashboard (giống CTV)
     return "ctv-dashboard";
   });
 
@@ -323,10 +323,8 @@ export default function App() {
     } else if (role === "accountant") {
       setActiveTab("accountant");
       localStorage.setItem("saohan_active_tab", "accountant");
-    } else if (role === "team_leader") {
-      setActiveTab("team-leader");
-      localStorage.setItem("saohan_active_tab", "team-leader");
     } else {
+      // team_leader và ctv đều vào ctv-dashboard khi đăng nhập
       setActiveTab("ctv-dashboard");
       localStorage.setItem("saohan_active_tab", "ctv-dashboard");
     }
@@ -405,7 +403,7 @@ export default function App() {
 
     if (activeTab === "admin" && role !== "admin") {
       showToast(`Tài khoản vai trò '${role.toUpperCase()}' không có quyền truy cập Bảng Admin.`);
-      const fallbackTab = role === "editor" ? "editor" : role === "accountant" ? "accountant" : role === "team_leader" ? "team-leader" : "ctv-dashboard";
+      const fallbackTab = role === "editor" ? "editor" : role === "accountant" ? "accountant" : "ctv-dashboard";
       setActiveTab(fallbackTab);
     } else if (activeTab === "editor" && role !== "editor" && role !== "admin") {
       showToast(`Tài khoản vai trò '${role.toUpperCase()}' không có quyền truy cập Bảng Biên Tập Viên.`);

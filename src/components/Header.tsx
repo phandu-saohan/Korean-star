@@ -120,6 +120,8 @@ export const Header: React.FC<HeaderProps> = ({
         return { name: "Bộ Phận Kế Toán", subtitle: "Duyệt Giải Ngân VietQR 24/7", icon: Wallet, badge: "KẾ TOÁN" };
       case "customer":
         return { name: "Khách Hàng Trải Nghiệm", subtitle: "Giao diện trải nghiệm dịch vụ", icon: User, badge: "GUEST" };
+      case "team_leader":
+        return { name: ctvUser.name, subtitle: "CTV", icon: Users, badge: "TRƯỞNG NHÓM" };
       default:
         return { name: ctvUser.name, subtitle: "CTV", icon: Users, badge: "CTV" };
     }
