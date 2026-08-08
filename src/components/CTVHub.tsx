@@ -62,6 +62,7 @@ interface CTVHubProps {
   onViewBeforeAfter?: (serviceId: string) => void;
   onDeleteLead?: (leadId: string) => void;
   onClearAllLeads?: () => void;
+  onOpenTeamTransferModal?: () => void;
 }
 
 export const CTVHub: React.FC<CTVHubProps> = ({
@@ -78,7 +79,8 @@ export const CTVHub: React.FC<CTVHubProps> = ({
   onGenerateServiceLink,
   onViewBeforeAfter,
   onDeleteLead,
-  onClearAllLeads
+  onClearAllLeads,
+  onOpenTeamTransferModal
 }) => {
   const PERFORMANCE_DATA = ctvUser.totalRevenue > 0 || ctvUser.successfulReferrals > 0
     ? [
@@ -110,7 +112,10 @@ export const CTVHub: React.FC<CTVHubProps> = ({
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const ctvModules = [
+  const isTeamLeader = ctvUser?.role === "team_leader" || (ctvUser as any)?.role === "team_leader";
+  const hasTeamLeader = Boolean(ctvUser?.teamLeaderId);
+
+  const baseModules = [
     { id: "service-catalog", title: "Bảng Dịch Vụ", sub: "Giá & % Hoa Hồng", icon: Stethoscope, color: "from-emerald-500 to-teal-600" },
     { id: "before-after", title: "Ảnh Trước Sau", sub: "Thư viện 3D lâm sàng", icon: Camera, color: "from-purple-500 to-indigo-600" },
     { id: "medical-knowledge", title: "Kiến Thức Y Khoa", sub: "Video & Bài viết sale", icon: GraduationCap, color: "from-blue-500 to-cyan-600" },
@@ -121,6 +126,19 @@ export const CTVHub: React.FC<CTVHubProps> = ({
     { id: "post-op", title: "Hậu Phẫu 24/7", sub: "Nhắc nhở hồi phục", icon: HeartPulse, color: "from-cyan-500 to-blue-600" },
     { id: "promotions", title: "Mã Ưu Đãi", sub: "Voucher Flash Sale", icon: Flame, color: "from-orange-500 to-amber-500" },
   ];
+
+  const teamLeaderModules = isTeamLeader
+    ? [
+        { id: "team-members", title: "Thành Viên Nhóm", sub: "Quản lý nhóm CTV", icon: Users, color: "from-blue-600 to-indigo-700" },
+        { id: "team-transfers", title: "Chuyển Doanh Số", sub: "Duyệt doanh số nhóm", icon: ArrowUpRight, color: "from-amber-500 to-amber-600" }
+      ]
+    : hasTeamLeader
+    ? [
+        { id: "send-team-transfer", title: "Chuyển Doanh Số", sub: "Gửi lên Trưởng nhóm", icon: ArrowUpRight, color: "from-blue-600 to-indigo-600" }
+      ]
+    : [];
+
+  const ctvModules = [...baseModules, ...teamLeaderModules];
 
   const ctvCodeLower = (ctvUser?.code || "").trim().toLowerCase();
   const ctvNameLower = (ctvUser?.name || "").trim().toLowerCase();
@@ -281,7 +299,11 @@ export const CTVHub: React.FC<CTVHubProps> = ({
               <button
                 key={mod.id}
                 onClick={() => {
-                  if (onSelectTab) {
+                  if (mod.id === "send-team-transfer") {
+                    if (onOpenTeamTransferModal) onOpenTeamTransferModal();
+                  } else if (mod.id === "team-members" || mod.id === "team-transfers") {
+                    if (onSelectTab) onSelectTab("team-leader");
+                  } else if (onSelectTab) {
                     onSelectTab(mod.id);
                   } else if (mod.id === "service-catalog") {
                     setActiveSubTab("services");

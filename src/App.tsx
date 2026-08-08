@@ -1784,6 +1784,7 @@ export default function App() {
               onViewBeforeAfter={(serviceId) => handleViewBeforeAfter(serviceId)}
               onDeleteLead={handleDeleteLead}
               onClearAllLeads={handleClearAllLeads}
+              onOpenTeamTransferModal={() => setTeamTransferModalOpen(true)}
             />
           )}
 
