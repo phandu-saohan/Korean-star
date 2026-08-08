@@ -32,7 +32,6 @@ import { AuthModal } from "./components/AuthModal";
 import { AuthPage } from "./components/AuthPage";
 import { ProfileEditModal } from "./components/ProfileEditModal";
 import { HelpSupportModal } from "./components/HelpSupportModal";
-import { PullToRefresh } from "./components/PullToRefresh";
 import { updateAppBadgeFromUnread, clearBadge } from "./lib/badge";
 import {
   fetchUserProfile,
@@ -625,7 +624,45 @@ export default function App() {
     } catch (_) {}
   }, []);
 
-  // Supabase Realtime WebSocket Listener cho Lịch Hẹn & Giải Ngân (An toàn chống vòng lặp đệ quy removeChannel & WebSocket 503)
+  // Tự động chủ động đồng bộ toàn bộ dữ liệu hệ thống từ Supabase 24/7 theo thời gian
+  const syncAllGlobalData = useCallback(async (silent = true) => {
+    try {
+      // 1. Đồng bộ danh sách dịch vụ
+      const remoteServices = await fetchServicesFromSupabase();
+      if (remoteServices && remoteServices.length > 0) {
+        setServices(remoteServices);
+        safeSetLocalStorage("saohan_services", JSON.stringify(remoteServices));
+      }
+
+      // 2. Đồng bộ phản hồi khách hàng
+      const remoteFeedbacks = await fetchFeedbacksFromSupabase();
+      if (remoteFeedbacks && remoteFeedbacks.length > 0) {
+        setFeedbacks(remoteFeedbacks);
+        safeSetLocalStorage("saohan_feedbacks", JSON.stringify(remoteFeedbacks));
+      }
+
+      // 3. Đồng bộ lịch hẹn CRM
+      await syncAppointmentsWithNotification();
+
+      // 4. Đồng bộ yêu cầu rút tiền
+      await syncPayoutsWithNotification();
+
+      // 5. Đồng bộ thông tin cá nhân tài khoản từ Supabase DB
+      if (authUser?.id || authUser?.email) {
+        const freshProfile = await fetchUserProfile(authUser.id || authUser.email);
+        if (freshProfile) {
+          setAuthUser(freshProfile);
+          safeSetLocalStorage("saohan_auth_user", JSON.stringify(freshProfile));
+        }
+      }
+
+      if (!silent) {
+        showToast("✨ Đã chủ động đồng bộ dữ liệu mới nhất từ Supabase!");
+      }
+    } catch (err) {}
+  }, [authUser, syncAppointmentsWithNotification, syncPayoutsWithNotification]);
+
+  // Supabase Realtime WebSocket Listener cho Lịch Hẹn, Giải Ngân, Dịch Vụ & Tài Khoản (WebSocket / WSS)
   useEffect(() => {
     if ((import.meta as any).env?.VITE_ENABLE_REALTIME !== "true") {
       return;
@@ -640,12 +677,22 @@ export default function App() {
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "appointment_bookings" },
-          () => syncAppointmentsWithNotification()
+          () => syncAllGlobalData(true)
         )
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "payout_requests" },
-          () => syncPayoutsWithNotification()
+          () => syncAllGlobalData(true)
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "user_profiles" },
+          () => syncAllGlobalData(true)
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "services" },
+          () => syncAllGlobalData(true)
         )
         .subscribe((status) => {
           if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
@@ -662,20 +709,18 @@ export default function App() {
         } catch (e) {}
       }
     };
-  }, [syncAppointmentsWithNotification, syncPayoutsWithNotification]);
+  }, [syncAllGlobalData]);
 
-  // Auto-polling: Đồng bộ liên tục Lịch Hẹn & Giải Ngân từ Supabase mỗi 10 giây
+  // Auto-polling: Hệ thống chủ động tự động đồng bộ dữ liệu liên tục từ Supabase mỗi 8 giây
   useEffect(() => {
-    syncAppointmentsWithNotification();
-    syncPayoutsWithNotification();
+    syncAllGlobalData(true);
 
     const interval = setInterval(() => {
-      syncAppointmentsWithNotification();
-      syncPayoutsWithNotification();
-    }, 10000); // 10 giây đồng bộ Realtime
+      syncAllGlobalData(true);
+    }, 8000); // 8 giây tự động chủ động đồng bộ
 
     return () => clearInterval(interval);
-  }, [syncAppointmentsWithNotification, syncPayoutsWithNotification]);
+  }, [syncAllGlobalData]);
 
   // Tự động đồng bộ Realtime trạng thái Danh sách khách hàng giới thiệu (Leads) từ Lịch hẹn CRM
   useEffect(() => {
@@ -1410,8 +1455,7 @@ export default function App() {
   }
 
   return (
-    <PullToRefresh onRefresh={handleGlobalDataRefresh}>
-      <div className="min-h-screen bg-slate-100 text-slate-900 font-sans antialiased selection:bg-amber-500 selection:text-white flex flex-col">
+    <div className="min-h-screen bg-slate-100 text-slate-900 font-sans antialiased selection:bg-amber-500 selection:text-white flex flex-col">
       
       {/* Toast Notification Alert */}
       {toastMsg && (
@@ -2189,7 +2233,6 @@ export default function App() {
         />
 
       </div>
-    </PullToRefresh>
   );
 }
 
