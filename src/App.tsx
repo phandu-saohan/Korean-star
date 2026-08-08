@@ -1770,6 +1770,7 @@ export default function App() {
           
           {activeTab === "ctv-dashboard" && (
             <CTVHub
+              currentRole={currentRole}
               ctvUser={effectiveCtvUser}
               leads={leads}
               appointments={appointments}

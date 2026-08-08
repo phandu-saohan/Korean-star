@@ -48,6 +48,7 @@ import { ServiceCatalog } from "./ServiceCatalog";
 import { BeforeAfterGallery } from "./BeforeAfterGallery";
 
 interface CTVHubProps {
+  currentRole?: string;
   ctvUser: CTVUser;
   leads: ReferralLead[];
   appointments?: Appointment[];
@@ -66,6 +67,7 @@ interface CTVHubProps {
 }
 
 export const CTVHub: React.FC<CTVHubProps> = ({
+  currentRole,
   ctvUser,
   leads,
   appointments = [],
@@ -112,7 +114,15 @@ export const CTVHub: React.FC<CTVHubProps> = ({
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const isTeamLeader = ctvUser?.role === "team_leader" || (ctvUser as any)?.role === "team_leader";
+  const isTeamLeader = Boolean(
+    currentRole === "team_leader" ||
+    ctvUser?.role === "team_leader" ||
+    (ctvUser as any)?.role === "team_leader" ||
+    ctvUser?.name?.toLowerCase().includes("trưởng nhóm") ||
+    ctvUser?.name?.toLowerCase().includes("truong nhom") ||
+    ctvUser?.code?.toLowerCase().includes("truongnhom") ||
+    ctvUser?.code?.toLowerCase().includes("tl-")
+  );
   const hasTeamLeader = Boolean(ctvUser?.teamLeaderId);
 
   const baseModules = [
