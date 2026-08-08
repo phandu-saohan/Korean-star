@@ -1619,11 +1619,30 @@ export default function App() {
                     <strong className="text-amber-400 font-extrabold text-sm">{effectiveCtvUser.code}</strong>
                     <button
                       onClick={copyCode}
-                      className="p-1.5 hover:bg-white/10 rounded-lg transition text-slate-300 hover:text-white"
+                      className="p-1.5 hover:bg-white/10 rounded-lg transition text-slate-300 hover:text-white cursor-pointer"
                       title="Sao chép mã CTV"
                     >
                       {copiedCode ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-slate-400" />}
                     </button>
+                  </div>
+
+                  {/* Hiển thị Mã nhóm & Tên nhóm tham gia ngay dưới Mã Giới Thiệu */}
+                  <div className="flex items-center gap-1.5 text-xs text-slate-300 mt-1.5 flex-wrap">
+                    <span className="text-slate-400 font-medium">Nhóm tham gia:</span>
+                    {effectiveCtvUser.teamLeaderId ? (
+                      <div className="inline-flex items-center gap-1.5 bg-blue-950/80 border border-blue-600/80 px-2.5 py-1 rounded-lg text-blue-200 font-medium text-[11px] shadow-xs">
+                        <Users className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        <span>Mã nhóm: <strong className="font-mono font-black text-amber-300 text-xs">{effectiveCtvUser.teamLeaderId}</strong></span>
+                        {effectiveCtvUser.teamName && (
+                          <span className="text-slate-200 font-semibold">({effectiveCtvUser.teamName})</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 bg-slate-800/80 border border-slate-700/80 px-2.5 py-0.5 rounded-lg text-slate-400 text-[11px]">
+                        <Users className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                        Chưa gia nhập nhóm
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
