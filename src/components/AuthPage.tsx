@@ -44,6 +44,7 @@ interface AuthPageProps {
 
 export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
+  const [signupStep, setSignupStep] = useState<1 | 2 | 3>(1);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -614,156 +615,338 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                 </>
               )}
 
-              {/* 2. FORM ĐĂNG KÝ CỘNG TÁC VIÊN (TRANG RIÊNG) */}
+              {/* 2. FORM ĐĂNG KÝ CỘNG TÁC VIÊN (WIZARD 3 BƯỚC ĐI TỪNG BƯỚC) */}
               {mode === "signup" && (
-                <>
-                  <div className="space-y-3">
-                    {/* FIELD 1: AVATAR 1:1 CROPPER */}
-                    <div>
-                      <label className="block text-slate-700 font-extrabold text-[11px] mb-1">1. Ảnh Đại Diện (*):</label>
-                      <div className="flex items-center gap-3 bg-slate-50 border border-slate-300/80 rounded-2xl p-2.5">
-                        <div className="w-14 h-14 rounded-2xl bg-slate-200 border-2 border-amber-400 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
-                          {avatarPreview ? (
-                            <img src={avatarPreview} alt="Avatar 1:1" className="w-full h-full object-cover" />
-                          ) : (
-                            <User className="w-7 h-7 text-slate-400" />
-                          )}
+                <div className="space-y-4">
+                  {/* STEPPER PROGRESS BAR HEADER */}
+                  <div className="bg-slate-50 border border-slate-200 p-3 rounded-2xl">
+                    <div className="flex items-center justify-between text-xs">
+                      {/* Step 1 Badge */}
+                      <button
+                        type="button"
+                        onClick={() => { if (signupStep > 1) setSignupStep(1); }}
+                        className={`flex items-center gap-1.5 font-black transition ${
+                          signupStep === 1 ? "text-amber-700 scale-105" : signupStep > 1 ? "text-emerald-700 cursor-pointer" : "text-slate-400"
+                        }`}
+                      >
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-mono font-black ${
+                          signupStep === 1 ? "bg-amber-500 text-[#0B192C] shadow-xs" : signupStep > 1 ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-500"
+                        }`}>
+                          {signupStep > 1 ? "✓" : "1"}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-[#0B192C] font-extrabold text-xs cursor-pointer transition shadow-xs">
-                            <Upload className="w-3.5 h-3.5" />
-                            <span>{avatarPreview ? "Đổi ảnh khác" : "Tải ảnh & Cắt 1:1"}</span>
-                            <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
-                          </label>
+                        <span>1. Hồ Sơ</span>
+                      </button>
+
+                      <div className={`flex-1 h-0.5 mx-2 rounded transition ${signupStep > 1 ? "bg-emerald-500" : "bg-slate-200"}`} />
+
+                      {/* Step 2 Badge */}
+                      <button
+                        type="button"
+                        onClick={() => { if (signupStep > 2) setSignupStep(2); }}
+                        className={`flex items-center gap-1.5 font-black transition ${
+                          signupStep === 2 ? "text-amber-700 scale-105" : signupStep > 2 ? "text-emerald-700 cursor-pointer" : "text-slate-400"
+                        }`}
+                      >
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-mono font-black ${
+                          signupStep === 2 ? "bg-amber-500 text-[#0B192C] shadow-xs" : signupStep > 2 ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-500"
+                        }`}>
+                          {signupStep > 2 ? "✓" : "2"}
+                        </div>
+                        <span>2. Tài Khoản</span>
+                      </button>
+
+                      <div className={`flex-1 h-0.5 mx-2 rounded transition ${signupStep > 2 ? "bg-emerald-500" : "bg-slate-200"}`} />
+
+                      {/* Step 3 Badge */}
+                      <button
+                        type="button"
+                        className={`flex items-center gap-1.5 font-black transition ${
+                          signupStep === 3 ? "text-amber-700 scale-105" : "text-slate-400"
+                        }`}
+                      >
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-mono font-black ${
+                          signupStep === 3 ? "bg-amber-500 text-[#0B192C] shadow-xs" : "bg-slate-200 text-slate-500"
+                        }`}>
+                          3
+                        </div>
+                        <span>3. Ngân Hàng</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* BƯỚC 1: HỒ SƠ CÁ NHÂN & CCCD */}
+                  {signupStep === 1 && (
+                    <div className="space-y-3.5 animate-fadeIn">
+                      <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-xl text-amber-900 font-extrabold text-[11px] flex items-center gap-1.5">
+                        <User className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>BƯỚC 1/3: HỒ SƠ CÁ NHÂN & ẢNH ĐẠI DIỆN 1:1</span>
+                      </div>
+
+                      {/* FIELD 1: AVATAR 1:1 CROPPER */}
+                      <div>
+                        <label className="block text-slate-700 font-extrabold text-[11px] mb-1">1. Ảnh Đại Diện 1:1 (*):</label>
+                        <div className="flex items-center gap-3 bg-slate-50 border border-slate-300/80 rounded-2xl p-2.5">
+                          <div className="w-14 h-14 rounded-2xl bg-slate-200 border-2 border-amber-400 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
+                            {avatarPreview ? (
+                              <img src={avatarPreview} alt="Avatar 1:1" className="w-full h-full object-cover" />
+                            ) : (
+                              <User className="w-7 h-7 text-slate-400" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-[#0B192C] font-extrabold text-xs cursor-pointer transition shadow-xs">
+                              <Upload className="w-3.5 h-3.5" />
+                              <span>{avatarPreview ? "Đổi ảnh khác" : "Tải ảnh & Cắt 1:1"}</span>
+                              <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+                            </label>
+                            <p className="text-[10px] text-slate-500 mt-1 font-medium">Tải ảnh đại diện rõ mặt để xác thực CTV</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div>
-                      <label className="block text-slate-700 font-extrabold text-[11px] mb-1">2. Họ Và Tên (*):</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Nguyễn Văn A"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-900 focus:outline-none focus:border-amber-500"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-slate-700 font-extrabold text-[11px] mb-1">3. Email (*):</label>
+                        <label className="block text-slate-700 font-extrabold text-[11px] mb-1">2. Họ Và Tên đầy đủ (*):</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ví dụ: Nguyễn Văn A"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-extrabold text-[11px] mb-1">3. Số CCCD / CMND (*):</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Nhập 12 số căn cước công dân"
+                          value={idCardNumber}
+                          onChange={(e) => setIdCardNumber(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-extrabold text-[11px] mb-1">4. Cơ sở / Spa / TMV (Tùy chọn):</label>
+                        <input
+                          type="text"
+                          placeholder="Tên Spa hoặc Thẩm Mỹ Viện của bạn"
+                          value={facilityName}
+                          onChange={(e) => setFacilityName(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setErrorMsg("");
+                          if (!avatarPreview) {
+                            setErrorMsg("Vui lòng tải lên và xác nhận Ảnh Đại Diện 1:1 (*)");
+                            return;
+                          }
+                          if (!fullName.trim()) {
+                            setErrorMsg("Vui lòng nhập Họ Và Tên (*)");
+                            return;
+                          }
+                          if (!idCardNumber.trim()) {
+                            setErrorMsg("Vui lòng nhập Số Căn Cước Công Dân (CCCD) (*)");
+                            return;
+                          }
+                          setSignupStep(2);
+                        }}
+                        className="w-full mt-2 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 active:scale-98 text-[#0B192C] font-black text-xs transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <span>Tiếp Theo (Bước 2: Liên Hệ & Mật Khẩu)</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* BƯỚC 2: LIÊN HỆ, MẬT KHẨU & VAI TRÒ */}
+                  {signupStep === 2 && (
+                    <div className="space-y-3.5 animate-fadeIn">
+                      <div className="bg-blue-50 border border-blue-200 p-2.5 rounded-xl text-blue-900 font-extrabold text-[11px] flex items-center gap-1.5">
+                        <Mail className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span>BƯỚC 2/3: EMAIL, SỐ ĐIỆN THOẠI & MẬT KHẨU</span>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-extrabold text-[11px] mb-1">5. Email Đăng Nhập (*):</label>
                         <input
                           type="email"
                           required
                           placeholder="nguyenvana@gmail.com"
                           value={signupEmail}
                           onChange={(e) => setSignupEmail(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-slate-700 font-extrabold text-[11px] mb-1">4. Số ĐT (*):</label>
+                        <label className="block text-slate-700 font-extrabold text-[11px] mb-1">6. Số Điện Thoại (*):</label>
                         <input
                           type="text"
                           required
                           placeholder="0912345678"
                           value={signupPhone}
                           onChange={(e) => setSignupPhone(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-slate-700 font-extrabold text-[11px] mb-1">Mật Khẩu Tài Khoản (*):</label>
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        required
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-slate-700 font-extrabold text-[11px] mb-1">5. STK Ngân Hàng (*):</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="STK nhận hoa hồng"
-                          value={bankAccount}
-                          onChange={(e) => setBankAccount(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-slate-700 font-extrabold text-[11px] mb-1">6. Tên Ngân Hàng (*):</label>
+                        <label className="block text-slate-700 font-extrabold text-[11px] mb-1">7. Mật Khẩu Tài Khoản (*):</label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            required
+                            placeholder="Thiết lập mật khẩu từ 6 ký tự..."
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 pr-10 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-3 text-slate-400 hover:text-slate-700 cursor-pointer"
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-extrabold text-[11px] mb-1">Vai trò khởi tạo:</label>
+                        <select
+                          value={signupRole}
+                          onChange={(e) => setSignupRole(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs cursor-pointer"
+                        >
+                          {availableRoles.map((r) => (
+                            <option key={r.roleKey} value={r.roleKey}>
+                              {r.roleName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setSignupStep(1)}
+                          className="flex-1 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
+                        >
+                          ← Quay Lại
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setErrorMsg("");
+                            if (!signupEmail.trim() || !signupEmail.includes("@")) {
+                              setErrorMsg("Vui lòng nhập địa chỉ Email đăng nhập hợp lệ (*)");
+                              return;
+                            }
+                            if (!signupPhone.trim() || signupPhone.length < 8) {
+                              setErrorMsg("Vui lòng nhập Số điện thoại liên hệ hợp lệ (*)");
+                              return;
+                            }
+                            if (!password || password.length < 6) {
+                              setErrorMsg("Mật khẩu tài khoản phải từ 6 ký tự trở lên (*)");
+                              return;
+                            }
+                            setSignupStep(3);
+                          }}
+                          className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 active:scale-98 text-[#0B192C] font-black text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <span>Tiếp Theo (Ngân Hàng)</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* BƯỚC 3: TÀI KHOẢN NGÂN HÀNG & HOÀN TẤT */}
+                  {signupStep === 3 && (
+                    <div className="space-y-3.5 animate-fadeIn">
+                      <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl text-emerald-900 font-extrabold text-[11px] flex items-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>BƯỚC 3/3: TÀI KHOẢN NGÂN HÀNG NHẬN HOA HỒNG VIETQR</span>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-extrabold text-[11px] mb-1">8. Chọn Tên Ngân Hàng (*):</label>
                         <button
                           type="button"
                           onClick={() => setBankModalOpen(true)}
-                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 font-bold text-slate-900 flex items-center justify-between transition cursor-pointer text-xs"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-900 flex items-center justify-between transition cursor-pointer text-xs"
                         >
                           <span className="truncate font-black">{bankName}</span>
                           <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         </button>
                       </div>
-                    </div>
 
-                    <div>
-                      <label className="block text-slate-700 font-extrabold text-[11px] mb-1">7. Số CCCD (*):</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="12 số căn cước"
-                        value={idCardNumber}
-                        onChange={(e) => setIdCardNumber(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
-                      />
-                    </div>
+                      <div>
+                        <label className="block text-slate-700 font-extrabold text-[11px] mb-1">9. Số Tài Khoản Ngân Hàng (*):</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Nhập số tài khoản nhận hoa hồng..."
+                          value={bankAccount}
+                          onChange={(e) => setBankAccount(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
+                        />
+                      </div>
 
-                    <div>
-                      <label className="block text-slate-700 font-extrabold text-[11px] mb-1">8. Cơ sở (Tùy chọn):</label>
-                      <input
-                        type="text"
-                        placeholder="Tên Spa / TMV của bạn"
-                        value={facilityName}
-                        onChange={(e) => setFacilityName(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs"
-                      />
-                    </div>
-                  </div>
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1 text-xs font-medium">
+                        <div className="flex justify-between text-slate-600">
+                          <span>Chủ tài khoản thụ hưởng:</span>
+                          <span className="font-black text-slate-900 uppercase">{fullName ? fullName.toUpperCase() : "CHƯA NHẬP"}</span>
+                        </div>
+                        <div className="flex justify-between text-slate-600">
+                          <span>Mã giới thiệu tự động:</span>
+                          <span className="font-mono font-black text-blue-700">SAOHAN-CTV</span>
+                        </div>
+                      </div>
 
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full mt-3 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 active:scale-98 text-white font-black text-sm transition shadow-lg flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    {loading ? (
-                      <span>Đang xử lý...</span>
-                    ) : (
-                      <>
-                        <span>Hoàn Tất Đăng Ký CTV</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setSignupStep(2)}
+                          className="py-3 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
+                        >
+                          ← Quay Lại
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={loading}
+                          className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-600 to-emerald-600 hover:brightness-110 active:scale-98 text-white font-black text-sm transition shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                          {loading ? (
+                            <span>Đang đăng ký...</span>
+                          ) : (
+                            <>
+                              <span>🚀 Hoàn Tất Đăng Ký CTV</span>
+                              <CheckCircle2 className="w-4 h-4" />
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="text-center pt-2 border-t border-slate-100">
                     <button
                       type="button"
-                      onClick={() => { setMode("signin"); setErrorMsg(""); setSuccessMsg(""); }}
+                      onClick={() => { setMode("signin"); setErrorMsg(""); setSuccessMsg(""); setSignupStep(1); }}
                       className="text-xs text-slate-600 hover:text-slate-900 font-bold"
                     >
                       Đã có tài khoản? <span className="text-amber-600 font-extrabold underline">Đăng nhập ngay</span>
                     </button>
                   </div>
-                </>
+                </div>
               )}
 
               {/* 3. FORM KHÔI PHỤC MẬT KHẨU */}
