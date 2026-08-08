@@ -409,17 +409,34 @@ export default function App() {
   }, [activeTab, authUser]);
 
   const handleSignOut = async () => {
+    // 1. Reset state đồng bộ ngay lập tức để ngắt giao diện và ngắt auto-sync
+    setAuthUser(null);
+    setCurrentRole("ctv");
+    setActiveTab("ctv-dashboard");
+
+    // 2. Xóa sạch dữ liệu phiên đăng nhập trong LocalStorage & SessionStorage
+    try {
+      localStorage.removeItem("saohan_auth_user");
+      localStorage.removeItem("saohan_active_tab");
+      localStorage.removeItem("saohan_current_role");
+
+      // Xóa tất cả các token phiên làm việc Supabase SDK trong LocalStorage (sb-*-auth-token)
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith("sb-") || key.includes("supabase") || key.includes("auth"))) {
+          localStorage.removeItem(key);
+        }
+      }
+      sessionStorage.clear();
+    } catch (e) {}
+
+    // 3. Đăng xuất khỏi Supabase Auth trong background
     try {
       await signOutUser();
     } catch (e) {
       console.warn("[SignOut Notice]:", e);
     }
-    setAuthUser(null);
-    localStorage.removeItem("saohan_auth_user");
-    localStorage.removeItem("saohan_active_tab");
-    localStorage.removeItem("saohan_current_role");
-    setCurrentRole("ctv");
-    setActiveTab("ctv-dashboard");
+
     showToast("Đã đăng xuất tài khoản an toàn.");
   };
 
@@ -461,11 +478,11 @@ export default function App() {
         console.warn("[Supabase] Không fetch được feedbacks, sử dụng bộ lưu trữ local.", err);
       }
 
-      // Fetch & Sync Live User Profile trực tiếp từ bảng user_profiles trên Supabase DB
+      // Fetch & Sync Live User Profile trực tiếp từ bảng user_profiles trên Supabase DB (chỉ khi đang đăng nhập)
       if (authUser?.id || authUser?.email) {
         try {
           const liveProfile = await fetchUserProfile(authUser.id || authUser.email);
-          if (liveProfile) {
+          if (liveProfile && localStorage.getItem("saohan_auth_user") !== null) {
             setAuthUser(liveProfile);
             safeSetLocalStorage("saohan_auth_user", JSON.stringify(liveProfile));
           }
@@ -647,10 +664,10 @@ export default function App() {
       // 4. Đồng bộ yêu cầu rút tiền
       await syncPayoutsWithNotification();
 
-      // 5. Đồng bộ thông tin cá nhân tài khoản từ Supabase DB
-      if (authUser?.id || authUser?.email) {
+      // 5. Đồng bộ thông tin cá nhân tài khoản từ Supabase DB (chỉ khi người dùng đang ở trạng thái đăng nhập)
+      if (authUser && (authUser.id || authUser.email)) {
         const freshProfile = await fetchUserProfile(authUser.id || authUser.email);
-        if (freshProfile) {
+        if (freshProfile && localStorage.getItem("saohan_auth_user") !== null) {
           setAuthUser(freshProfile);
           safeSetLocalStorage("saohan_auth_user", JSON.stringify(freshProfile));
         }

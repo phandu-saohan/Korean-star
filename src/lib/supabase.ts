@@ -243,13 +243,27 @@ export const signInUser = async (emailOrPhone: string, password: string) => {
   return { user: data.user, session: data.session, profile };
 };
 
-// 3. Sign Out (Đăng xuất khỏi Supabase Session)
+// 3. Sign Out (Đăng xuất khỏi Supabase Session & xóa sạch dữ liệu phiên)
 export const signOutUser = async () => {
   try {
     await supabase.auth.signOut();
   } catch (error) {
     console.warn("[Supabase SignOut Warning]:", error);
   }
+  try {
+    localStorage.removeItem("saohan_auth_user");
+    localStorage.removeItem("saohan_active_tab");
+    localStorage.removeItem("saohan_current_role");
+    
+    // Clear all Supabase internal session keys (sb-*-auth-token, etc.)
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith("sb-") || key.includes("supabase") || key.includes("auth"))) {
+        localStorage.removeItem(key);
+      }
+    }
+    sessionStorage.clear();
+  } catch (e) {}
 };
 
 // 4. Reset Password (Quên mật khẩu)
