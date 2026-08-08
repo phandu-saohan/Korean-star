@@ -139,7 +139,7 @@ export default function App() {
       }
       if (savedTab === "editor" && userRole !== "editor" && userRole !== "admin") return "ctv-dashboard";
       if (savedTab === "accountant" && userRole !== "accountant" && userRole !== "admin") return "ctv-dashboard";
-      if (savedTab === "team-leader" && userRole !== "team_leader" && userRole !== "admin") return "ctv-dashboard";
+      if (savedTab === "team-leader") return "ctv-dashboard";
       return savedTab;
     }
 
@@ -411,8 +411,7 @@ export default function App() {
     } else if (activeTab === "accountant" && role !== "accountant" && role !== "admin") {
       showToast(`Tài khoản vai trò '${role.toUpperCase()}' không có quyền truy cập Bảng Kế Toán.`);
       setActiveTab("ctv-dashboard");
-    } else if (activeTab === "team-leader" && role !== "team_leader" && role !== "admin") {
-      showToast(`Tài khoản vai trò '${role.toUpperCase()}' không có quyền truy cập Bảng Trưởng nhóm.`);
+    } else if (activeTab === "team-leader") {
       setActiveTab("ctv-dashboard");
     }
   }, [activeTab, authUser]);
