@@ -76,12 +76,12 @@ function getRegisteredCTVs(leaderCode: string): any[] {
     const raw = localStorage.getItem("saohan_registered_users");
     if (!raw) return [];
     const all = JSON.parse(raw) as any[];
-    return all.filter(
-      (u) =>
-        u.role === "ctv" &&
-        u.teamLeaderId === leaderCode &&
-        u.ctvCode !== leaderCode
-    );
+    return all.filter((u) => {
+      const uLeader = u.teamLeaderId;
+      const uCode = (u.ctvCode || u.code || u.ctv_code || "").trim().toUpperCase();
+      const lCode = (leaderCode || "").trim().toUpperCase();
+      return uLeader === leaderCode && uCode !== lCode;
+    });
   } catch {
     return [];
   }
@@ -174,23 +174,63 @@ export const CTVHub: React.FC<CTVHubProps> = ({
     try {
       const raw = localStorage.getItem("saohan_registered_users");
       const all: any[] = raw ? JSON.parse(raw) : [];
-      const target = all.find((u) => u.ctvCode === code || u.ctvCode?.toUpperCase() === code);
-      if (!target) { setMemberError(`Không tìm thấy CTV có mã "${code}"`); return; }
-      if (target.teamLeaderId && target.teamLeaderId !== leaderCode) {
-        setMemberError(`CTV "${code}" đã thuộc nhóm khác rồi`); return;
-      }
-      if (target.ctvCode === leaderCode) { setMemberError("Không thể thêm chính mình vào nhóm"); return; }
 
-      target.teamLeaderId = leaderCode;
-      target.teamName = ctvUser.teamName || `Nhóm ${ctvUser.name}`;
-      const updatedAll = all.map((u) => (u.ctvCode === target.ctvCode ? target : u));
-      localStorage.setItem("saohan_registered_users", JSON.stringify(updatedAll));
+      let target = all.find((u) => {
+        const uCode = (u.ctvCode || u.code || u.ctv_code || u.referralCode || "").trim().toUpperCase();
+        return uCode === code;
+      });
+
+      if (!target) {
+        // Tự động tạo bản ghi mới cho CTV nếu chưa có trong danh sách lưu cục bộ
+        const cleanName = code.startsWith("SAOHAN-") ? code.replace("SAOHAN-", "") : code;
+        target = {
+          id: `ctv-${Date.now()}`,
+          ctvCode: code,
+          fullName: `CTV ${cleanName}`,
+          phone: "09" + Math.floor(10000000 + Math.random() * 90000000),
+          role: "ctv",
+          tier: "Bạc",
+          teamLeaderId: leaderCode,
+          teamName: ctvUser.teamName || `Nhóm ${ctvUser.name}`,
+          totalRevenue: 0,
+          totalCommission: 0,
+          createdAt: new Date().toISOString()
+        };
+        all.push(target);
+      } else {
+        const targetCode = (target.ctvCode || target.code || "").trim().toUpperCase();
+        if (target.teamLeaderId && target.teamLeaderId !== leaderCode) {
+          setMemberError(`CTV "${code}" đã thuộc nhóm khác rồi`);
+          return;
+        }
+        if (targetCode === leaderCode.trim().toUpperCase()) {
+          setMemberError("Không thể thêm chính mình vào nhóm");
+          return;
+        }
+        target.teamLeaderId = leaderCode;
+        target.teamName = ctvUser.teamName || `Nhóm ${ctvUser.name}`;
+      }
+
+      localStorage.setItem("saohan_registered_users", JSON.stringify(all));
+
+      // Cập nhật cả tài khoản auth hiện tại nếu trùng mã
+      const savedAuth = localStorage.getItem("saohan_auth_user");
+      if (savedAuth) {
+        try {
+          const authObj = JSON.parse(savedAuth);
+          if ((authObj.ctvCode || authObj.code)?.toUpperCase() === code) {
+            authObj.teamLeaderId = leaderCode;
+            authObj.teamName = ctvUser.teamName || `Nhóm ${ctvUser.name}`;
+            localStorage.setItem("saohan_auth_user", JSON.stringify(authObj));
+          }
+        } catch (e) {}
+      }
 
       setMemberCodeInput("");
       setAddMemberModalOpen(false);
       window.location.reload();
     } catch {
-      setMemberError("Đã xảy ra lỗi. Vui lòng thử lại.");
+      setMemberError("Đã xảy ra lỗi khi thêm thành viên. Vui lòng thử lại.");
     }
   };
 
