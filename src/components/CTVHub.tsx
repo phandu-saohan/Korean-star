@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { formatCurrencyInput, parseCurrencyInput, formatDateTimeVN } from "../utils/formatters";
 import { CTVUser, ReferralLead, ServiceItem, ServiceFeedback, Appointment, AppointmentInvoice, PayoutRequest, TeamRevenueTransfer } from "../types";
+import { fetchUserProfileByCtvCode, updateTeamLeaderInSupabase } from "../lib/supabase";
 import { 
   Wallet, 
   Crown, 
@@ -173,7 +174,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
   const [editPhone, setEditPhone] = useState("");
   const [editAvatar, setEditAvatar] = useState("");
 
-  const handleMemberCodeChange = (val: string) => {
+  const handleMemberCodeChange = async (val: string) => {
     setMemberCodeInput(val);
     setMemberError("");
     const clean = val.trim().toUpperCase();
@@ -186,38 +187,61 @@ export const CTVHub: React.FC<CTVHubProps> = ({
             (u.ctvCode || u.code || u.ctv_code || "").trim().toUpperCase() === clean
         );
         if (match) {
-          setMemberNameInput(match.fullName || match.name || "");
-          setMemberPhoneInput(match.phone || match.phoneNumber || "");
-          setMemberAvatarInput(match.avatarUrl || match.avatar || "");
+          if (match.fullName || match.name) setMemberNameInput(match.fullName || match.name);
+          if (match.phone || match.phoneNumber) setMemberPhoneInput(match.phone || match.phoneNumber);
+          if (match.avatarUrl || match.avatar) setMemberAvatarInput(match.avatarUrl || match.avatar);
+          if (match.teamLeaderId && match.teamLeaderId !== leaderCode) {
+            setMemberError(`CTV "${clean}" đã thuộc ${match.teamName || "nhóm khác"} rồi! Mỗi CTV chỉ được thuộc 1 nhóm.`);
+          }
+        }
+
+        // Tự động truy vấn dữ liệu CTV thật trên Supabase (user_profiles)
+        const sbProfile = await fetchUserProfileByCtvCode(clean);
+        if (sbProfile) {
+          if (sbProfile.fullName) setMemberNameInput(sbProfile.fullName);
+          if (sbProfile.phone) setMemberPhoneInput(sbProfile.phone);
+          if (sbProfile.avatarUrl) setMemberAvatarInput(sbProfile.avatarUrl);
+          if (sbProfile.teamLeaderId && sbProfile.teamLeaderId !== leaderCode) {
+            setMemberError(`CTV "${clean}" đã thuộc ${sbProfile.teamName || "nhóm khác"} rồi! Mỗi CTV chỉ được thuộc 1 nhóm.`);
+          }
         }
       } catch (e) {}
     }
   };
 
-  const handleRemoveMember = (memberCode: string) => {
+  const handleRemoveMember = async (memberCode: string) => {
     if (!confirm(`Bạn có chắc chắn muốn gỡ CTV "${memberCode}" khỏi nhóm?`)) return;
     try {
       const raw = localStorage.getItem("saohan_registered_users");
       const all: any[] = raw ? JSON.parse(raw) : [];
+      const targetCodeUpper = memberCode.trim().toUpperCase();
       const updatedAll = all.map((u) => {
-        if (u.ctvCode === memberCode) {
+        const uCode = (u.ctvCode || u.code || u.ctv_code || "").trim().toUpperCase();
+        if (uCode === targetCodeUpper || u.ctvCode === memberCode) {
           return { ...u, teamLeaderId: null, teamName: null };
         }
         return u;
       });
       localStorage.setItem("saohan_registered_users", JSON.stringify(updatedAll));
+
+      // Đồng bộ việc xóa thành viên khỏi nhóm trên CSDL Supabase
+      updateTeamLeaderInSupabase(memberCode, null, null).catch(console.error);
+
       window.location.reload();
     } catch (e) {
       console.error(e);
     }
   };
 
-  const handleAddMember = () => {
+  const handleAddMember = async () => {
     setMemberError("");
     const code = memberCodeInput.trim().toUpperCase();
     if (!code) { setMemberError("Vui lòng nhập Mã CTV"); return; }
 
     try {
+      // 1. Lấy thông tin thật của CTV từ Supabase DB
+      const sbProfile = await fetchUserProfileByCtvCode(code);
+
       const raw = localStorage.getItem("saohan_registered_users");
       const all: any[] = raw ? JSON.parse(raw) : [];
 
@@ -226,47 +250,58 @@ export const CTVHub: React.FC<CTVHubProps> = ({
         return uCode === code;
       });
 
+      // 2. Kiểm tra quy tắc: Mỗi CTV chỉ được add vào 1 nhóm
+      const existingLeader = sbProfile?.teamLeaderId || target?.teamLeaderId;
+      const existingTeamName = sbProfile?.teamName || target?.teamName;
+
+      if (existingLeader && existingLeader !== leaderCode) {
+        setMemberError(`CTV "${code}" đã thuộc ${existingTeamName || "nhóm khác"} rồi! Mỗi CTV chỉ được gia nhập 1 nhóm.`);
+        return;
+      }
+
+      if (code === leaderCode.trim().toUpperCase()) {
+        setMemberError("Không thể thêm chính mình vào nhóm!");
+        return;
+      }
+
+      // 3. Ưu tiên thông tin từ Supabase -> Input chỉnh sửa -> Local Storage
       const cleanName = code.startsWith("SAOHAN-") ? code.replace("SAOHAN-", "") : code;
-      const finalName = memberNameInput.trim() || (target ? (target.fullName || target.name) : `CTV ${cleanName}`);
-      const finalPhone = memberPhoneInput.trim() || (target ? (target.phone || target.phoneNumber) : "09" + Math.floor(10000000 + Math.random() * 90000000));
-      const finalAvatar = memberAvatarInput.trim() || (target ? (target.avatarUrl || target.avatar) : "");
+      const finalName = memberNameInput.trim() || sbProfile?.fullName || (target ? (target.fullName || target.name) : `CTV ${cleanName}`);
+      const finalPhone = memberPhoneInput.trim() || sbProfile?.phone || (target ? (target.phone || target.phoneNumber) : "09" + Math.floor(10000000 + Math.random() * 90000000));
+      const finalAvatar = memberAvatarInput.trim() || sbProfile?.avatarUrl || (target ? (target.avatarUrl || target.avatar) : "");
+
+      const teamName = ctvUser.teamName || `Nhóm ${ctvUser.name}`;
 
       if (!target) {
         target = {
-          id: `ctv-${Date.now()}`,
+          id: sbProfile?.id || `ctv-${Date.now()}`,
           ctvCode: code,
           fullName: finalName,
           phone: finalPhone,
           avatarUrl: finalAvatar,
           role: "ctv",
-          tier: "Bạc",
+          tier: sbProfile?.tier || "Bạc",
           teamLeaderId: leaderCode,
-          teamName: ctvUser.teamName || `Nhóm ${ctvUser.name}`,
-          totalRevenue: 0,
-          totalCommission: 0,
+          teamName: teamName,
+          totalRevenue: sbProfile?.totalRevenue || 0,
+          totalCommission: sbProfile?.totalCommission || 0,
           createdAt: new Date().toISOString()
         };
         all.push(target);
       } else {
-        const targetCode = (target.ctvCode || target.code || "").trim().toUpperCase();
-        if (target.teamLeaderId && target.teamLeaderId !== leaderCode) {
-          setMemberError(`CTV "${code}" đã thuộc nhóm khác rồi`);
-          return;
-        }
-        if (targetCode === leaderCode.trim().toUpperCase()) {
-          setMemberError("Không thể thêm chính mình vào nhóm");
-          return;
-        }
         target.fullName = finalName;
         target.phone = finalPhone;
         if (finalAvatar) target.avatarUrl = finalAvatar;
         target.teamLeaderId = leaderCode;
-        target.teamName = ctvUser.teamName || `Nhóm ${ctvUser.name}`;
+        target.teamName = teamName;
       }
 
       localStorage.setItem("saohan_registered_users", JSON.stringify(all));
 
-      // Cập nhật tài khoản auth hiện tại nếu trùng mã
+      // 4. Đồng bộ gán nhóm lên Supabase CSDL table user_profiles
+      updateTeamLeaderInSupabase(code, leaderCode, teamName).catch(console.error);
+
+      // Cập nhật auth user nếu khớp
       const savedAuth = localStorage.getItem("saohan_auth_user");
       if (savedAuth) {
         try {
@@ -276,7 +311,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
             authObj.phone = finalPhone;
             if (finalAvatar) authObj.avatarUrl = finalAvatar;
             authObj.teamLeaderId = leaderCode;
-            authObj.teamName = ctvUser.teamName || `Nhóm ${ctvUser.name}`;
+            authObj.teamName = teamName;
             localStorage.setItem("saohan_auth_user", JSON.stringify(authObj));
           }
         } catch (e) {}

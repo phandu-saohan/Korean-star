@@ -54,6 +54,8 @@ export interface AuthUserProfile {
   totalRevenue: number;
   totalCommission: number;
   avatarUrl?: string;
+  teamLeaderId?: string | null;
+  teamName?: string | null;
   bankName?: string;
   accountNumber?: string;
   accountHolder?: string;
@@ -378,6 +380,8 @@ export const fetchUserProfile = async (identifier: string): Promise<AuthUserProf
       totalRevenue: Number(data.total_revenue) || 0,
       totalCommission: Number(data.total_commission) || 0,
       avatarUrl: data.avatar_url,
+      teamLeaderId: data.team_leader_id,
+      teamName: data.team_name,
       bankName: data.bank_name,
       accountNumber: data.account_number,
       accountHolder: data.account_holder,
@@ -387,6 +391,64 @@ export const fetchUserProfile = async (identifier: string): Promise<AuthUserProf
     };
   } catch {
     return null;
+  }
+};
+
+// 5c. Fetch User Profile by CTV Code from Supabase
+export const fetchUserProfileByCtvCode = async (ctvCode: string): Promise<AuthUserProfile | null> => {
+  if (!ctvCode) return null;
+  try {
+    const cleanCode = ctvCode.trim().toUpperCase();
+    const { data } = await supabase
+      .from("user_profiles")
+      .select("*")
+      .ilike("ctv_code", cleanCode)
+      .maybeSingle();
+
+    if (!data) return null;
+
+    return {
+      id: data.id,
+      email: data.email || "",
+      fullName: data.full_name || "",
+      phone: data.phone || "",
+      role: data.role || "ctv",
+      ctvCode: data.ctv_code || cleanCode,
+      tier: data.tier || "Bạc",
+      availableBalance: Number(data.available_balance) || 0,
+      pendingBalance: Number(data.pending_balance) || 0,
+      totalRevenue: Number(data.total_revenue) || 0,
+      totalCommission: Number(data.total_commission) || 0,
+      avatarUrl: data.avatar_url,
+      teamLeaderId: data.team_leader_id,
+      teamName: data.team_name,
+      bankName: data.bank_name,
+      accountNumber: data.account_number,
+      accountHolder: data.account_holder,
+      idCardNumber: data.id_card_number,
+      facilityName: data.facility_name,
+      zaloChatId: data.zalo_chat_id
+    };
+  } catch {
+    return null;
+  }
+};
+
+// 5d. Sync Team Leader ID & Team Name to Supabase DB Table
+export const updateTeamLeaderInSupabase = async (userCodeOrId: string, leaderId: string | null, teamName: string | null) => {
+  try {
+    const clean = userCodeOrId.trim();
+    if (!clean) return;
+
+    await supabase
+      .from("user_profiles")
+      .update({
+        team_leader_id: leaderId,
+        team_name: teamName
+      })
+      .or(`ctv_code.eq.${clean.toUpperCase()},id.eq.${clean}`);
+  } catch (e) {
+    console.error("Supabase team_leader sync error:", e);
   }
 };
 
