@@ -104,9 +104,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onCreditCTVCommission
 }) => {
   const effectiveRole = userRole || authUser?.role || "admin";
-  const [activeTab, setActiveTab] = useState<"analytics" | "crm" | "payouts" | "invoices" | "services" | "feedbacks" | "settings">(
-    effectiveRole === "accountant" ? "invoices" : "analytics"
-  );
+  const [activeTab, setActiveTab] = useState<"analytics" | "crm" | "payouts" | "invoices" | "services" | "feedbacks" | "settings">("analytics");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
@@ -446,7 +444,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div>
               <div className="flex items-center gap-2 text-xs font-bold text-amber-700">
                 <Crown className="w-3.5 h-3.5" />
-                <span>Executive Dashboard</span>
+                <span>{effectiveRole === "accountant" ? "Accountant Dashboard" : effectiveRole === "editor" ? "Editor Dashboard" : "Executive Dashboard"}</span>
                 <span>/</span>
                 <span className="text-slate-900 font-black">{currentTabObj.shortTitle}</span>
               </div>
