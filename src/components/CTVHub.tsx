@@ -168,6 +168,25 @@ export const CTVHub: React.FC<CTVHubProps> = ({
 
   useEffect(() => {
     if (ctvUser?.code) {
+      // 1. Tự động kiểm tra và đồng bộ Trưởng nhóm của CTV từ Supabase DB
+      fetchUserProfileByCtvCode(ctvUser.code).then((sbProfile) => {
+        if (sbProfile && sbProfile.teamLeaderId && sbProfile.teamLeaderId !== ctvUser.teamLeaderId) {
+          ctvUser.teamLeaderId = sbProfile.teamLeaderId;
+          ctvUser.teamName = sbProfile.teamName || ctvUser.teamName;
+
+          const savedAuth = localStorage.getItem("saohan_auth_user");
+          if (savedAuth) {
+            try {
+              const authObj = JSON.parse(savedAuth);
+              authObj.teamLeaderId = sbProfile.teamLeaderId;
+              authObj.teamName = sbProfile.teamName || authObj.teamName;
+              localStorage.setItem("saohan_auth_user", JSON.stringify(authObj));
+            } catch (e) {}
+          }
+        }
+      });
+
+      // 2. Tự động đồng bộ các yêu cầu chuyển doanh số từ Supabase DB
       fetchMyTransferRequestsFromSupabase(ctvUser.code).then((sbTransfers) => {
         if (sbTransfers && sbTransfers.length > 0) {
           setMyTransfers((prev) => {
@@ -326,8 +345,12 @@ export const CTVHub: React.FC<CTVHubProps> = ({
 
       localStorage.setItem("saohan_registered_users", JSON.stringify(all));
 
-      // 4. Đồng bộ gán nhóm lên Supabase CSDL table user_profiles
-      updateTeamLeaderInSupabase(code, leaderCode, teamName).catch(console.error);
+      // 4. Đồng bộ gán nhóm lên Supabase CSDL table user_profiles (Tự tạo profile nếu chưa có)
+      await updateTeamLeaderInSupabase(code, leaderCode, teamName, {
+        fullName: finalName,
+        phone: finalPhone,
+        avatarUrl: finalAvatar
+      });
 
       // Cập nhật auth user nếu khớp
       const savedAuth = localStorage.getItem("saohan_auth_user");

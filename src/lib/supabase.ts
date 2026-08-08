@@ -434,22 +434,97 @@ export const fetchUserProfileByCtvCode = async (ctvCode: string): Promise<AuthUs
   }
 };
 
-// 5d. Sync Team Leader ID & Team Name to Supabase DB Table
-export const updateTeamLeaderInSupabase = async (userCodeOrId: string, leaderId: string | null, teamName: string | null) => {
+// 5d. Sync Team Leader ID & Team Name to Supabase DB Table (supports creating missing profiles)
+export const updateTeamLeaderInSupabase = async (
+  userCodeOrId: string,
+  leaderId: string | null,
+  teamName: string | null,
+  extraProfileInfo?: { fullName?: string; phone?: string; avatarUrl?: string }
+) => {
   try {
     const clean = userCodeOrId.trim();
     if (!clean) return;
 
-    await supabase
+    const ctvCode = clean.toUpperCase();
+
+    // Tìm profile đã có trên Supabase
+    const { data: existing } = await supabase
       .from("user_profiles")
-      .update({
+      .select("id, ctv_code")
+      .or(`ctv_code.eq.${ctvCode},id.eq.${clean}`)
+      .maybeSingle();
+
+    if (existing) {
+      const updatePayload: any = {
         team_leader_id: leaderId,
         team_name: teamName
-      })
-      .or(`ctv_code.eq.${clean.toUpperCase()},id.eq.${clean}`);
+      };
+      if (extraProfileInfo?.fullName) updatePayload.full_name = extraProfileInfo.fullName;
+      if (extraProfileInfo?.phone) updatePayload.phone = extraProfileInfo.phone;
+      if (extraProfileInfo?.avatarUrl) updatePayload.avatar_url = extraProfileInfo.avatarUrl;
+
+      await supabase
+        .from("user_profiles")
+        .update(updatePayload)
+        .eq("id", existing.id);
+    } else {
+      // Nếu chưa có trên Supabase -> Upsert tạo mới profile CTV vào bảng user_profiles
+      const newId = `user-${Date.now()}`;
+      await supabase.from("user_profiles").upsert({
+        id: newId,
+        ctv_code: ctvCode,
+        full_name: extraProfileInfo?.fullName || `CTV ${ctvCode}`,
+        phone: extraProfileInfo?.phone || "",
+        avatar_url: extraProfileInfo?.avatarUrl || "",
+        role: "ctv",
+        tier: "Bạc",
+        team_leader_id: leaderId,
+        team_name: teamName,
+        total_revenue: 0,
+        total_commission: 0,
+        available_balance: 0,
+        pending_balance: 0,
+        created_at: new Date().toISOString()
+      });
+    }
   } catch (e) {
     console.error("Supabase team_leader sync error:", e);
   }
+};
+
+// 5g. Fetch Team Members managed by a Team Leader from Supabase
+export const fetchTeamMembersFromSupabase = async (leaderCode: string): Promise<AuthUserProfile[]> => {
+  if (!leaderCode) return [];
+  try {
+    const clean = leaderCode.trim().toUpperCase();
+    const { data } = await supabase
+      .from("user_profiles")
+      .select("*")
+      .ilike("team_leader_id", clean);
+
+    if (data && Array.isArray(data)) {
+      return data.map((d: any) => ({
+        id: d.id,
+        email: d.email || "",
+        fullName: d.full_name || "",
+        phone: d.phone || "",
+        ctvCode: d.ctv_code || "",
+        role: d.role || "ctv",
+        tier: d.tier || "Bạc",
+        avatarUrl: d.avatar_url || "",
+        totalRevenue: Number(d.total_revenue) || 0,
+        totalCommission: Number(d.total_commission) || 0,
+        availableBalance: Number(d.available_balance) || 0,
+        pendingBalance: Number(d.pending_balance) || 0,
+        createdAt: d.created_at || "",
+        teamLeaderId: d.team_leader_id,
+        teamName: d.team_name
+      }));
+    }
+  } catch (e) {
+    console.error("Fetch team members error:", e);
+  }
+  return [];
 };
 
 // 5e. Save Transfer Request to Supabase DB Table team_revenue_transfers
