@@ -1437,7 +1437,7 @@ export default function App() {
           />
         </div>
       ) : (
-        <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 flex-1 flex flex-col space-y-5">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pt-4 pb-28 sm:py-6 flex-1 flex flex-col space-y-5">
         
         {/* User Status Summary Banner - Tailored per role */}
         {activeTab === "ctv-dashboard" && (
@@ -1787,7 +1787,10 @@ export default function App() {
 
       {/* Mobile Navigation Bottom Dock (Ẩn khi ở Admin Dashboard để Admin Full Screen) */}
       {activeTab !== "admin" && (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 border-t border-slate-200/90 z-40 backdrop-blur-xl px-1 py-1 shadow-2xl flex items-center justify-around text-[10px] text-[#0B192C] w-full max-w-full overflow-visible pb-[calc(0.375rem+env(safe-area-inset-bottom,0px))]">
+        <nav
+          className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 border-t border-slate-200/90 z-40 backdrop-blur-xl px-1 py-1 shadow-2xl flex items-center justify-around text-[10px] text-[#0B192C] w-full max-w-full overflow-visible pb-[calc(0.375rem+env(safe-area-inset-bottom,0px))] transform-gpu translate-z-0"
+          style={{ WebkitTransform: "translate3d(0,0,0)", transform: "translate3d(0,0,0)" }}
+        >
           
           {/* 1. Trang Chủ */}
           <button

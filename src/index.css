@@ -27,17 +27,17 @@
   }
 }
 
-/* Ngăn tràn màn hình mà KHÔNG phá vỡ position: sticky của Header */
+/* Ngăn tràn màn hình & triệt tiêu hiệu ứng rubber-band nảy trang iOS làm nhảy Menu Bottom */
 html {
   background-color: #0B192C;
   overflow-x: clip;
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: none !important;
 }
 
 body {
   overflow-x: clip;
   max-width: 100vw;
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: none !important;
 }
 
 @media screen and (max-width: 768px) {
