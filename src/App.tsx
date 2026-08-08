@@ -677,17 +677,72 @@ export default function App() {
     return () => clearInterval(interval);
   }, [syncAppointmentsWithNotification, syncPayoutsWithNotification]);
 
-  // Tự động chuyển đổi appointments thành leads để hiển thị đầy đủ trên Dashboard CTVHub
+  // Tự động đồng bộ Realtime trạng thái Danh sách khách hàng giới thiệu (Leads) từ Lịch hẹn CRM
   useEffect(() => {
-    if (!appointments || appointments.length === 0) return;
+    if (!appointments) return;
+
+    const mapStatus = (status: Appointment["status"]): ReferralLead["status"] => {
+      switch (status) {
+        case "Chờ xác nhận":
+          return "Mới";
+        case "Đã xác nhận":
+          return "Đã đặt lịch";
+        case "Đang điều trị":
+          return "Đã tư vấn";
+        case "Hoàn thành":
+          return "Đã hoàn thành";
+        case "Đã hủy":
+          return "Hủy";
+        default:
+          return "Đã đặt lịch";
+      }
+    };
 
     setLeads((prevLeads) => {
-      const existingLeadIds = new Set(prevLeads.map((l) => l.id));
+      const aptMap = new Map<string, Appointment>();
+      appointments.forEach((apt) => {
+        aptMap.set(apt.id, apt);
+        const leadId = apt.id.startsWith("lead-") ? apt.id : `lead-${apt.id}`;
+        aptMap.set(leadId, apt);
+      });
+
+      let hasChanges = false;
+
+      // 1. Cập nhật trạng thái Realtime cho các khách hàng giới thiệu hiện tại
+      const updatedLeads = prevLeads.map((lead) => {
+        const matchingApt = aptMap.get(lead.id);
+        if (matchingApt) {
+          const expectedStatus = mapStatus(matchingApt.status);
+          if (
+            lead.status !== expectedStatus ||
+            lead.customerName !== matchingApt.customerName ||
+            lead.serviceName !== matchingApt.serviceName ||
+            lead.appointmentDate !== matchingApt.date ||
+            lead.doctorAssigned !== matchingApt.doctorName
+          ) {
+            hasChanges = true;
+            return {
+              ...lead,
+              status: expectedStatus,
+              customerName: matchingApt.customerName,
+              customerPhone: matchingApt.customerPhone || lead.customerPhone,
+              serviceName: matchingApt.serviceName,
+              appointmentDate: matchingApt.date,
+              doctorAssigned: matchingApt.doctorName || lead.doctorAssigned
+            };
+          }
+        }
+        return lead;
+      });
+
+      // 2. Thêm khách hàng giới thiệu mới từ lịch hẹn nếu chưa có trong danh sách
+      const existingIds = new Set(updatedLeads.map((l) => l.id));
       const newLeadsFromApts: ReferralLead[] = [];
 
       appointments.forEach((apt) => {
         const leadId = apt.id.startsWith("lead-") ? apt.id : `lead-${apt.id}`;
-        if (!existingLeadIds.has(leadId) && !existingLeadIds.has(apt.id)) {
+        if (!existingIds.has(leadId) && !existingIds.has(apt.id)) {
+          hasChanges = true;
           newLeadsFromApts.push({
             id: leadId,
             customerName: apt.customerName,
@@ -697,7 +752,7 @@ export default function App() {
             ctvCode: apt.ctvCode || ctvUser.code,
             ctvName: apt.ctvName || ctvUser.name,
             createdAt: apt.date || new Date().toISOString().slice(0, 10),
-            status: apt.status === "Hoàn thành" ? "Đã hoàn thành" : apt.status === "Đang điều trị" ? "Đã tư vấn" : "Đã đặt lịch",
+            status: mapStatus(apt.status),
             estimatedValue: 35000000,
             commission: 5250000,
             doctorAssigned: apt.doctorName,
@@ -706,11 +761,11 @@ export default function App() {
         }
       });
 
-      if (newLeadsFromApts.length === 0) return prevLeads;
+      if (!hasChanges) return prevLeads;
 
-      const mergedLeads = [...newLeadsFromApts, ...prevLeads];
-      safeSetLocalStorage("saohan_leads", JSON.stringify(mergedLeads));
-      return mergedLeads;
+      const finalLeads = [...newLeadsFromApts, ...updatedLeads];
+      safeSetLocalStorage("saohan_leads", JSON.stringify(finalLeads));
+      return finalLeads;
     });
   }, [appointments, ctvUser]);
 
