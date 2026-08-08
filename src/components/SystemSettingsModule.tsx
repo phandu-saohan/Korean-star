@@ -9,7 +9,8 @@ import {
   fetchCmsSettingsFromSupabase,
   saveCmsSettingsToSupabase,
   fetchAllUserProfilesFromSupabase,
-  saveRegisteredUserToLocalStorage
+  saveRegisteredUserToLocalStorage,
+  signUpUser
 } from "../lib/supabase";
 import { CTVUser } from "../types";
 import { sendOneSignalNotification, notifySystemSettingsUpdated } from "../lib/onesignal";
@@ -48,11 +49,12 @@ import {
   DollarSign,
   UserPlus,
   Shield,
+  Eye,
+  EyeOff,
   Layers,
   FileText,
   Stethoscope,
   QrCode,
-  Eye,
   UserCheck,
   Award,
   TrendingUp,
@@ -465,6 +467,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
   });
 
   // Bank selector inside user modal
+  const [showUserPassword, setShowUserPassword] = useState(false);
   const [userBankModalOpen, setUserBankModalOpen] = useState(false);
   const [userBankSearch, setUserBankSearch] = useState("");
 
@@ -727,6 +730,11 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
         return;
       }
 
+      if (!userFormData.password.trim() || userFormData.password.trim().length < 6) {
+        alert("Vui lòng nhập Mật Khẩu tài khoản (tối thiểu 6 ký tự)!");
+        return;
+      }
+
       const cleanPhone = userFormData.phone.replace(/\D/g, "");
       const ctvCode = `SAOHAN-${userFormData.fullName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "").toUpperCase()}${cleanPhone.slice(-4) || "2026"}`;
       const newUserId = typeof crypto !== "undefined" && crypto.randomUUID
@@ -753,28 +761,42 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
       };
 
       try {
-        await supabase.from("user_profiles").upsert({
-          id: newUserId,
+        await signUpUser({
           email: newUser.email,
-          full_name: newUser.fullName,
+          password: userFormData.password.trim(),
+          fullName: newUser.fullName,
           phone: newUser.phone,
           role: newUser.role,
-          ctv_code: newUser.ctvCode,
-          tier: newUser.tier,
-          available_balance: 0,
-          pending_balance: 0,
-          total_revenue: 0,
-          total_commission: 0,
-          bank_name: newUser.bankName,
-          account_number: newUser.accountNumber,
-          account_holder: newUser.accountHolder,
-          id_card_number: newUser.idCardNumber,
-          facility_name: newUser.facilityName
+          bankName: newUser.bankName,
+          bankAccount: newUser.accountNumber,
+          idCardNumber: newUser.idCardNumber,
+          facilityName: newUser.facilityName
         });
-      } catch (err) {}
+      } catch (err) {
+        try {
+          await supabase.from("user_profiles").upsert({
+            id: newUserId,
+            email: newUser.email,
+            full_name: newUser.fullName,
+            phone: newUser.phone,
+            role: newUser.role,
+            ctv_code: newUser.ctvCode,
+            tier: newUser.tier,
+            available_balance: 0,
+            pending_balance: 0,
+            total_revenue: 0,
+            total_commission: 0,
+            bank_name: newUser.bankName,
+            account_number: newUser.accountNumber,
+            account_holder: newUser.accountHolder,
+            id_card_number: newUser.idCardNumber,
+            facility_name: newUser.facilityName
+          });
+        } catch (_) {}
+      }
 
       setUserAccounts((prev) => [newUser, ...prev]);
-      onToast(`Đã tạo tài khoản mới ${newUser.fullName} trên Supabase thành công!`);
+      onToast(`Đã tạo tài khoản mới ${newUser.fullName} (${newUser.email}) với mật khẩu đã nhập!`);
     }
 
     setUserModalOpen(false);
@@ -2452,6 +2474,31 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                     onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 disabled:opacity-60"
                   />
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label className="block font-extrabold text-slate-700 mb-1">
+                    {editingUser ? "Mật Khẩu Mới (Đổi mật khẩu):" : "Mật Khẩu Đăng Nhập (*):"}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showUserPassword ? "text" : "password"}
+                      required={!editingUser}
+                      placeholder={editingUser ? "•••••••• (Giữ nguyên mật khẩu cũ)" : "Nhập mật khẩu (tối thiểu 6 ký tự)..."}
+                      value={userFormData.password}
+                      onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 pr-10 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowUserPassword(!showUserPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      title={showUserPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                    >
+                      {showUserPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Phone */}
