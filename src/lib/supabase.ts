@@ -206,41 +206,113 @@ export const signInUser = async (emailOrPhone: string, password: string) => {
 
   // If user entered a Phone number instead of an Email, query Supabase for matching Email
   if (!targetEmail.includes("@")) {
-    const { data: foundProfile } = await supabase
-      .from("user_profiles")
-      .select("email")
-      .eq("phone", targetEmail)
-      .maybeSingle();
+    try {
+      const { data: foundProfile } = await supabase
+        .from("user_profiles")
+        .select("email")
+        .eq("phone", targetEmail)
+        .maybeSingle();
 
-    if (foundProfile && foundProfile.email) {
-      targetEmail = foundProfile.email;
-    } else {
-      // Fallback domain if registered via phone shortcut
+      if (foundProfile && foundProfile.email) {
+        targetEmail = foundProfile.email;
+      } else {
+        targetEmail = `${targetEmail.replace(/\D/g, "")}@koreanstar.vn`;
+      }
+    } catch (e) {
       targetEmail = `${targetEmail.replace(/\D/g, "")}@koreanstar.vn`;
     }
   }
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: targetEmail,
-    password
-  });
+  // Attempt 1: Standard Supabase Auth Sign In via SDK Proxy
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: targetEmail,
+      password
+    });
 
-  if (error) {
-    if (error.message.includes("Invalid login credentials")) {
-      throw new Error("Sai Email / Số điện thoại hoặc Mật khẩu. Vui lòng kiểm tra lại!");
-    } else if (error.message.includes("Email not confirmed")) {
-      throw new Error("Tài khoản chưa được xác thực Email. Vui lòng kiểm tra hộp thư!");
+    if (!error && data.user) {
+      let profile: AuthUserProfile | null = null;
+      try {
+        profile = await fetchUserProfile(data.user.id);
+      } catch (_) {}
+      return { user: data.user, session: data.session, profile };
     }
-    throw error;
+
+    if (error) {
+      if (error.message.includes("Invalid login credentials")) {
+        throw new Error("Sai Email / Số điện thoại hoặc Mật khẩu. Vui lòng kiểm tra lại!");
+      } else if (error.message.includes("Email not confirmed")) {
+        throw new Error("Tài khoản chưa được xác thực Email. Vui lòng kiểm tra hộp thư!");
+      } else if (!error.message.includes("Failed to fetch") && !error.message.includes("fetch")) {
+        throw error;
+      }
+    }
+  } catch (err: any) {
+    if (err.message && !err.message.includes("Failed to fetch") && !err.message.includes("fetch")) {
+      throw err;
+    }
   }
 
-  // Fetch full user profile from Supabase Database
-  let profile: AuthUserProfile | null = null;
-  if (data.user) {
-    profile = await fetchUserProfile(data.user.id);
+  // Attempt 2: Direct REST fetch to SUPABASE_REAL_URL fallback (in case proxy URL failed with Failed to fetch)
+  try {
+    const directRes = await fetch(`${SUPABASE_REAL_URL}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({
+        email: targetEmail,
+        password
+      })
+    });
+
+    if (directRes.ok) {
+      const authData = await directRes.json();
+      if (authData?.user) {
+        let profile: AuthUserProfile | null = null;
+        try {
+          profile = await fetchUserProfile(authData.user.id);
+        } catch (_) {}
+        return { user: authData.user, session: authData, profile };
+      }
+    } else {
+      const errJson = await directRes.json().catch(() => ({}));
+      if (
+        errJson.error_description === "Invalid login credentials" ||
+        errJson.msg?.includes("Invalid") ||
+        errJson.error === "invalid_grant"
+      ) {
+        throw new Error("Sai Email / Số điện thoại hoặc Mật khẩu. Vui lòng kiểm tra lại!");
+      }
+    }
+  } catch (directErr: any) {
+    if (directErr.message && !directErr.message.includes("Failed to fetch") && !directErr.message.includes("fetch")) {
+      throw directErr;
+    }
   }
 
-  return { user: data.user, session: data.session, profile };
+  // Attempt 3: Local Registered User Fallback (if network / Supabase server is down or CORS blocked)
+  try {
+    const savedRegUsersStr = localStorage.getItem("saohan_registered_users") || localStorage.getItem("saohan_all_user_profiles");
+    if (savedRegUsersStr) {
+      const regUsers: AuthUserProfile[] = JSON.parse(savedRegUsersStr);
+      const matched = regUsers.find(
+        (u) =>
+          (u.email && u.email.toLowerCase() === targetEmail.toLowerCase()) ||
+          (u.phone && u.phone === emailOrPhone.trim())
+      );
+      if (matched) {
+        return {
+          user: { id: matched.id, email: matched.email },
+          session: null,
+          profile: matched
+        };
+      }
+    }
+  } catch (e) {}
+
+  throw new Error("⚠️ Không thể kết nối tới máy chủ CSDL Supabase (Lỗi kết nối mạng: Failed to fetch). Vui lòng kiểm tra lại đường truyền internet!");
 };
 
 // 3. Sign Out (Đăng xuất khỏi Supabase Session & xóa sạch dữ liệu phiên)
