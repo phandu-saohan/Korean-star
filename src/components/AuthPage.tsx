@@ -448,24 +448,25 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
         mode === "signup" ? "max-w-xl" : "max-w-md"
       }`}>
         
-        {/* LOGO SECTION: ICON ON TOP, NAME BELOW */}
-        <div className="text-center space-y-3 w-full max-w-full">
-          {/* Logo Image on Top */}
+        {/* LOGO SECTION: HORIZONTAL LAYOUT (LOGO ON LEFT, TEXT ON RIGHT) */}
+        <div className="flex items-center justify-center gap-3.5 w-full max-w-full">
+          {/* Logo Image on Left - Smaller & Compact */}
           <img 
             src="/logo.png" 
             alt="KOREAN STAR Logo" 
-            className="w-20 h-20 rounded-3xl object-cover border-2 border-amber-400/60 shadow-2xl mx-auto transition hover:scale-105" 
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl object-cover border-2 border-amber-400/80 shadow-xl transition hover:scale-105 shrink-0" 
           />
 
-          <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center justify-center gap-2">
+          {/* Brand Text on Right */}
+          <div className="text-left space-y-0.5">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-1.5 leading-none">
               KOREAN <span className="text-amber-400">STAR</span>
             </h1>
-            <p className="text-amber-400 font-extrabold text-[11px] tracking-widest uppercase mt-1">
+            <p className="text-amber-400 font-extrabold text-[10px] sm:text-[11px] tracking-widest uppercase leading-snug">
               BỆNH VIỆN THẨM MỸ QUỐC TẾ
             </p>
-            <p className="text-slate-300 text-xs font-medium mt-1">
-              Hệ thống quản lý Cộng tác viên & Doanh số Realtime
+            <p className="text-slate-300 text-[11px] font-medium leading-snug">
+              Hệ thống Quản lý Cộng tác viên & Realtime
             </p>
           </div>
         </div>
