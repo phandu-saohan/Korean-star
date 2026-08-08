@@ -703,16 +703,20 @@ export const CTVHub: React.FC<CTVHubProps> = ({
               <button
                 key={mod.id}
                 onClick={() => {
-                  if (mod.id === "send-team-transfer") {
+                  if (mod.id === "team-members") {
+                    setActiveSubTab("team-members");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  } else if (mod.id === "team-transfers") {
+                    setActiveSubTab("team-transfers");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  } else if (mod.id === "send-team-transfer") {
                     if (onOpenTeamTransferModal) onOpenTeamTransferModal();
-                  } else if (mod.id === "team-members" || mod.id === "team-transfers") {
-                    if (onSelectTab) onSelectTab("team-leader");
-                  } else if (onSelectTab) {
-                    onSelectTab(mod.id);
                   } else if (mod.id === "service-catalog") {
                     setActiveSubTab("services");
                   } else if (mod.id === "before-after") {
                     setActiveSubTab("feedbacks");
+                  } else if (onSelectTab) {
+                    onSelectTab(mod.id);
                   }
                 }}
                 className="bg-slate-50 hover:bg-slate-100 border border-slate-200/90 p-1.5 sm:p-2.5 rounded-2xl transition-all duration-200 hover:scale-[1.03] flex flex-col items-center justify-center text-center group focus:outline-none min-w-0"
