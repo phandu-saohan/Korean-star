@@ -250,7 +250,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     <div className="min-h-screen bg-slate-100/80 flex flex-col md:flex-row font-sans">
       
       {/* 1. MOBILE HEADER BAR */}
-      <div className="md:hidden bg-[#0B192C] text-white p-4 flex items-center justify-between border-b border-blue-900 sticky top-0 z-40 shadow-md">
+      <div className="md:hidden bg-[#0B192C] text-white p-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)] flex items-center justify-between border-b border-blue-900 sticky top-0 z-40 shadow-md">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-600 text-[#0B192C] font-black flex items-center justify-center shadow-xs">
             <Crown className="w-4.5 h-4.5 text-[#0B192C]" />

@@ -29,6 +29,7 @@
 
 /* Ngăn tràn màn hình mà KHÔNG phá vỡ position: sticky của Header */
 html {
+  background-color: #0B192C;
   overflow-x: clip;
   overscroll-behavior-y: contain;
 }
