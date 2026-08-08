@@ -1,4 +1,4 @@
-export type UserRole = "ctv" | "admin" | "editor" | "accountant" | "customer";
+export type UserRole = "ctv" | "admin" | "editor" | "accountant" | "customer" | "team_leader";
 export interface ServiceFeedback {
   id: string;
   serviceId: string;
@@ -67,6 +67,25 @@ export interface CTVUser {
     accountNumber: string;
     accountHolder: string;
   };
+  // Trường dành riêng cho Trưởng nhóm CTV
+  role?: string;
+  teamLeaderId?: string;    // Mã Trưởng nhóm quản lý CTV này
+  teamMemberCodes?: string[]; // Danh sách Mã CTV thuộc nhóm (chỉ dành cho team_leader)
+  teamName?: string;          // Tên nhóm CTV
+}
+
+export interface TeamRevenueTransfer {
+  id: string;
+  fromCtvCode: string;
+  fromCtvName: string;
+  toLeaderCode: string;
+  toLeaderName: string;
+  amount: number;
+  commission: number;
+  serviceName: string;
+  note?: string;
+  transferredAt: string;
+  status: "pending" | "accepted" | "rejected";
 }
 
 export interface ReferralLead {

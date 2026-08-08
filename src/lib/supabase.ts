@@ -46,7 +46,7 @@ export interface AuthUserProfile {
   email: string;
   fullName: string;
   phone: string;
-  role: "ctv" | "admin" | "editor" | "accountant";
+  role: "ctv" | "admin" | "editor" | "accountant" | "team_leader";
   ctvCode: string;
   tier: "Bạc" | "Vàng" | "Bạch Kim" | "Kim Cương";
   availableBalance: number;
@@ -79,7 +79,7 @@ export const signUpUser = async ({
   password: string;
   fullName: string;
   phone: string;
-  role?: "ctv" | "admin" | "editor" | "accountant";
+  role?: "ctv" | "admin" | "editor" | "accountant" | "team_leader";
   avatarUrl?: string;
   bankName?: string;
   bankAccount?: string;

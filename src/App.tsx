@@ -32,6 +32,7 @@ import { AuthModal } from "./components/AuthModal";
 import { AuthPage } from "./components/AuthPage";
 import { ProfileEditModal } from "./components/ProfileEditModal";
 import { HelpSupportModal } from "./components/HelpSupportModal";
+import { TeamLeaderDashboard, SendTransferModal } from "./components/TeamLeaderDashboard";
 import { updateAppBadgeFromUnread, clearBadge } from "./lib/badge";
 import {
   fetchUserProfile,
@@ -94,7 +95,8 @@ import {
   Stethoscope,
   CalendarHeart,
   Camera,
-  GraduationCap
+  GraduationCap,
+  Crown
 } from "lucide-react";
 
 export default function App() {
@@ -133,16 +135,18 @@ export default function App() {
     const savedTab = localStorage.getItem("saohan_active_tab");
     if (savedTab) {
       if (savedTab === "admin" && userRole !== "admin") {
-        return userRole === "editor" ? "editor" : userRole === "accountant" ? "accountant" : "ctv-dashboard";
+        return userRole === "editor" ? "editor" : userRole === "accountant" ? "accountant" : userRole === "team_leader" ? "team-leader" : "ctv-dashboard";
       }
       if (savedTab === "editor" && userRole !== "editor" && userRole !== "admin") return "ctv-dashboard";
       if (savedTab === "accountant" && userRole !== "accountant" && userRole !== "admin") return "ctv-dashboard";
+      if (savedTab === "team-leader" && userRole !== "team_leader" && userRole !== "admin") return "ctv-dashboard";
       return savedTab;
     }
 
     if (userRole === "admin") return "admin";
     if (userRole === "editor") return "editor";
     if (userRole === "accountant") return "accountant";
+    if (userRole === "team_leader") return "team-leader";
     return "ctv-dashboard";
   });
 
@@ -274,6 +278,7 @@ export default function App() {
   };
 
   const [payoutModalOpen, setPayoutModalOpen] = useState(false);
+  const [teamTransferModalOpen, setTeamTransferModalOpen] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
 
   const handleSaveProfile = async (updates: any) => {
@@ -318,6 +323,9 @@ export default function App() {
     } else if (role === "accountant") {
       setActiveTab("accountant");
       localStorage.setItem("saohan_active_tab", "accountant");
+    } else if (role === "team_leader") {
+      setActiveTab("team-leader");
+      localStorage.setItem("saohan_active_tab", "team-leader");
     } else {
       setActiveTab("ctv-dashboard");
       localStorage.setItem("saohan_active_tab", "ctv-dashboard");
@@ -397,13 +405,16 @@ export default function App() {
 
     if (activeTab === "admin" && role !== "admin") {
       showToast(`Tài khoản vai trò '${role.toUpperCase()}' không có quyền truy cập Bảng Admin.`);
-      const fallbackTab = role === "editor" ? "editor" : role === "accountant" ? "accountant" : "ctv-dashboard";
+      const fallbackTab = role === "editor" ? "editor" : role === "accountant" ? "accountant" : role === "team_leader" ? "team-leader" : "ctv-dashboard";
       setActiveTab(fallbackTab);
     } else if (activeTab === "editor" && role !== "editor" && role !== "admin") {
       showToast(`Tài khoản vai trò '${role.toUpperCase()}' không có quyền truy cập Bảng Biên Tập Viên.`);
       setActiveTab("ctv-dashboard");
     } else if (activeTab === "accountant" && role !== "accountant" && role !== "admin") {
       showToast(`Tài khoản vai trò '${role.toUpperCase()}' không có quyền truy cập Bảng Kế Toán.`);
+      setActiveTab("ctv-dashboard");
+    } else if (activeTab === "team-leader" && role !== "team_leader" && role !== "admin") {
+      showToast(`Tài khoản vai trò '${role.toUpperCase()}' không có quyền truy cập Bảng Trưởng nhóm.`);
       setActiveTab("ctv-dashboard");
     }
   }, [activeTab, authUser]);
@@ -1404,18 +1415,19 @@ export default function App() {
 
   const allQuickNavItems = [
     { id: "admin", title: "Bảng Admin", sub: "Quản trị & Phân quyền Supabase", icon: ShieldCheck, color: "from-[#0B192C] to-red-950", roles: ["admin"] },
+    { id: "team-leader", title: "Trưởng nhóm CTV", sub: "Quản lý nhóm & Doanh số", icon: Crown, color: "from-blue-700 to-blue-900", roles: ["admin", "team_leader"] },
     { id: "editor", title: "Biên Tập Viên", sub: "Cập nhật bài viết & ảnh 3D", icon: FileText, color: "from-purple-600 to-indigo-700", roles: ["admin", "editor"] },
     { id: "accountant", title: "Kế Toán Quỹ", sub: "Duyệt giải ngân VietQR", icon: Wallet, color: "from-emerald-600 to-teal-700", roles: ["admin", "accountant"] },
-    { id: "ctv-dashboard", title: "Hoa Hồng CTV", sub: "Ví & Doanh số", icon: Coins, color: "from-amber-500 to-amber-600", roles: ["admin", "editor", "accountant", "ctv"] },
-    { id: "service-catalog", title: "Bảng Dịch Vụ", sub: "Giá niêm yết", icon: Stethoscope, color: "from-emerald-600 to-teal-600", roles: ["admin", "editor", "accountant", "ctv"] },
-    { id: "before-after", title: "Ảnh Trước Sau", sub: "Feedback thực tế", icon: Camera, color: "from-purple-600 to-indigo-600", roles: ["admin", "editor", "accountant", "ctv"] },
-    { id: "medical-knowledge", title: "Kiến Thức Y Khoa", sub: "Video & Bài viết", icon: GraduationCap, color: "from-blue-600 to-cyan-600", roles: ["admin", "editor", "accountant", "ctv"] },
-    { id: "implant-3d", title: "Mô Phỏng 3D", sub: "Size túi 360°", icon: Eye, color: "from-indigo-600 to-blue-700", roles: ["admin", "editor", "accountant", "ctv"] },
-    { id: "skin-ai", title: "Soi Da AI", sub: "Phác đồ Gemini", icon: Sparkles, color: "from-pink-600 to-rose-600", roles: ["admin", "editor", "accountant", "ctv"] },
-    { id: "combo-builder", title: "Phối Combo", sub: "Gói liệu trình", icon: Layers, color: "from-amber-600 to-orange-600", roles: ["admin", "editor", "accountant", "ctv"] },
-    { id: "crm-appointments", title: "Lịch Hẹn CRM", sub: "Tư vấn & Khám", icon: CalendarHeart, color: "from-rose-600 to-red-600", roles: ["admin", "editor", "accountant", "ctv"] },
-    { id: "post-op", title: "Hậu Phẫu 24/7", sub: "Chăm sóc & Nhắc", icon: HeartPulse, color: "from-cyan-600 to-blue-600", roles: ["admin", "editor", "accountant", "ctv"] },
-    { id: "promotions", title: "Ưu Đãi Hot", sub: "Flash Sale Realtime", icon: Flame, color: "from-orange-500 to-amber-500", roles: ["admin", "editor", "accountant", "ctv"] }
+    { id: "ctv-dashboard", title: "Hoa Hồng CTV", sub: "Ví & Doanh số", icon: Coins, color: "from-amber-500 to-amber-600", roles: ["admin", "editor", "accountant", "ctv", "team_leader"] },
+    { id: "service-catalog", title: "Bảng Dịch Vụ", sub: "Giá niêm yết", icon: Stethoscope, color: "from-emerald-600 to-teal-600", roles: ["admin", "editor", "accountant", "ctv", "team_leader"] },
+    { id: "before-after", title: "Ảnh Trước Sau", sub: "Feedback thực tế", icon: Camera, color: "from-purple-600 to-indigo-600", roles: ["admin", "editor", "accountant", "ctv", "team_leader"] },
+    { id: "medical-knowledge", title: "Kiến Thức Y Khoa", sub: "Video & Bài viết", icon: GraduationCap, color: "from-blue-600 to-cyan-600", roles: ["admin", "editor", "accountant", "ctv", "team_leader"] },
+    { id: "implant-3d", title: "Mô Phỏng 3D", sub: "Size túi 360°", icon: Eye, color: "from-indigo-600 to-blue-700", roles: ["admin", "editor", "accountant", "ctv", "team_leader"] },
+    { id: "skin-ai", title: "Soi Da AI", sub: "Phác đồ Gemini", icon: Sparkles, color: "from-pink-600 to-rose-600", roles: ["admin", "editor", "accountant", "ctv", "team_leader"] },
+    { id: "combo-builder", title: "Phối Combo", sub: "Gói liệu trình", icon: Layers, color: "from-amber-600 to-orange-600", roles: ["admin", "editor", "accountant", "ctv", "team_leader"] },
+    { id: "crm-appointments", title: "Lịch Hẹn CRM", sub: "Tư vấn & Khám", icon: CalendarHeart, color: "from-rose-600 to-red-600", roles: ["admin", "editor", "accountant", "ctv", "team_leader"] },
+    { id: "post-op", title: "Hậu Phẫu 24/7", sub: "Chăm sóc & Nhắc", icon: HeartPulse, color: "from-cyan-600 to-blue-600", roles: ["admin", "editor", "accountant", "ctv", "team_leader"] },
+    { id: "promotions", title: "Ưu Đãi Hot", sub: "Flash Sale Realtime", icon: Flame, color: "from-orange-500 to-amber-500", roles: ["admin", "editor", "accountant", "ctv", "team_leader"] }
   ];
 
   const quickNavItems = allQuickNavItems.filter((item) => item.roles.includes(userRoleKey));
@@ -1912,6 +1924,22 @@ export default function App() {
             />
           )}
 
+          {/* Team Leader Dashboard */}
+          {activeTab === "team-leader" && (
+            <TeamLeaderDashboard
+              ctvUser={effectiveCtvUser}
+              leads={leads}
+            />
+          )}
+
+          {/* CTV thành viên nhóm: nút chuyển doanh số lên Trưởng nhóm (hiện khi CTV có teamLeaderId) */}
+          {teamTransferModalOpen && (
+            <SendTransferModal
+              ctvUser={effectiveCtvUser}
+              onClose={() => setTeamTransferModalOpen(false)}
+            />
+          )}
+
         </main>
       </div>
     )}
@@ -2239,6 +2267,56 @@ export default function App() {
                   </div>
                   <ChevronRight className="w-4 h-4 opacity-60" />
                 </button>
+
+                {/* 6. Trưởng nhóm CTV Dashboard Link */}
+                {(currentRole === "team_leader" || authUser?.role === "team_leader" || authUser?.role === "admin") && (
+                  <button
+                    onClick={() => {
+                      setCurrentRole("team_leader");
+                      setActiveTab("team-leader");
+                      setAccountDrawerOpen(false);
+                      showToast("Đã chuyển sang Dashboard Trưởng Nhóm CTV!");
+                    }}
+                    className={`w-full p-3.5 rounded-2xl border transition flex items-center justify-between text-left ${
+                      activeTab === "team-leader"
+                        ? "bg-blue-700 text-white font-black border-blue-700 shadow-sm"
+                        : "bg-slate-50 hover:bg-slate-100 text-slate-900 border-slate-200"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-900 flex items-center justify-center font-bold">
+                        <Crown className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="font-extrabold text-xs">Dashboard Trưởng Nhóm CTV</div>
+                        <div className="text-[10px] text-slate-500 font-medium">Quản lý thành viên & duyệt chuyển doanh số</div>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 opacity-60" />
+                  </button>
+                )}
+
+                {/* 7. CTV có Trưởng nhóm: nút Chuyển doanh số */}
+                {effectiveCtvUser?.teamLeaderId && currentRole !== "team_leader" && authUser?.role !== "team_leader" && (
+                  <button
+                    onClick={() => {
+                      setTeamTransferModalOpen(true);
+                      setAccountDrawerOpen(false);
+                    }}
+                    className="w-full p-3.5 rounded-2xl border border-blue-300 bg-blue-50 hover:bg-blue-100 text-blue-900 transition flex items-center justify-between text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-blue-200 text-blue-900 flex items-center justify-center font-bold">
+                        <Crown className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="font-extrabold text-xs">Chuyển doanh số lên Trưởng nhóm</div>
+                        <div className="text-[10px] text-blue-700 font-medium">Gửi doanh số tới: {effectiveCtvUser.teamLeaderId}</div>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 opacity-60" />
+                  </button>
+                )}
               </div>
 
 

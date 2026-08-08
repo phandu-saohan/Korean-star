@@ -251,6 +251,23 @@ const DEFAULT_ROLES: RoleConfig[] = [
       ai_tools: { create: false, read: true, update: false, delete: false },
       system_settings: { create: false, read: false, update: false, delete: false }
     }
+  },
+  {
+    id: "role-team-leader",
+    roleKey: "team_leader",
+    roleName: "Trưởng Nhóm CTV",
+    description: "Quản lý nhóm CTV trực thuộc, xem doanh số nhóm và duyệt chuyển doanh số từ CTV thành viên",
+    isSystem: true,
+    badgeColor: "bg-blue-700 text-white",
+    permissions: {
+      services: { create: false, read: true, update: false, delete: false },
+      crm_appointments: { create: true, read: true, update: false, delete: false },
+      payouts: { create: true, read: true, update: false, delete: false },
+      content: { create: false, read: true, update: false, delete: false },
+      ctv_management: { create: false, read: true, update: false, delete: false },
+      ai_tools: { create: true, read: true, update: false, delete: false },
+      system_settings: { create: false, read: false, update: false, delete: false }
+    }
   }
 ];
 
@@ -458,7 +475,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
     email: "",
     phone: "",
     password: "",
-    role: "ctv" as "ctv" | "admin" | "editor" | "accountant",
+    role: "ctv" as "ctv" | "admin" | "editor" | "accountant" | "team_leader",
     tier: "Bạc" as "Bạc" | "Vàng" | "Bạch Kim" | "Kim Cương",
     bankName: "MB Bank",
     accountNumber: "",

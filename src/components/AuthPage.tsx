@@ -67,6 +67,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   const [signupRole, setSignupRole] = useState<string>("ctv");
   const [availableRoles] = useState<{ roleKey: string; roleName: string }[]>([
     { roleKey: "ctv", roleName: "Cộng Tác Viên (CTV)" },
+    { roleKey: "team_leader", roleName: "Trưởng Nhóm CTV" },
     { roleKey: "admin", roleName: "Ban Quản Trị (Admin)" },
     { roleKey: "editor", roleName: "Biên Tập Viên (Editor)" },
     { roleKey: "accountant", roleName: "Bộ Phận Kế Toán" }
