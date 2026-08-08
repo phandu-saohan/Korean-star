@@ -266,23 +266,25 @@ export const logoutOneSignal = () => {
 export interface SendPushNotificationParams {
   title: string;
   message: string;
-  targetUserId?: string; // CTV User ID for target push
+  targetUserId?: string; // CTV User ID or Code for target push
   targetRoles?: ("admin" | "accountant" | "ctv" | "editor")[]; // Roles to notify (Admin, Accountant receive ALL)
+  targetAllUsers?: boolean; // If true, send notification to ALL subscribed users (Segment "All")
   url?: string;
   data?: Record<string, any>;
 }
 
 /**
  * Core Function: Send Realtime Push Notification via OneSignal REST API / Browser Web Push
- * Rules enforced:
- * 1. Specific User receives their own appointment & payout updates (targetUserId)
- * 2. Admin and Accountant receive ALL updates (roles: admin, accountant)
+ * Enforces Rules:
+ * 1. Đặt hẹn: Targeted to assigned CTV (targetUserId) + Admin/Accountant
+ * 2. Doanh thu & Hóa đơn: Targeted to assigned CTV (targetUserId) + Admin/Accountant
+ * 3. Các module còn lại: Broadcast to ALL users (targetAllUsers: true)
  */
 export const sendOneSignalNotification = async (params: SendPushNotificationParams) => {
-  const { title, message, targetUserId, targetRoles = ["admin", "accountant"], url, data } = params;
+  const { title, message, targetUserId, targetRoles = ["admin", "accountant"], targetAllUsers, url, data } = params;
 
   const cfg = getOneSignalConfig();
-  console.log(`[OneSignal Push] Sending: '${title}' - Target User: ${targetUserId || "ALL"} - Roles: ${targetRoles.join(", ")}`);
+  console.log(`[OneSignal Push] Sending: '${title}' - Target: ${targetAllUsers ? "ALL_USERS" : (targetUserId || "NONE")} - Roles: ${targetRoles.join(", ")}`);
 
   // Dispatch Custom Event để hiển thị Floating Corner Toast trực tiếp trên màn hình web
   if (typeof window !== "undefined") {
@@ -306,22 +308,24 @@ export const sendOneSignalNotification = async (params: SendPushNotificationPara
 
   // 2. Build OneSignal Filters:
   // Target specific User ID OR (role = admin OR role = accountant)
+  // If targetAllUsers is true, filters stays empty [] so proxy sends to included_segments: ["All"]
   const filters: any[] = [];
 
-  if (targetUserId) {
-    filters.push({ field: "tag", key: "user_id", relation: "=", value: targetUserId });
-    filters.push({ operator: "OR" });
-    filters.push({ field: "tag", key: "ctv_code", relation: "=", value: targetUserId });
-  }
-
-  // Admin and Accountant ALWAYS receive all notifications
-  const rolesToNotify = Array.from(new Set([...targetRoles, "admin", "accountant"]));
-  rolesToNotify.forEach((role) => {
-    if (filters.length > 0) {
+  if (!targetAllUsers) {
+    if (targetUserId) {
+      filters.push({ field: "tag", key: "user_id", relation: "=", value: targetUserId });
       filters.push({ operator: "OR" });
+      filters.push({ field: "tag", key: "ctv_code", relation: "=", value: targetUserId });
     }
-    filters.push({ field: "tag", key: "role", relation: "=", value: role });
-  });
+
+    const rolesToNotify = Array.from(new Set([...targetRoles, "admin", "accountant"]));
+    rolesToNotify.forEach((role) => {
+      if (filters.length > 0) {
+        filters.push({ operator: "OR" });
+      }
+      filters.push({ field: "tag", key: "role", relation: "=", value: role });
+    });
+  }
 
   // 3. Send via Proxy Serverless Function (/api/onesignal/send-notification) to avoid CORS & 401
   if (cfg.enabled && cfg.appId) {
@@ -335,7 +339,7 @@ export const sendOneSignalNotification = async (params: SendPushNotificationPara
           apiKey: cfg.apiKey,
           title,
           message,
-          filters,
+          filters: filters.length > 0 ? filters : undefined,
           data: data || {},
           url: url || window.location.origin
         })
@@ -358,19 +362,22 @@ export const sendOneSignalNotification = async (params: SendPushNotificationPara
   return { success: true, localOnly: true };
 };
 
+// =========================================================================
+// MODULE 1: ĐẶT HẸN (Nhiệm vụ: Đẩy thông báo về đúng CTV sở hữu lịch hẹn)
+// =========================================================================
+
 /**
- * Event Helper 1: Notify New Appointment Created
- * Enforces rule: Pushes to CTV who booked it + Admin + Accountant
+ * Event 1.1: Notify New Appointment Created
  */
 export const notifyAppointmentCreated = (appointment: any) => {
-  const ctvId = appointment.ctvId || appointment.userId;
+  const ctvId = appointment.ctvId || appointment.userId || appointment.ctvCode || appointment.ctv_code;
   const ctvName = appointment.ctvName || "Cộng tác viên";
   const typeText = appointment.appointmentType || "Lịch hẹn";
   const service = appointment.serviceName || "Dịch vụ Thẩm mỹ";
 
   sendOneSignalNotification({
     title: `📅 ${typeText} Mới: ${appointment.customerName}`,
-    message: `Khách hàng đặt ${service} vào ${appointment.appointmentDate || "hôm nay"}. CTV: ${ctvName}.`,
+    message: `Khách hàng đặt ${service} vào ${appointment.date || appointment.appointmentDate || "hôm nay"}. CTV: ${ctvName}.`,
     targetUserId: ctvId,
     targetRoles: ["admin", "accountant"],
     data: { appointmentId: appointment.id, type: "NEW_APPOINTMENT" }
@@ -378,14 +385,13 @@ export const notifyAppointmentCreated = (appointment: any) => {
 };
 
 /**
- * Event Helper 2: Notify Appointment Status Change
- * Enforces rule: Pushes status change to assigned CTV + Admin + Accountant
+ * Event 1.2: Notify Appointment Status Change
  */
 export const notifyAppointmentStatusChanged = (appointment: any, newStatus: string) => {
-  const ctvId = appointment.ctvId || appointment.userId;
+  const ctvId = appointment.ctvId || appointment.userId || appointment.ctvCode || appointment.ctv_code;
   const customerName = appointment.customerName || "Khách hàng";
   const serviceName = appointment.serviceName || appointment.service_name || "Dịch vụ Thẩm mỹ";
-  const dateStr = appointment.appointmentDate || appointment.date || "hôm nay";
+  const dateStr = appointment.date || appointment.appointmentDate || "hôm nay";
 
   let statusEmoji = "🔄";
   let statusDetail = `chuyển sang trạng thái: '${newStatus}'`;
@@ -414,8 +420,88 @@ export const notifyAppointmentStatusChanged = (appointment: any, newStatus: stri
 };
 
 /**
- * Event Helper 3: Notify Payout / Commission Withdrawal Request
- * Enforces rule: Pushes to requesting CTV + Admin + Accountant
+ * Event 1.3: Notify Appointment Deleted
+ */
+export const notifyAppointmentDeleted = (appointment: any) => {
+  const ctvId = appointment.ctvId || appointment.userId || appointment.ctvCode || appointment.ctv_code;
+  const customerName = appointment.customerName || "Khách hàng";
+  const serviceName = appointment.serviceName || "Dịch vụ Thẩm mỹ";
+
+  sendOneSignalNotification({
+    title: `🗑️ Lịch Hẹn Đã Xóa: ${customerName}`,
+    message: `Lịch hẹn dịch vụ ${serviceName} của khách hàng ${customerName} đã được xóa khỏi hệ thống.`,
+    targetUserId: ctvId,
+    targetRoles: ["admin", "accountant"],
+    data: { appointmentId: appointment.id, type: "APPOINTMENT_DELETED" }
+  });
+};
+
+// =========================================================================
+// MODULE 2: QUẢN LÝ DOANH THU & HÓA ĐƠN (Nhiệm vụ: Đẩy về đúng CTV)
+// =========================================================================
+
+/**
+ * Event 2.1: Notify New Invoice Created
+ */
+export const notifyInvoiceCreated = (invoice: any) => {
+  const ctvTargetId = invoice.ctvUserId || invoice.ctvId || invoice.ctvCode;
+  const totalStr = (invoice.totalAmount || 0).toLocaleString("vi-VN");
+  const commStr = (invoice.commissionAmount || 0).toLocaleString("vi-VN");
+
+  sendOneSignalNotification({
+    title: `🧾 Hóa Đơn Mới: ${invoice.id || "INV"}`,
+    message: `Khách hàng ${invoice.customerName} (${invoice.serviceName}) - Doanh thu: ${totalStr} VNĐ. Hoa hồng CTV: ${commStr} VNĐ.`,
+    targetUserId: ctvTargetId,
+    targetRoles: ["admin", "accountant"],
+    data: { invoiceId: invoice.id, type: "NEW_INVOICE" }
+  });
+};
+
+/**
+ * Event 2.2: Notify Invoice Status / Payment Change
+ */
+export const notifyInvoiceStatusChanged = (invoice: any, newStatus: string) => {
+  const ctvTargetId = invoice.ctvUserId || invoice.ctvId || invoice.ctvCode;
+  const customerName = invoice.customerName || "Khách hàng";
+  const serviceName = invoice.serviceName || "Dịch vụ Thẩm mỹ";
+
+  sendOneSignalNotification({
+    title: `💰 Hóa Đơn [${newStatus}]: ${customerName}`,
+    message: `Hóa đơn ${invoice.id || ""} (${serviceName}) của ${customerName} chuyển trạng thái: '${newStatus}'.`,
+    targetUserId: ctvTargetId,
+    targetRoles: ["admin", "accountant"],
+    data: { invoiceId: invoice.id, newStatus, type: "INVOICE_STATUS" }
+  });
+};
+
+/**
+ * Event 2.3: Notify Commission Credited / Earned
+ */
+export const notifyCommissionEarned = (ctvIdOrCode: string, amount: number, serviceName: string, invoiceId?: string) => {
+  sendOneSignalNotification({
+    title: `💸 Cộng Hoa Hồng Thành Công!`,
+    message: `Tài khoản CTV của bạn vừa được cộng +${amount.toLocaleString("vi-VN")} VNĐ hoa hồng từ dịch vụ ${serviceName}${invoiceId ? ` (Hóa đơn ${invoiceId})` : ""}.`,
+    targetUserId: ctvIdOrCode,
+    targetRoles: ["admin", "accountant"],
+    data: { amount, serviceName, type: "COMMISSION_EARNED" }
+  });
+};
+
+/**
+ * Event 2.4: Notify Revenue Target / KPI Bonus Updated
+ */
+export const notifyRevenueTargetUpdated = (ctvIdOrCode: string, title: string, message: string) => {
+  sendOneSignalNotification({
+    title: `🎯 Cập Nhật Doanh Thu & KPI: ${title}`,
+    message: message,
+    targetUserId: ctvIdOrCode,
+    targetRoles: ["admin", "accountant"],
+    data: { type: "REVENUE_TARGET" }
+  });
+};
+
+/**
+ * Event 2.5: Notify Payout Request
  */
 export const notifyPayoutRequested = (payoutData: {
   ctvUserId: string;
@@ -426,7 +512,7 @@ export const notifyPayoutRequested = (payoutData: {
 }) => {
   sendOneSignalNotification({
     title: `💰 Yêu Cầu Rút Hoa Hồng Mới`,
-    message: `CTV ${payoutData.ctvName} gửi yêu cầu rút ${payoutData.amount.toLocaleString()} VNĐ về ${payoutData.bankName} (${payoutData.accountNumber}).`,
+    message: `CTV ${payoutData.ctvName} gửi yêu cầu rút ${payoutData.amount.toLocaleString("vi-VN")} VNĐ về ${payoutData.bankName} (${payoutData.accountNumber}).`,
     targetUserId: payoutData.ctvUserId,
     targetRoles: ["admin", "accountant"],
     data: { type: "PAYOUT_REQUEST", amount: payoutData.amount }
@@ -434,8 +520,7 @@ export const notifyPayoutRequested = (payoutData: {
 };
 
 /**
- * Event Helper 4: Notify Payout Processed / Completed
- * Enforces rule: Pushes completion result to CTV + Admin + Accountant
+ * Event 2.6: Notify Payout Processed / Completed
  */
 export const notifyPayoutCompleted = (payoutData: {
   ctvUserId: string;
@@ -444,16 +529,106 @@ export const notifyPayoutCompleted = (payoutData: {
   status: string;
 }) => {
   sendOneSignalNotification({
-    title: `✅ Giải Ngân Hoa Hồng ${payoutData.status}`,
-    message: `Yêu cầu rút ${payoutData.amount.toLocaleString()} VNĐ của ${payoutData.ctvName} đã được ${payoutData.status.toLowerCase()} qua VietQR!`,
+    title: `✅ Giải Ngân Hoa Hồng: ${payoutData.status}`,
+    message: `Yêu cầu rút ${payoutData.amount.toLocaleString("vi-VN")} VNĐ của ${payoutData.ctvName} đã được ${payoutData.status.toLowerCase()} qua VietQR!`,
     targetUserId: payoutData.ctvUserId,
     targetRoles: ["admin", "accountant"],
     data: { type: "PAYOUT_COMPLETED", status: payoutData.status }
   });
 };
 
+// =========================================================================
+// MODULE 3: CÁC MODULE CÒN LẠI (Nhiệm vụ: Đẩy thông báo về TẤT CẢ USER)
+// =========================================================================
+
 /**
- * Event Helper 5: Notify New CTV / User Registration to Admin
+ * Event 3.1: Notify Service Catalog Updated -> Broadcast ALL Users
+ */
+export const notifyServiceCatalogUpdated = (serviceName: string, action: "add" | "update" | "delete") => {
+  const actionText = action === "add" ? "thêm mới" : action === "delete" ? "xóa" : "cập nhật giá & chính sách";
+  sendOneSignalNotification({
+    title: `✨ Cập Nhật Bảng Giá & Dịch Vụ`,
+    message: `Dịch vụ '${serviceName}' vừa được ${actionText} trên hệ thống Korean Star. Kiểm tra ngay!`,
+    targetAllUsers: true,
+    data: { serviceName, action, type: "SERVICE_CATALOG_UPDATE" }
+  });
+};
+
+/**
+ * Event 3.2: Notify Medical Knowledge & Training Article Updated -> Broadcast ALL Users
+ */
+export const notifyMedicalKnowledgeUpdated = (title: string, category?: string) => {
+  sendOneSignalNotification({
+    title: `📚 Bài Viết Y Khoa & Đào Tạo Mới`,
+    message: `Chuyên mục ${category || "Y Khoa"} vừa có bài viết mới: '${title}'. Hãy xem để nâng cao kiến thức tư vấn!`,
+    targetAllUsers: true,
+    data: { title, type: "MEDICAL_KNOWLEDGE_UPDATE" }
+  });
+};
+
+/**
+ * Event 3.3: Notify Before-After / 3D Gallery Updated -> Broadcast ALL Users
+ */
+export const notifyGalleryUpdated = (title: string) => {
+  sendOneSignalNotification({
+    title: `📸 Album Trước & Sau Phẫu Thuật Mới`,
+    message: `Thư viện vừa cập nhật ca phẫu thuật '${title}'. Truy cập để lấy tư liệu tư vấn cho khách hàng!`,
+    targetAllUsers: true,
+    data: { title, type: "GALLERY_UPDATE" }
+  });
+};
+
+/**
+ * Event 3.4: Notify Promotional Campaign / Banner Updated -> Broadcast ALL Users
+ */
+export const notifyPromotionUpdated = (title: string, discountText?: string) => {
+  sendOneSignalNotification({
+    title: `🔥 Chương Trình Ưu Đãi Mới`,
+    message: `Khuyến mãi: '${title}' ${discountText ? `(${discountText})` : ""} vừa được khởi động trên toàn hệ thống!`,
+    targetAllUsers: true,
+    data: { title, type: "PROMOTION_UPDATE" }
+  });
+};
+
+/**
+ * Event 3.5: Notify System Settings Updated -> Broadcast ALL Users
+ */
+export const notifySystemSettingsUpdated = (settingName: string) => {
+  sendOneSignalNotification({
+    title: `⚙️ Cập Nhật Cấu Hình Hệ Thống`,
+    message: `Hệ thống vừa cập nhật cài đặt: '${settingName}'. Giao diện & tính năng đã sẵn sàng!`,
+    targetAllUsers: true,
+    data: { settingName, type: "SYSTEM_SETTINGS_UPDATE" }
+  });
+};
+
+/**
+ * Event 3.6: Notify Post-Op Care Guidelines Updated -> Broadcast ALL Users
+ */
+export const notifyPostOpUpdated = (title: string) => {
+  sendOneSignalNotification({
+    title: `🏥 Cập Nhật Chăm Sóc Hậu Phẫu`,
+    message: `Quy trình & hướng dẫn hậu phẫu '${title}' vừa được cập nhật trên hệ thống!`,
+    targetAllUsers: true,
+    data: { title, type: "POST_OP_UPDATE" }
+  });
+};
+
+/**
+ * Event 3.7: Notify General Broadcast Announcement -> Broadcast ALL Users
+ */
+export const notifyBroadcastAnnouncement = (title: string, message: string, url?: string) => {
+  sendOneSignalNotification({
+    title: title || `📢 Thông Báo Toàn Hệ Thống`,
+    message: message,
+    targetAllUsers: true,
+    url: url,
+    data: { type: "BROADCAST_ANNOUNCEMENT" }
+  });
+};
+
+/**
+ * Event Helper: Notify New CTV / User Registration to Admin
  */
 export const notifyUserSignedUp = (user: { fullName: string; email: string; phone?: string; role?: string }) => {
   sendOneSignalNotification({
@@ -465,7 +640,7 @@ export const notifyUserSignedUp = (user: { fullName: string; email: string; phon
 };
 
 /**
- * Event Helper 6: Notify Post-Op Checkin Submitted to Admin & Doctors
+ * Event Helper: Notify Post-Op Checkin Submitted to Admin & Doctors
  */
 export const notifyPostOpCheckin = (checkin: { customerName?: string; serviceName: string; dayPostOp: number; aiHealthStatus: string }) => {
   sendOneSignalNotification({
@@ -477,7 +652,7 @@ export const notifyPostOpCheckin = (checkin: { customerName?: string; serviceNam
 };
 
 /**
- * Event Helper 7: Notify New Customer Feedback Submitted to Admin
+ * Event Helper: Notify New Customer Feedback Submitted to Admin
  */
 export const notifyFeedbackSubmitted = (feedback: { customerName: string; serviceName: string; rating: number }) => {
   sendOneSignalNotification({
@@ -487,3 +662,4 @@ export const notifyFeedbackSubmitted = (feedback: { customerName: string; servic
     data: { type: "NEW_FEEDBACK", rating: feedback.rating }
   });
 };
+

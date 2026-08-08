@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { VideoGuide } from "../types";
+import { notifyMedicalKnowledgeUpdated } from "../lib/onesignal";
 import { 
   GraduationCap, 
   Video, 
@@ -68,26 +69,32 @@ export const MedicalKnowledge: React.FC<MedicalKnowledgeProps> = ({
     if (!formData.title) return;
 
     if (editingVideo && onUpdateVideo) {
+      const title = formData.title || editingVideo.title;
+      const category = formData.category || editingVideo.category;
       onUpdateVideo({
         ...editingVideo,
         ...formData,
-        title: formData.title || editingVideo.title,
-        category: formData.category || editingVideo.category,
+        title,
+        category,
         duration: formData.duration || editingVideo.duration,
         thumbnail: formData.thumbnail || editingVideo.thumbnail,
         targetAudience: formData.targetAudience || editingVideo.targetAudience,
         scriptHighlights: formData.scriptHighlights || editingVideo.scriptHighlights
       });
+      notifyMedicalKnowledgeUpdated(title, category);
     } else if (onAddVideo) {
+      const title = formData.title || "Tài Liệu Y Khoa";
+      const category = formData.category || "Kiến Thức Thẩm Mỹ";
       onAddVideo({
         id: `vid-${Date.now()}`,
-        title: formData.title,
-        category: formData.category || "Kiến Thức Thẩm Mỹ",
+        title,
+        category,
         duration: formData.duration || "03:30",
         thumbnail: formData.thumbnail || "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=600",
         targetAudience: formData.targetAudience || "Khách hàng & CTV",
         scriptHighlights: formData.scriptHighlights || ["Chuẩn y khoa Bệnh viện"]
       });
+      notifyMedicalKnowledgeUpdated(title, category);
     }
 
     setIsModalOpen(false);

@@ -6,6 +6,7 @@ import {
 } from "../types";
 import { generateVietQRUrl } from "../lib/banks";
 import { formatCurrencyInput, parseCurrencyInput } from "../utils/formatters";
+import { notifyInvoiceCreated, notifyInvoiceStatusChanged, notifyCommissionEarned } from "../lib/onesignal";
 import { 
   DollarSign, 
   Receipt, 
@@ -172,9 +173,12 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
       onUpdateInvoice(newInvoice);
     }
 
+    notifyInvoiceCreated(newInvoice);
+
     // Automatically credit CTV commission if fully paid on creation
     if (paymentStatus === "Đã thu đủ (Hoàn thành)" && onCreditCTVCommission && newInvoice.ctvCode) {
       onCreditCTVCommission(newInvoice.ctvCode, commAmount, newInvoice.serviceName);
+      notifyCommissionEarned(newInvoice.ctvCode, commAmount, newInvoice.serviceName, newInvoice.id);
     }
 
     // Update appointment status if linked
@@ -324,6 +328,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
     };
 
     onUpdateInvoice(updated);
+    notifyInvoiceStatusChanged(updated, "Đã cọc");
 
     // Also update appointment status to "Đã xác nhận"
     if (onUpdateAppointmentStatus) {
@@ -350,6 +355,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
     };
 
     onUpdateInvoice(updated);
+    notifyInvoiceStatusChanged(updated, "Đã thu đủ (Hoàn thành)");
 
     // 1. Update appointment status to "Hoàn thành"
     if (onUpdateAppointmentStatus) {
@@ -362,6 +368,12 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
         selectedInvoiceForFinal.ctvCode,
         selectedInvoiceForFinal.commissionAmount,
         selectedInvoiceForFinal.serviceName
+      );
+      notifyCommissionEarned(
+        selectedInvoiceForFinal.ctvCode,
+        selectedInvoiceForFinal.commissionAmount,
+        selectedInvoiceForFinal.serviceName,
+        selectedInvoiceForFinal.id
       );
     }
 

@@ -12,7 +12,7 @@ import {
   saveRegisteredUserToLocalStorage
 } from "../lib/supabase";
 import { CTVUser } from "../types";
-import { sendOneSignalNotification } from "../lib/onesignal";
+import { sendOneSignalNotification, notifySystemSettingsUpdated } from "../lib/onesignal";
 import { ZaloNotifier } from "./ZaloNotifier";
 import { registerZaloWebhook } from "../services/zaloService";
 import { VIETNAM_BANKS, getBankLogo } from "../lib/banks";
@@ -672,6 +672,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
     e.preventDefault();
     localStorage.setItem("saohan_cms_settings", JSON.stringify(brandConfig));
     await saveCmsSettingsToSupabase(brandConfig);
+    notifySystemSettingsUpdated("Thương Hiệu & Cấu Hình Realtime");
     onToast("Đã lưu cấu hình thương hiệu & logo hệ thống lên Supabase thành công!");
   };
 

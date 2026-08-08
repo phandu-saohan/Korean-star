@@ -203,6 +203,7 @@ export interface PayoutAuditLog {
 
 export interface PayoutRequest {
   id: string;
+  ctvUserId?: string;
   ctvCode: string;
   ctvName: string;
   amount: number;

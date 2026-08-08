@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Appointment, CTVUser, ServiceItem } from "../types";
 import { AuthUserProfile } from "../lib/supabase";
 import { SERVICES_DATA } from "../data/aestheticData";
-import { notifyAppointmentCreated, notifyAppointmentStatusChanged } from "../lib/onesignal";
+import { notifyAppointmentCreated, notifyAppointmentStatusChanged, notifyAppointmentDeleted } from "../lib/onesignal";
 import { notifyZaloAppointmentCreated, notifyZaloAppointmentStatusChanged } from "../services/zaloService";
 import { 
   Calendar, 
@@ -327,14 +327,14 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
   };
 
   const handleStatusChange = (apt: Appointment, newStatus: Appointment["status"]) => {
-    const ctvUserId = authUser?.id || ctvUser?.id || "";
+    const targetCtvId = (apt as any).ctvId || (apt as any).userId || apt.ctvCode || authUser?.id || ctvUser?.id || "";
     notifyAppointmentStatusChanged(
-      { ...apt, ctvId: ctvUserId },
+      { ...apt, ctvId: targetCtvId },
       newStatus
     );
     const aptWithCtvInfo = {
       ...apt,
-      ctvId: (apt as any).ctvId || (apt as any).userId || "",
+      ctvId: targetCtvId,
     };
     const targetChatId = authUser?.zaloChatId || ctvUser?.zaloChatId;
     notifyZaloAppointmentStatusChanged(aptWithCtvInfo, newStatus, targetChatId);
@@ -372,8 +372,9 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
         customerMediaType: form.customerMediaType
       };
 
-      (updatedApt as any).ctvId = ctvUserId;
-      (updatedApt as any).userId = ctvUserId;
+      const targetCtv = (editingAppointment as any).ctvId || (editingAppointment as any).userId || ctvUserId;
+      (updatedApt as any).ctvId = targetCtv;
+      (updatedApt as any).userId = targetCtv;
 
       if (selectedDetailAppointment && selectedDetailAppointment.id === updatedApt.id) {
         setSelectedDetailAppointment(updatedApt);
@@ -408,11 +409,11 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
         customerMediaType: form.customerMediaType
       };
 
-      (newApt as any).ctvId = ctvUserId;
-      (newApt as any).userId = ctvUserId;
+      (newApt as any).ctvId = ctvUserId || assignedCtvCode;
+      (newApt as any).userId = ctvUserId || assignedCtvCode;
 
       onAddAppointment(newApt);
-      notifyAppointmentCreated({ ...newApt, ctvId: ctvUserId });
+      notifyAppointmentCreated({ ...newApt, ctvId: ctvUserId || assignedCtvCode });
       notifyZaloAppointmentCreated(newApt, authUser?.zaloChatId || ctvUser?.zaloChatId);
     }
 
@@ -426,6 +427,10 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
   // Confirm and delete appointment
   const handleConfirmDelete = () => {
     if (!deletingAppointmentId) return;
+    const deletingApt = activeSourceList.find((a) => a.id === deletingAppointmentId);
+    if (deletingApt) {
+      notifyAppointmentDeleted(deletingApt);
+    }
     if (onDeleteAppointment) {
       onDeleteAppointment(deletingAppointmentId);
     }

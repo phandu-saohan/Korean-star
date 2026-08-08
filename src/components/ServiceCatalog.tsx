@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ServiceItem } from "../types";
 import { formatCurrencyInput, parseCurrencyInput } from "../utils/formatters";
+import { notifyServiceCatalogUpdated } from "../lib/onesignal";
 import { 
   Search, 
   Check, 
@@ -122,6 +123,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
         scriptHighlights: formData.features || editingService.features || []
       };
       onUpdateService(updated);
+      notifyServiceCatalogUpdated(updated.name, "update");
     } else if (onAddService) {
       const newSrv: ServiceItem = {
         id: `srv-${Date.now()}`,
@@ -146,6 +148,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
         isPopular: true
       };
       onAddService(newSrv);
+      notifyServiceCatalogUpdated(newSrv.name, "add");
     }
 
     setIsModalOpen(false);

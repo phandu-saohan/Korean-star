@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ServiceItem, ServiceFeedback } from "../types";
+import { notifyGalleryUpdated } from "../lib/onesignal";
 import { 
   Camera, 
   Calendar, 
@@ -466,6 +467,7 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
         treatmentDetails: fbFormData.treatmentDetails || srv.beforeAfter?.treatmentDetails || srv.name
       } as ServiceFeedback;
       onUpdateFeedback(updated);
+      notifyGalleryUpdated(`${updated.customerName} (${updated.serviceName})`);
     } else if (onAddFeedback) {
       const newFb: ServiceFeedback = {
         id: `fb-${Date.now()}`,
@@ -484,6 +486,7 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
         images: uploadedImages.length > 0 ? uploadedImages : [beforeImg, afterImg]
       };
       onAddFeedback(newFb);
+      notifyGalleryUpdated(`${newFb.customerName} (${newFb.serviceName})`);
     }
 
     setIsModalOpen(false);

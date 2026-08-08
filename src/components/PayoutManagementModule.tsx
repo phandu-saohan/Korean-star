@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { formatDateVN, formatDateTimeVN } from "../utils/formatters";
 import { getBankLogo } from "../lib/banks";
+import { notifyPayoutCompleted } from "../lib/onesignal";
 
 interface PayoutManagementModuleProps {
   payoutRequests: PayoutRequest[];
@@ -104,6 +105,12 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
     };
 
     onUpdatePayoutRequest(updated);
+    notifyPayoutCompleted({
+      ctvUserId: req.ctvUserId || req.ctvCode,
+      ctvName: req.ctvName,
+      amount: req.amount,
+      status: "Admin đã phê duyệt"
+    });
   };
 
   // Step 4: Accountant Submit Transaction Details + Proof Image
@@ -136,6 +143,13 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
     };
 
     onUpdatePayoutRequest(updated);
+    notifyPayoutCompleted({
+      ctvUserId: txModalRequest.ctvUserId || txModalRequest.ctvCode,
+      ctvName: txModalRequest.ctvName,
+      amount: txModalRequest.amount,
+      status: "Đã giải ngân VietQR thành công"
+    });
+
     setTxModalRequest(null);
     setTxCodeInput("");
     setTxNotesInput("");
@@ -168,6 +182,13 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
     };
 
     onUpdatePayoutRequest(updated);
+    notifyPayoutCompleted({
+      ctvUserId: rejectModalRequest.ctvUserId || rejectModalRequest.ctvCode,
+      ctvName: rejectModalRequest.ctvName,
+      amount: rejectModalRequest.amount,
+      status: "Bị từ chối"
+    });
+
     setRejectModalRequest(null);
     setRejectReasonInput("");
   };
