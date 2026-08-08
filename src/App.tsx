@@ -1482,8 +1482,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Real WebApp Top Header Navigation (Ẩn khi ở Admin Dashboard để Admin Full Screen) */}
-      {activeTab !== "admin" && (
+      {/* Real WebApp Top Header Navigation (Ẩn khi ở Admin & Accountant Dashboard để Full Screen) */}
+      {activeTab !== "admin" && activeTab !== "accountant" && (
         <Header
           currentRole={currentRole}
           onRoleChange={(role) => {
@@ -1513,44 +1513,75 @@ export default function App() {
         />
       )}
 
-      {/* Main WebApp Envelope Container (Full Screen riêng cho Admin Dashboard) */}
-      {activeTab === "admin" ? (
+      {/* Main WebApp Envelope Container (Full Screen riêng cho Admin & Accountant Dashboard) */}
+      {activeTab === "admin" || activeTab === "accountant" ? (
         <div className="w-full min-h-screen flex-1 flex flex-col bg-slate-100/80">
-          <AdminDashboard
-            ctvUser={ctvUser}
-            leads={leads}
-            appointments={appointments}
-            services={services}
-            feedbacks={feedbacks}
-            payoutRequests={payoutRequests}
-            authUser={authUser}
-            onApproveLead={handleApproveLead}
-            onAddService={handleAddService}
-            onUpdateService={handleUpdateService}
-            onDeleteService={handleDeleteService}
-            onAddFeedback={handleAddFeedback}
-            onUpdateFeedback={handleUpdateFeedback}
-            onDeleteFeedback={handleDeleteFeedback}
-            onAddAppointment={handleAddAppointment}
-            onUpdateAppointment={handleUpdateAppointment}
-            onDeleteAppointment={handleDeleteAppointment}
-            onUpdateStatus={handleUpdateStatus}
-            onUpdatePayoutRequest={handleUpdatePayoutRequest}
-            onViewBeforeAfter={(serviceId) => handleViewBeforeAfter(serviceId)}
-            onBookAppointment={(serviceName, notes) => handleBookFromComponent(serviceName, notes)}
-            onGenerateServiceLink={(serviceName) => handleGenerateServiceLink(serviceName)}
-            onRefreshAppointments={handleRefreshAppointments}
-            invoices={invoices}
-            onUpdateInvoice={handleUpdateInvoice}
-            onCreditCTVCommission={handleCreditCTVCommission}
-            onRoleChange={(role) => {
-              setCurrentRole(role);
-              if (role === "ctv") setActiveTab("ctv-dashboard");
-              else if (role === "customer") setActiveTab("service-catalog");
-              else setActiveTab("admin");
-            }}
-            onSignOut={handleSignOut}
-          />
+          {activeTab === "admin" && (
+            <AdminDashboard
+              userRole="admin"
+              ctvUser={ctvUser}
+              leads={leads}
+              appointments={appointments}
+              services={services}
+              feedbacks={feedbacks}
+              payoutRequests={payoutRequests}
+              authUser={authUser}
+              onApproveLead={handleApproveLead}
+              onAddService={handleAddService}
+              onUpdateService={handleUpdateService}
+              onDeleteService={handleDeleteService}
+              onAddFeedback={handleAddFeedback}
+              onUpdateFeedback={handleUpdateFeedback}
+              onDeleteFeedback={handleDeleteFeedback}
+              onAddAppointment={handleAddAppointment}
+              onUpdateAppointment={handleUpdateAppointment}
+              onDeleteAppointment={handleDeleteAppointment}
+              onUpdateStatus={handleUpdateStatus}
+              onUpdatePayoutRequest={handleUpdatePayoutRequest}
+              onViewBeforeAfter={(serviceId) => handleViewBeforeAfter(serviceId)}
+              onBookAppointment={(serviceName, notes) => handleBookFromComponent(serviceName, notes)}
+              onGenerateServiceLink={(serviceName) => handleGenerateServiceLink(serviceName)}
+              onRefreshAppointments={handleRefreshAppointments}
+              invoices={invoices}
+              onUpdateInvoice={handleUpdateInvoice}
+              onCreditCTVCommission={handleCreditCTVCommission}
+              onRoleChange={(role) => {
+                setCurrentRole(role);
+                if (role === "ctv") setActiveTab("ctv-dashboard");
+                else if (role === "customer") setActiveTab("service-catalog");
+                else if (role === "accountant") setActiveTab("accountant");
+                else setActiveTab("admin");
+              }}
+              onSignOut={handleSignOut}
+            />
+          )}
+
+          {activeTab === "accountant" && (
+            <AccountantDashboard
+              ctvUser={ctvUser}
+              leads={leads}
+              appointments={appointments}
+              services={services}
+              feedbacks={feedbacks}
+              invoices={invoices}
+              payoutRequests={payoutRequests}
+              authUser={authUser}
+              onApprovePayoutRequest={handleApprovePayoutRequest}
+              onRejectPayoutRequest={handleRejectPayoutRequest}
+              onUpdatePayoutRequest={handleUpdatePayoutRequest}
+              onUpdateInvoice={handleUpdateInvoice}
+              onUpdateAppointmentStatus={handleUpdateStatus}
+              onCreditCTVCommission={handleCreditCTVCommission}
+              onRoleChange={(role) => {
+                setCurrentRole(role);
+                if (role === "ctv") setActiveTab("ctv-dashboard");
+                else if (role === "customer") setActiveTab("service-catalog");
+                else if (role === "admin") setActiveTab("admin");
+                else setActiveTab("accountant");
+              }}
+              onSignOut={handleSignOut}
+            />
+          )}
         </div>
       ) : (
         <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pt-4 pb-28 sm:py-6 flex-1 flex flex-col space-y-5">
@@ -1881,38 +1912,12 @@ export default function App() {
             />
           )}
 
-          {activeTab === "accountant" && (
-            <AccountantDashboard
-              ctvUser={ctvUser}
-              leads={leads}
-              appointments={appointments}
-              services={services}
-              feedbacks={feedbacks}
-              invoices={invoices}
-              payoutRequests={payoutRequests}
-              authUser={authUser}
-              onApprovePayoutRequest={handleApprovePayoutRequest}
-              onRejectPayoutRequest={handleRejectPayoutRequest}
-              onUpdatePayoutRequest={handleUpdatePayoutRequest}
-              onUpdateInvoice={handleUpdateInvoice}
-              onUpdateAppointmentStatus={handleUpdateStatus}
-              onCreditCTVCommission={handleCreditCTVCommission}
-              onRoleChange={(role) => {
-                setCurrentRole(role);
-                if (role === "ctv") setActiveTab("ctv-dashboard");
-                else if (role === "customer") setActiveTab("service-catalog");
-                else setActiveTab("admin");
-              }}
-              onSignOut={handleSignOut}
-            />
-          )}
-
         </main>
       </div>
     )}
 
-      {/* Mobile Navigation Bottom Dock (Ẩn khi ở Admin Dashboard để Admin Full Screen) */}
-      {activeTab !== "admin" && (
+      {/* Mobile Navigation Bottom Dock (Ẩn khi ở Admin & Accountant Dashboard để Full Screen) */}
+      {activeTab !== "admin" && activeTab !== "accountant" && (
         <nav
           className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 border-t border-slate-200/90 z-40 backdrop-blur-xl px-1 py-1 shadow-2xl flex items-center justify-around text-[10px] text-[#0B192C] w-full max-w-full overflow-visible pb-[calc(0.375rem+env(safe-area-inset-bottom,0px))] transform-gpu translate-z-0"
           style={{ WebkitTransform: "translate3d(0,0,0)", transform: "translate3d(0,0,0)" }}
