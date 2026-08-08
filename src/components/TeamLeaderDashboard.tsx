@@ -528,12 +528,33 @@ interface SendTransferProps {
 }
 
 export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClose }) => {
-  const leaderCode = ctvUser.teamLeaderId || "";
+  const getInitialLeaderCode = () => {
+    if (ctvUser.teamLeaderId) return ctvUser.teamLeaderId;
+    try {
+      const codeUpper = (ctvUser.code || "").trim().toUpperCase();
+      const rawReg = localStorage.getItem("saohan_registered_users");
+      if (rawReg) {
+        const regList: any[] = JSON.parse(rawReg);
+        const match = regList.find((u) => (u.ctvCode || u.code || "").trim().toUpperCase() === codeUpper);
+        if (match?.teamLeaderId) return match.teamLeaderId;
+      }
+      const rawAuth = localStorage.getItem("saohan_auth_user");
+      if (rawAuth) {
+        const authObj = JSON.parse(rawAuth);
+        if (authObj.teamLeaderId) return authObj.teamLeaderId;
+      }
+    } catch (e) {}
+    return "";
+  };
+
+  const [targetLeaderCode, setTargetLeaderCode] = useState(getInitialLeaderCode());
   const [amount, setAmount] = useState("");
   const [commission, setCommission] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  const leaderCode = targetLeaderCode.trim().toUpperCase();
 
   // Tính Doanh số khả dụng = Doanh số tổng - Doanh số đã rút hoa hồng
   const totalRevenue = ctvUser.totalRevenue || 0;
@@ -550,7 +571,7 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
   const handleSend = async () => {
     setError("");
     if (!leaderCode) {
-      setError("Bạn chưa thuộc nhóm nào. Vui lòng liên hệ Trưởng nhóm để được thêm vào nhóm.");
+      setError("Vui lòng nhập Mã Trưởng nhóm nhận doanh số.");
       return;
     }
 
@@ -585,6 +606,9 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
       all.push(transfer);
       localStorage.setItem("saohan_team_transfers", JSON.stringify(all));
 
+      // Tự động gán nhóm cho CTV nếu chưa có
+      updateTeamLeaderInSupabase(ctvUser.code, leaderCode, ctvUser.teamName || `Nhóm ${leaderCode}`).catch(console.error);
+
       // Lưu trực tiếp lên CSDL Supabase table team_revenue_transfers
       saveTransferRequestToSupabase(transfer).catch(console.error);
 
@@ -593,23 +617,6 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
       setError("Lỗi khi gửi yêu cầu. Vui lòng thử lại.");
     }
   };
-
-  if (!leaderCode) {
-    return (
-      <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-        <div className="bg-white rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl text-slate-900">
-          <AlertCircle className="w-12 h-12 mx-auto text-amber-500" />
-          <h3 className="font-black text-base text-slate-900">Bạn chưa thuộc nhóm nào</h3>
-          <p className="text-xs text-slate-500 leading-relaxed">
-            Hệ thống yêu cầu bạn phải được <strong>Trưởng nhóm thêm vào nhóm</strong> trước khi gửi yêu cầu chuyển doanh số.
-          </p>
-          <button onClick={onClose} className="w-full bg-slate-100 text-slate-700 font-bold py-2.5 rounded-2xl text-xs hover:bg-slate-200 transition cursor-pointer">
-            Đóng
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
@@ -635,13 +642,19 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
           </div>
         ) : (
           <div className="space-y-3 text-xs font-medium">
-            {/* Tự động hiển thị Trưởng nhóm đã add */}
-            <div className="bg-blue-50 border border-blue-200 p-3 rounded-2xl flex items-center justify-between">
-              <div>
-                <span className="text-[10px] text-blue-600 font-bold block uppercase">Trưởng nhóm nhận:</span>
-                <span className="font-mono font-black text-xs text-blue-900">{leaderCode} {ctvUser.teamName ? `(${ctvUser.teamName})` : ''}</span>
+            {/* Hiển thị / Cho phép nhập Mã Trưởng nhóm nhận */}
+            <div>
+              <label className="block font-extrabold mb-1 text-slate-700">Mã Trưởng nhóm nhận doanh số (*):</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="VD: SAOHAN-TRUONGNHOM16789"
+                  value={targetLeaderCode}
+                  onChange={(e) => setTargetLeaderCode(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 uppercase"
+                />
+                <UserCheck className="w-4 h-4 text-blue-600 absolute right-3 top-3 pointer-events-none" />
               </div>
-              <UserCheck className="w-5 h-5 text-blue-600 shrink-0" />
             </div>
 
             {/* Khối Thống Kê Doanh Số Khả Dụng */}

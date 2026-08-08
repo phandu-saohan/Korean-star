@@ -166,27 +166,63 @@ export const CTVHub: React.FC<CTVHubProps> = ({
     }
   });
 
+  // Reactive Team Leader local state for instant UI re-render
+  const [myTeamLeaderId, setMyTeamLeaderId] = useState<string>(() => ctvUser.teamLeaderId || "");
+  const [myTeamName, setMyTeamName] = useState<string>(() => ctvUser.teamName || "");
+
+  useEffect(() => {
+    if (ctvUser?.teamLeaderId) setMyTeamLeaderId(ctvUser.teamLeaderId);
+    if (ctvUser?.teamName) setMyTeamName(ctvUser.teamName);
+  }, [ctvUser?.teamLeaderId, ctvUser?.teamName]);
+
+  useEffect(() => {
+    const codeUpper = (ctvUser?.code || "").trim().toUpperCase();
+    if (!codeUpper) return;
+
+    // 1. Kiểm tra saohan_registered_users trong LocalStorage
+    try {
+      const raw = localStorage.getItem("saohan_registered_users");
+      if (raw) {
+        const all: any[] = JSON.parse(raw);
+        const match = all.find((u) => (u.ctvCode || u.code || "").trim().toUpperCase() === codeUpper);
+        if (match && match.teamLeaderId) {
+          setMyTeamLeaderId(match.teamLeaderId);
+          if (match.teamName) setMyTeamName(match.teamName);
+        }
+      }
+    } catch (e) {}
+
+    // 2. Tra cứu dữ liệu từ Supabase DB user_profiles
+    fetchUserProfileByCtvCode(codeUpper).then((sbProfile) => {
+      if (sbProfile && sbProfile.teamLeaderId) {
+        setMyTeamLeaderId(sbProfile.teamLeaderId);
+        if (sbProfile.teamName) setMyTeamName(sbProfile.teamName);
+
+        const savedAuth = localStorage.getItem("saohan_auth_user");
+        if (savedAuth) {
+          try {
+            const authObj = JSON.parse(savedAuth);
+            authObj.teamLeaderId = sbProfile.teamLeaderId;
+            authObj.teamName = sbProfile.teamName || authObj.teamName;
+            localStorage.setItem("saohan_auth_user", JSON.stringify(authObj));
+          } catch (e) {}
+        }
+      }
+    });
+  }, [ctvUser?.code]);
+
+  const currentLeaderId = ctvUser.teamLeaderId || myTeamLeaderId;
+  const currentTeamName = ctvUser.teamName || myTeamName;
+
+  const ctvUserWithTeam: CTVUser = {
+    ...ctvUser,
+    teamLeaderId: currentLeaderId,
+    teamName: currentTeamName
+  };
+
   useEffect(() => {
     if (ctvUser?.code) {
-      // 1. Tự động kiểm tra và đồng bộ Trưởng nhóm của CTV từ Supabase DB
-      fetchUserProfileByCtvCode(ctvUser.code).then((sbProfile) => {
-        if (sbProfile && sbProfile.teamLeaderId && sbProfile.teamLeaderId !== ctvUser.teamLeaderId) {
-          ctvUser.teamLeaderId = sbProfile.teamLeaderId;
-          ctvUser.teamName = sbProfile.teamName || ctvUser.teamName;
-
-          const savedAuth = localStorage.getItem("saohan_auth_user");
-          if (savedAuth) {
-            try {
-              const authObj = JSON.parse(savedAuth);
-              authObj.teamLeaderId = sbProfile.teamLeaderId;
-              authObj.teamName = sbProfile.teamName || authObj.teamName;
-              localStorage.setItem("saohan_auth_user", JSON.stringify(authObj));
-            } catch (e) {}
-          }
-        }
-      });
-
-      // 2. Tự động đồng bộ các yêu cầu chuyển doanh số từ Supabase DB
+      // Tự động đồng bộ các yêu cầu chuyển doanh số từ Supabase DB
       fetchMyTransferRequestsFromSupabase(ctvUser.code).then((sbTransfers) => {
         if (sbTransfers && sbTransfers.length > 0) {
           setMyTransfers((prev) => {
@@ -460,7 +496,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
     ctvUser?.code?.toLowerCase().includes("truongnhom") ||
     ctvUser?.code?.toLowerCase().includes("tl-")
   );
-  const hasTeamLeader = Boolean(ctvUser?.teamLeaderId);
+  const hasTeamLeader = Boolean(ctvUser?.teamLeaderId || myTeamLeaderId);
 
   const baseModules = [
     { id: "service-catalog", title: "Bảng Dịch Vụ", sub: "Giá & % Hoa Hồng", icon: Stethoscope, color: "from-emerald-500 to-teal-600" },
