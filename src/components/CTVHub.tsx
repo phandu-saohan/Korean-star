@@ -307,6 +307,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
       {/* SUBTAB: THÀNH VIÊN NHÓM */}
       {activeSubTab === "team-members" && (
         <div className="space-y-4 animate-fadeIn">
+          {/* Header Bar */}
           <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
             <div className="flex items-center gap-3">
               <button
@@ -319,9 +320,9 @@ export const CTVHub: React.FC<CTVHubProps> = ({
               <div>
                 <h2 className="font-black text-slate-900 text-base sm:text-lg flex items-center gap-2">
                   <Users className="w-5 h-5 text-blue-600" />
-                  Danh Sách Thành Viên Nhóm ({teamMembers.length})
+                  Quản Lý Thành Viên Nhóm ({teamMembers.length})
                 </h2>
-                <p className="text-xs text-slate-500 font-medium">Quản lý các cộng tác viên thuộc nhóm của bạn</p>
+                <p className="text-xs text-slate-500 font-medium">Danh sách các cộng tác viên thuộc đội nhóm của bạn</p>
               </div>
             </div>
 
@@ -334,57 +335,114 @@ export const CTVHub: React.FC<CTVHubProps> = ({
             </button>
           </div>
 
+          {/* Quick Stats Summary Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-2xl">
+              <span className="text-[10px] text-blue-700 font-extrabold uppercase block">Thành viên</span>
+              <span className="text-lg font-black text-blue-900 font-mono">{teamMembers.length} người</span>
+            </div>
+            <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">
+              <span className="text-[10px] text-emerald-700 font-extrabold uppercase block">Tổng doanh số nhóm</span>
+              <span className="text-lg font-black text-emerald-900 font-mono">
+                {teamMembers.reduce((s, m) => s + (m.totalRevenue || 0), 0).toLocaleString("vi-VN")}đ
+              </span>
+            </div>
+            <div className="bg-amber-50 border border-amber-200 p-3 rounded-2xl">
+              <span className="text-[10px] text-amber-700 font-extrabold uppercase block">Hoa hồng nhóm</span>
+              <span className="text-lg font-black text-amber-900 font-mono">
+                {teamMembers.reduce((s, m) => s + (m.totalCommission || 0), 0).toLocaleString("vi-VN")}đ
+              </span>
+            </div>
+            <div className="bg-purple-50 border border-purple-200 p-3 rounded-2xl">
+              <span className="text-[10px] text-purple-700 font-extrabold uppercase block">Tổng khách giới thiệu</span>
+              <span className="text-lg font-black text-purple-900 font-mono">
+                {leads.filter((l) => teamMembers.some((m) => m.ctvCode === l.ctvCode)).length} ca
+              </span>
+            </div>
+          </div>
+
+          {/* Search bar for Team Members */}
+          {teamMembers.length > 0 && (
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <input
+                type="text"
+                placeholder="Tìm thành viên theo Tên, SĐT hoặc Mã CTV..."
+                value={memberSearch}
+                onChange={(e) => setMemberSearch(e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-2xl pl-9 pr-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500 shadow-2xs font-medium"
+              />
+            </div>
+          )}
+
+          {/* Grid Thành viên nhóm */}
           {teamMembers.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {teamMembers.map((member) => {
-                const memberLeads = leads.filter((l) => l.ctvCode === member.ctvCode);
-                return (
-                  <div key={member.ctvCode} className="bg-white border border-slate-200 rounded-3xl p-4 space-y-3 shadow-sm hover:border-blue-300 transition">
-                    <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-                      <div className="w-10 h-10 rounded-2xl bg-slate-200 border border-slate-300 overflow-hidden flex items-center justify-center shrink-0 font-black text-slate-600">
-                        {member.avatarUrl ? (
-                          <img src={member.avatarUrl} alt={member.fullName} className="w-full h-full object-cover" />
-                        ) : (
-                          member.fullName?.[0] || "C"
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-black text-sm text-slate-900 truncate">{member.fullName}</div>
-                        <div className="font-mono text-[11px] text-blue-700 font-bold">{member.ctvCode}</div>
-                        <div className="text-[10px] text-slate-500">{member.phone}</div>
-                      </div>
-                    </div>
+              {teamMembers
+                .filter(
+                  (m) =>
+                    !memberSearch ||
+                    m.fullName?.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                    m.ctvCode?.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                    m.phone?.includes(memberSearch)
+                )
+                .map((member) => {
+                  const memberLeads = leads.filter((l) => l.ctvCode === member.ctvCode);
+                  return (
+                    <div key={member.ctvCode} className="bg-white border border-slate-200 rounded-3xl p-4 space-y-3 shadow-sm hover:border-blue-300 transition relative group">
+                      <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                        <div className="w-10 h-10 rounded-2xl bg-slate-200 border border-slate-300 overflow-hidden flex items-center justify-center shrink-0 font-black text-slate-600">
+                          {member.avatarUrl ? (
+                            <img src={member.avatarUrl} alt={member.fullName} className="w-full h-full object-cover" />
+                          ) : (
+                            member.fullName?.[0] || "C"
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-black text-sm text-slate-900 truncate">{member.fullName}</div>
+                          <div className="font-mono text-[11px] text-blue-700 font-bold">{member.ctvCode}</div>
+                          <div className="text-[10px] text-slate-500">{member.phone || "Chưa cập nhật SĐT"}</div>
+                        </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-xs text-center">
-                      <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-200">
-                        <div className="font-black text-emerald-700 text-[11px] font-mono">
-                          {(member.totalRevenue || 0).toLocaleString("vi-VN")}đ
-                        </div>
-                        <div className="text-[10px] text-slate-500 font-medium">Doanh số</div>
+                        <button
+                          onClick={() => handleRemoveMember(member.ctvCode)}
+                          className="p-1.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition opacity-60 hover:opacity-100 cursor-pointer"
+                          title="Gỡ khỏi nhóm"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
-                      <div className="bg-amber-50 p-2 rounded-xl border border-amber-200">
-                        <div className="font-black text-amber-700 text-[11px] font-mono">
-                          {(member.totalCommission || 0).toLocaleString("vi-VN")}đ
+
+                      <div className="grid grid-cols-3 gap-2 text-xs text-center">
+                        <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-200">
+                          <div className="font-black text-emerald-700 text-[11px] font-mono">
+                            {(member.totalRevenue || 0).toLocaleString("vi-VN")}đ
+                          </div>
+                          <div className="text-[10px] text-slate-500 font-medium">Doanh số</div>
                         </div>
-                        <div className="text-[10px] text-slate-500 font-medium">Hoa hồng</div>
-                      </div>
-                      <div className="bg-blue-50 p-2 rounded-xl border border-blue-200">
-                        <div className="font-black text-blue-700 text-[11px]">
-                          {memberLeads.length}
+                        <div className="bg-amber-50 p-2 rounded-xl border border-amber-200">
+                          <div className="font-black text-amber-700 text-[11px] font-mono">
+                            {(member.totalCommission || 0).toLocaleString("vi-VN")}đ
+                          </div>
+                          <div className="text-[10px] text-slate-500 font-medium">Hoa hồng</div>
                         </div>
-                        <div className="text-[10px] text-slate-500 font-medium">Khách GT</div>
+                        <div className="bg-blue-50 p-2 rounded-xl border border-blue-200">
+                          <div className="font-black text-blue-700 text-[11px]">
+                            {memberLeads.length}
+                          </div>
+                          <div className="text-[10px] text-slate-500 font-medium">Khách GT</div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           ) : (
             <div className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-3 shadow-sm">
               <Users className="w-12 h-12 mx-auto text-slate-300" />
               <div>
-                <p className="font-bold text-slate-700">Nhóm của bạn chưa có thành viên</p>
-                <p className="text-xs text-slate-500 mt-1">Nhập Mã CTV để thêm cộng tác viên vào nhóm của bạn.</p>
+                <p className="font-bold text-slate-700">Nhóm của bạn chưa có thành viên nào</p>
+                <p className="text-xs text-slate-500 mt-1">Nhập Mã CTV để thêm cộng tác viên vào đội nhóm của bạn.</p>
               </div>
               <button
                 onClick={() => setAddMemberModalOpen(true)}
@@ -400,6 +458,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
       {/* SUBTAB: CHUYỂN DOANH SỐ (DẠNG GRID GỌN GÀNG) */}
       {activeSubTab === "team-transfers" && (
         <div className="space-y-4 animate-fadeIn">
+          {/* Header Bar */}
           <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-3 shadow-sm">
             <div className="flex items-center gap-3">
               <button
@@ -412,77 +471,116 @@ export const CTVHub: React.FC<CTVHubProps> = ({
               <div>
                 <h2 className="font-black text-slate-900 text-base sm:text-lg flex items-center gap-2">
                   <ArrowUpRight className="w-5 h-5 text-amber-600" />
-                  Danh Sách Yêu Cầu Chuyển Doanh Số Nhóm ({transfers.length})
+                  Danh Sách Yêu Cầu Chuyển Doanh Số ({transfers.length})
                 </h2>
-                <p className="text-xs text-slate-500 font-medium">Duyệt hoặc từ chối các yêu cầu chuyển doanh số từ CTV thành viên</p>
+                <p className="text-xs text-slate-500 font-medium">Xem & xử lý phê duyệt doanh số từ các CTV trong nhóm</p>
               </div>
             </div>
           </div>
 
+          {/* Filter Status Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+            <button
+              onClick={() => setTransferStatusFilter("ALL")}
+              className={`px-3 py-1.5 rounded-xl font-extrabold transition cursor-pointer shrink-0 ${
+                transferStatusFilter === "ALL" ? "bg-[#0B192C] text-amber-400 shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              Tất cả ({transfers.length})
+            </button>
+            <button
+              onClick={() => setTransferStatusFilter("pending")}
+              className={`px-3 py-1.5 rounded-xl font-extrabold transition cursor-pointer shrink-0 ${
+                transferStatusFilter === "pending" ? "bg-amber-500 text-slate-900 shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              ⏳ Chờ duyệt ({transfers.filter((t) => t.status === "pending").length})
+            </button>
+            <button
+              onClick={() => setTransferStatusFilter("accepted")}
+              className={`px-3 py-1.5 rounded-xl font-extrabold transition cursor-pointer shrink-0 ${
+                transferStatusFilter === "accepted" ? "bg-emerald-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              ✓ Đã chấp nhận ({transfers.filter((t) => t.status === "accepted").length})
+            </button>
+            <button
+              onClick={() => setTransferStatusFilter("rejected")}
+              className={`px-3 py-1.5 rounded-xl font-extrabold transition cursor-pointer shrink-0 ${
+                transferStatusFilter === "rejected" ? "bg-rose-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              ✗ Đã từ chối ({transfers.filter((t) => t.status === "rejected").length})
+            </button>
+          </div>
+
+          {/* GRID GỌN GÀNG THU GỌN */}
           {transfers.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {transfers.map((t) => (
-                <div key={t.id} className="bg-white border border-slate-200 rounded-3xl p-4 space-y-3 shadow-sm hover:border-amber-300 transition">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                    <div>
-                      <span className="text-[10px] text-slate-500 font-bold uppercase block">CTV gửi:</span>
-                      <span className="font-black text-xs text-slate-900">{t.fromCtvName}</span>
-                      <span className="font-mono text-[10px] text-blue-700 font-bold ml-1.5">({t.fromCtvCode})</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {transfers
+                .filter((t) => transferStatusFilter === "ALL" || t.status === transferStatusFilter)
+                .map((t) => (
+                  <div key={t.id} className="bg-white border border-slate-200 rounded-3xl p-4 space-y-3 shadow-sm hover:border-amber-400 transition">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block">CTV gửi:</span>
+                        <span className="font-black text-xs text-slate-900">{t.fromCtvName}</span>
+                        <span className="font-mono text-[10px] text-blue-700 font-bold ml-1">({t.fromCtvCode})</span>
+                      </div>
+                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${
+                        t.status === "pending" ? "bg-amber-100 text-amber-900 border-amber-300 animate-pulse" :
+                        t.status === "accepted" ? "bg-emerald-100 text-emerald-900 border-emerald-300" :
+                        "bg-rose-100 text-rose-900 border-rose-300"
+                      }`}>
+                        {t.status === "pending" ? "⏳ Chờ duyệt" : t.status === "accepted" ? "✓ Chấp nhận" : "✗ Từ chối"}
+                      </span>
                     </div>
-                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${
-                      t.status === "pending" ? "bg-amber-100 text-amber-900 border-amber-300 animate-pulse" :
-                      t.status === "accepted" ? "bg-emerald-100 text-emerald-900 border-emerald-300" :
-                      "bg-rose-100 text-rose-900 border-rose-300"
-                    }`}>
-                      {t.status === "pending" ? "⏳ Chờ duyệt" : t.status === "accepted" ? "✓ Đã chấp nhận" : "✗ Đã từ chối"}
-                    </span>
+
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div className="bg-slate-50 p-2 rounded-xl border border-slate-200 min-w-0">
+                        <span className="text-[10px] text-slate-400 font-bold block truncate">Dịch vụ</span>
+                        <span className="font-black text-slate-900 truncate block text-[11px]">{t.serviceName}</span>
+                      </div>
+                      <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-200 min-w-0">
+                        <span className="text-[10px] text-emerald-600 font-bold block truncate">Doanh số</span>
+                        <span className="font-mono font-black text-emerald-700 truncate block text-[11px]">{t.amount.toLocaleString("vi-VN")}đ</span>
+                      </div>
+                      <div className="bg-amber-50 p-2 rounded-xl border border-amber-200 min-w-0">
+                        <span className="text-[10px] text-amber-600 font-bold block truncate">Hoa hồng</span>
+                        <span className="font-mono font-black text-amber-700 truncate block text-[11px]">{t.commission.toLocaleString("vi-VN")}đ</span>
+                      </div>
+                    </div>
+
+                    {t.note && (
+                      <p className="text-[11px] text-slate-600 italic bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
+                        Ghi chú: "{t.note}"
+                      </p>
+                    )}
+
+                    {t.status === "pending" && (
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          onClick={() => handleAcceptTransfer(t)}
+                          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2 rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-xs cursor-pointer"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Chấp nhận
+                        </button>
+                        <button
+                          onClick={() => handleRejectTransfer(t)}
+                          className="flex-1 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold py-2 rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-xs cursor-pointer"
+                        >
+                          <XCircle className="w-3.5 h-3.5" /> Từ chối
+                        </button>
+                      </div>
+                    )}
                   </div>
-
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-200">
-                      <span className="text-[10px] text-slate-500 font-bold block">Dịch vụ</span>
-                      <span className="font-black text-slate-900 truncate block">{t.serviceName}</span>
-                    </div>
-                    <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-200">
-                      <span className="text-[10px] text-slate-500 font-bold block">Doanh số</span>
-                      <span className="font-mono font-black text-emerald-700 truncate block">{t.amount.toLocaleString("vi-VN")}đ</span>
-                    </div>
-                    <div className="bg-amber-50 p-2 rounded-xl border border-amber-200">
-                      <span className="text-[10px] text-slate-500 font-bold block">Hoa hồng</span>
-                      <span className="font-mono font-black text-amber-700 truncate block">{t.commission.toLocaleString("vi-VN")}đ</span>
-                    </div>
-                  </div>
-
-                  {t.note && (
-                    <p className="text-[11px] text-slate-600 italic bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
-                      Ghi chú: "{t.note}"
-                    </p>
-                  )}
-
-                  {t.status === "pending" && (
-                    <div className="flex items-center gap-2 pt-1">
-                      <button
-                        onClick={() => handleAcceptTransfer(t)}
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2 rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-xs cursor-pointer"
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Chấp nhận
-                      </button>
-                      <button
-                        onClick={() => handleRejectTransfer(t)}
-                        className="flex-1 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold py-2 rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer"
-                      >
-                        <XCircle className="w-3.5 h-3.5" /> Từ chối
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
+                ))}
             </div>
           ) : (
             <div className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-2 shadow-sm">
               <ArrowUpRight className="w-12 h-12 mx-auto text-slate-300" />
-              <p className="font-bold text-slate-700">Chưa có yêu cầu chuyển doanh số</p>
-              <p className="text-xs text-slate-500">Khi CTV trong nhóm gửi yêu cầu chuyển doanh số, danh sách sẽ hiển thị dạng Grid tại đây.</p>
+              <p className="font-bold text-slate-700">Chưa có yêu cầu chuyển doanh số nào</p>
+              <p className="text-xs text-slate-500">Các yêu cầu chuyển doanh số từ CTV thành viên sẽ xuất hiện tại đây dưới dạng Grid gọn gàng.</p>
             </div>
           )}
         </div>
