@@ -70,18 +70,34 @@ interface CTVHubProps {
   onOpenTeamTransferModal?: () => void;
 }
 
-// Lấy danh sách CTV đã đăng ký từ localStorage
+// Lấy danh sách CTV đã đăng ký từ localStorage với chuẩn hóa Họ tên, SĐT, Avatar
 function getRegisteredCTVs(leaderCode: string): any[] {
   try {
     const raw = localStorage.getItem("saohan_registered_users");
     if (!raw) return [];
     const all = JSON.parse(raw) as any[];
-    return all.filter((u) => {
-      const uLeader = u.teamLeaderId;
-      const uCode = (u.ctvCode || u.code || u.ctv_code || "").trim().toUpperCase();
-      const lCode = (leaderCode || "").trim().toUpperCase();
-      return uLeader === leaderCode && uCode !== lCode;
-    });
+    const lCode = (leaderCode || "").trim().toUpperCase();
+
+    return all
+      .filter((u) => {
+        const uLeader = u.teamLeaderId;
+        const uCode = (u.ctvCode || u.code || u.ctv_code || "").trim().toUpperCase();
+        return uLeader === leaderCode && uCode !== lCode;
+      })
+      .map((u) => {
+        const ctvCode = u.ctvCode || u.code || u.ctv_code || "CTV-UNKNOWN";
+        const fullName = u.fullName || u.name || u.displayName || u.user_metadata?.full_name || `CTV ${ctvCode.replace("SAOHAN-", "")}`;
+        const phone = u.phone || u.phoneNumber || u.mobile || "Chưa cập nhật SĐT";
+        const avatarUrl = u.avatarUrl || u.avatar || u.photoUrl || u.user_metadata?.avatar_url || "";
+
+        return {
+          ...u,
+          ctvCode,
+          fullName,
+          phone,
+          avatarUrl
+        };
+      });
   } catch {
     return [];
   }
@@ -144,9 +160,38 @@ export const CTVHub: React.FC<CTVHubProps> = ({
 
   const [addMemberModalOpen, setAddMemberModalOpen] = useState(false);
   const [memberCodeInput, setMemberCodeInput] = useState("");
+  const [memberNameInput, setMemberNameInput] = useState("");
+  const [memberPhoneInput, setMemberPhoneInput] = useState("");
+  const [memberAvatarInput, setMemberAvatarInput] = useState("");
   const [memberError, setMemberError] = useState("");
   const [memberSearch, setMemberSearch] = useState("");
   const [transferStatusFilter, setTransferStatusFilter] = useState<"ALL" | "pending" | "accepted" | "rejected">("ALL");
+
+  const [editingMember, setEditingMember] = useState<any | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editAvatar, setEditAvatar] = useState("");
+
+  const handleMemberCodeChange = (val: string) => {
+    setMemberCodeInput(val);
+    setMemberError("");
+    const clean = val.trim().toUpperCase();
+    if (clean) {
+      try {
+        const raw = localStorage.getItem("saohan_registered_users");
+        const all: any[] = raw ? JSON.parse(raw) : [];
+        const match = all.find(
+          (u) =>
+            (u.ctvCode || u.code || u.ctv_code || "").trim().toUpperCase() === clean
+        );
+        if (match) {
+          setMemberNameInput(match.fullName || match.name || "");
+          setMemberPhoneInput(match.phone || match.phoneNumber || "");
+          setMemberAvatarInput(match.avatarUrl || match.avatar || "");
+        }
+      } catch (e) {}
+    }
+  };
 
   const handleRemoveMember = (memberCode: string) => {
     if (!confirm(`Bạn có chắc chắn muốn gỡ CTV "${memberCode}" khỏi nhóm?`)) return;
@@ -180,14 +225,18 @@ export const CTVHub: React.FC<CTVHubProps> = ({
         return uCode === code;
       });
 
+      const cleanName = code.startsWith("SAOHAN-") ? code.replace("SAOHAN-", "") : code;
+      const finalName = memberNameInput.trim() || (target ? (target.fullName || target.name) : `CTV ${cleanName}`);
+      const finalPhone = memberPhoneInput.trim() || (target ? (target.phone || target.phoneNumber) : "09" + Math.floor(10000000 + Math.random() * 90000000));
+      const finalAvatar = memberAvatarInput.trim() || (target ? (target.avatarUrl || target.avatar) : "");
+
       if (!target) {
-        // Tự động tạo bản ghi mới cho CTV nếu chưa có trong danh sách lưu cục bộ
-        const cleanName = code.startsWith("SAOHAN-") ? code.replace("SAOHAN-", "") : code;
         target = {
           id: `ctv-${Date.now()}`,
           ctvCode: code,
-          fullName: `CTV ${cleanName}`,
-          phone: "09" + Math.floor(10000000 + Math.random() * 90000000),
+          fullName: finalName,
+          phone: finalPhone,
+          avatarUrl: finalAvatar,
           role: "ctv",
           tier: "Bạc",
           teamLeaderId: leaderCode,
@@ -207,18 +256,24 @@ export const CTVHub: React.FC<CTVHubProps> = ({
           setMemberError("Không thể thêm chính mình vào nhóm");
           return;
         }
+        target.fullName = finalName;
+        target.phone = finalPhone;
+        if (finalAvatar) target.avatarUrl = finalAvatar;
         target.teamLeaderId = leaderCode;
         target.teamName = ctvUser.teamName || `Nhóm ${ctvUser.name}`;
       }
 
       localStorage.setItem("saohan_registered_users", JSON.stringify(all));
 
-      // Cập nhật cả tài khoản auth hiện tại nếu trùng mã
+      // Cập nhật tài khoản auth hiện tại nếu trùng mã
       const savedAuth = localStorage.getItem("saohan_auth_user");
       if (savedAuth) {
         try {
           const authObj = JSON.parse(savedAuth);
           if ((authObj.ctvCode || authObj.code)?.toUpperCase() === code) {
+            authObj.fullName = finalName;
+            authObj.phone = finalPhone;
+            if (finalAvatar) authObj.avatarUrl = finalAvatar;
             authObj.teamLeaderId = leaderCode;
             authObj.teamName = ctvUser.teamName || `Nhóm ${ctvUser.name}`;
             localStorage.setItem("saohan_auth_user", JSON.stringify(authObj));
@@ -227,10 +282,53 @@ export const CTVHub: React.FC<CTVHubProps> = ({
       }
 
       setMemberCodeInput("");
+      setMemberNameInput("");
+      setMemberPhoneInput("");
+      setMemberAvatarInput("");
       setAddMemberModalOpen(false);
       window.location.reload();
     } catch {
       setMemberError("Đã xảy ra lỗi khi thêm thành viên. Vui lòng thử lại.");
+    }
+  };
+
+  const handleSaveEditMember = () => {
+    if (!editingMember) return;
+    try {
+      const raw = localStorage.getItem("saohan_registered_users");
+      const all: any[] = raw ? JSON.parse(raw) : [];
+      const targetCode = (editingMember.ctvCode || editingMember.code || "").trim().toUpperCase();
+      const updatedAll = all.map((u) => {
+        const uCode = (u.ctvCode || u.code || u.ctv_code || "").trim().toUpperCase();
+        if (uCode === targetCode) {
+          return {
+            ...u,
+            fullName: editName.trim() || u.fullName || u.name,
+            phone: editPhone.trim() || u.phone,
+            avatarUrl: editAvatar.trim() || u.avatarUrl || u.avatar
+          };
+        }
+        return u;
+      });
+      localStorage.setItem("saohan_registered_users", JSON.stringify(updatedAll));
+
+      const savedAuth = localStorage.getItem("saohan_auth_user");
+      if (savedAuth) {
+        try {
+          const authObj = JSON.parse(savedAuth);
+          if ((authObj.ctvCode || authObj.code)?.toUpperCase() === targetCode) {
+            if (editName.trim()) authObj.fullName = editName.trim();
+            if (editPhone.trim()) authObj.phone = editPhone.trim();
+            if (editAvatar.trim()) authObj.avatarUrl = editAvatar.trim();
+            localStorage.setItem("saohan_auth_user", JSON.stringify(authObj));
+          }
+        } catch (e) {}
+      }
+
+      setEditingMember(null);
+      window.location.reload();
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -451,26 +549,43 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                   return (
                     <div key={member.ctvCode} className="bg-white border border-slate-200 rounded-3xl p-4 space-y-3 shadow-sm hover:border-blue-300 transition relative group">
                       <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-                        <div className="w-10 h-10 rounded-2xl bg-slate-200 border border-slate-300 overflow-hidden flex items-center justify-center shrink-0 font-black text-slate-600">
+                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white overflow-hidden flex items-center justify-center shrink-0 font-black shadow-xs border border-slate-200">
                           {member.avatarUrl ? (
-                            <img src={member.avatarUrl} alt={member.fullName} className="w-full h-full object-cover" />
+                            <img src={member.avatarUrl} alt={member.fullName} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLElement).style.display = "none"; }} />
                           ) : (
-                            member.fullName?.[0] || "C"
+                            <span className="text-base">{member.fullName?.[0]?.toUpperCase() || "C"}</span>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-black text-sm text-slate-900 truncate">{member.fullName}</div>
+                          <div className="font-black text-sm text-slate-900 truncate" title={member.fullName}>{member.fullName}</div>
                           <div className="font-mono text-[11px] text-blue-700 font-bold">{member.ctvCode}</div>
-                          <div className="text-[10px] text-slate-500">{member.phone || "Chưa cập nhật SĐT"}</div>
+                          <div className="text-[10px] text-slate-500 truncate flex items-center gap-1 mt-0.5">
+                            <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span>{member.phone || "Chưa cập nhật SĐT"}</span>
+                          </div>
                         </div>
 
-                        <button
-                          onClick={() => handleRemoveMember(member.ctvCode)}
-                          className="p-1.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition opacity-60 hover:opacity-100 cursor-pointer"
-                          title="Gỡ khỏi nhóm"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => {
+                              setEditingMember(member);
+                              setEditName(member.fullName || "");
+                              setEditPhone(member.phone || "");
+                              setEditAvatar(member.avatarUrl || "");
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
+                            title="Sửa thông tin CTV"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleRemoveMember(member.ctvCode)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                            title="Gỡ khỏi nhóm"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-3 gap-2 text-xs text-center">
@@ -949,7 +1064,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
       {/* Modal Thêm thành viên nhóm */}
       {addMemberModalOpen && (
         <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-slate-900">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl text-slate-900">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-black text-sm flex items-center gap-2">
                 <Plus className="w-4 h-4 text-amber-600" /> Thêm thành viên vào nhóm
@@ -966,12 +1081,42 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                   type="text"
                   placeholder="VD: SAOHAN-NGUYENVANA0912"
                   value={memberCodeInput}
-                  onChange={(e) => { setMemberCodeInput(e.target.value); setMemberError(""); }}
+                  onChange={(e) => handleMemberCodeChange(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 uppercase"
                 />
-                <p className="text-[10px] text-slate-500 mt-1">
-                  CTV phải đã đăng ký tài khoản trên hệ thống và chưa thuộc nhóm nào.
-                </p>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Họ và Tên CTV:</label>
+                <input
+                  type="text"
+                  placeholder="Tự động đồng bộ nếu đã có tài khoản"
+                  value={memberNameInput}
+                  onChange={(e) => setMemberNameInput(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Số Điện Thoại:</label>
+                <input
+                  type="text"
+                  placeholder="VD: 0912345678"
+                  value={memberPhoneInput}
+                  onChange={(e) => setMemberPhoneInput(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-mono text-slate-900 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Link Ảnh Đại Diện (Avatar URL):</label>
+                <input
+                  type="text"
+                  placeholder="https://... (để trống nếu dùng ảnh tự động)"
+                  value={memberAvatarInput}
+                  onChange={(e) => setMemberAvatarInput(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-amber-500 text-[11px]"
+                />
               </div>
 
               {memberError && (
@@ -981,7 +1126,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                 </div>
               )}
 
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex items-center gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => { setAddMemberModalOpen(false); setMemberError(""); }}
@@ -995,6 +1140,84 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                   className="flex-1 py-2.5 bg-[#0B192C] text-amber-400 font-black rounded-xl hover:bg-slate-800 transition shadow-sm cursor-pointer"
                 >
                   Xác nhận thêm
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Chỉnh Sửa & Đồng Bộ Thông Tin Thành Viên */}
+      {editingMember && (
+        <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl text-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-sm flex items-center gap-2">
+                <Pencil className="w-4 h-4 text-blue-600" /> Đồng bộ thông tin thành viên ({editingMember.ctvCode})
+              </h3>
+              <button onClick={() => setEditingMember(null)} className="p-1 hover:bg-slate-100 rounded-full cursor-pointer">
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs font-medium">
+              <div>
+                <label className="block text-slate-700 font-extrabold mb-1">Mã CTV (Bảo lưu):</label>
+                <input
+                  type="text"
+                  disabled
+                  value={editingMember.ctvCode}
+                  className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 font-mono font-bold text-slate-500 cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-extrabold mb-1">Họ và Tên CTV:</label>
+                <input
+                  type="text"
+                  placeholder="Nhập Họ và Tên..."
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 font-bold focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-extrabold mb-1">Số Điện Thoại:</label>
+                <input
+                  type="text"
+                  placeholder="Nhập Số điện thoại..."
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono text-slate-900 focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-extrabold mb-1">Link Ảnh Đại Diện (Avatar URL):</label>
+                <input
+                  type="text"
+                  placeholder="https://..."
+                  value={editAvatar}
+                  onChange={(e) => setEditAvatar(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-blue-500 text-[11px]"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingMember(null)}
+                  className="flex-1 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEditMember}
+                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition shadow-sm cursor-pointer"
+                >
+                  Lưu & Đồng bộ
                 </button>
               </div>
             </div>
