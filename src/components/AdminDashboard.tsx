@@ -312,24 +312,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </button>
           </div>
 
-          {/* ADMIN PROFILE CARD */}
-          {(!isSidebarCollapsed || isMobileSidebarOpen) && (
-            <div className="p-3 mx-3 my-3 bg-blue-950/60 rounded-2xl border border-blue-800/80 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-500 text-[#0B192C] font-black flex items-center justify-center text-xs shadow-xs shrink-0">
-                {authUser?.fullName ? authUser.fullName.charAt(0).toUpperCase() : "A"}
-              </div>
-              <div className="truncate min-w-0">
-                <div className="font-black text-xs text-white truncate">{authUser?.fullName || ctvUser?.name || "Admin Quản Trị"}</div>
-                <div className="text-[10px] font-bold text-amber-400 flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3 text-amber-400 shrink-0" />
-                  <span>Tổng Giám Đốc / Admin</span>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* SIDEBAR NAVIGATION MENU */}
-          <nav className="p-3 space-y-1.5 overflow-y-auto max-h-[calc(100vh-230px)]">
+          <nav className="p-3 space-y-1.5 overflow-y-auto max-h-[calc(100vh-180px)]">
             {menuItems.map((item) => {
               const IconComp = item.icon;
               const isActive = activeTab === item.id;
@@ -378,41 +362,57 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </nav>
         </div>
 
-        {/* SIDEBAR FOOTER REALTIME STATUS */}
-        {(!isSidebarCollapsed || isMobileSidebarOpen) && (
-          <div className="p-3 border-t border-blue-900/60 bg-blue-950/40 m-3 rounded-2xl space-y-2">
-            <div className="flex items-center justify-between text-[11px] font-bold text-slate-300">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                CSDL Realtime:
-              </span>
-              <span className="font-mono text-emerald-400 font-black">HOẠT ĐỘNG</span>
+        {/* SIDEBAR FOOTER: MOVED ADMIN PROFILE CARD & ACTIONS */}
+        {(!isSidebarCollapsed || isMobileSidebarOpen) ? (
+          <div className="p-3 border-t border-blue-900/60 bg-blue-950/60 m-3 rounded-2xl space-y-2.5">
+            {/* Admin Profile Info */}
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-500 text-[#0B192C] font-black flex items-center justify-center text-xs shadow-xs shrink-0">
+                {authUser?.fullName ? authUser.fullName.charAt(0).toUpperCase() : "A"}
+              </div>
+              <div className="truncate min-w-0">
+                <div className="font-black text-xs text-white truncate">{authUser?.fullName || ctvUser?.name || "Admin Quản Trị"}</div>
+                <div className="text-[10px] font-bold text-amber-400 flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-amber-400 shrink-0" />
+                  <span>Tổng Giám Đốc / Admin</span>
+                </div>
+              </div>
             </div>
-            {onRefreshAppointments && (
-              <button
-                onClick={onRefreshAppointments}
-                className="w-full bg-blue-900/80 hover:bg-blue-800 text-amber-300 font-extrabold text-[11px] py-1.5 rounded-xl transition flex items-center justify-center gap-1.5 border border-blue-800 cursor-pointer"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Tải Lại CSDL</span>
-              </button>
-            )}
-            {onRoleChange && (
-              <button
-                onClick={() => onRoleChange("ctv")}
-                className="w-full bg-amber-500 hover:bg-amber-400 text-[#0B192C] font-black text-[11px] py-2 rounded-xl transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <ArrowLeftRight className="w-3.5 h-3.5" />
-                <span>Chuyển Màn CTV</span>
-              </button>
-            )}
+
+            {/* Quick Action Buttons */}
+            <div className="space-y-1.5 pt-1 border-t border-blue-900/40">
+              {onRoleChange && (
+                <button
+                  onClick={() => onRoleChange("ctv")}
+                  className="w-full bg-amber-500 hover:bg-amber-400 text-[#0B192C] font-black text-[11px] py-2 rounded-xl transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                >
+                  <ArrowLeftRight className="w-3.5 h-3.5" />
+                  <span>Chuyển Màn CTV</span>
+                </button>
+              )}
+              {onSignOut && (
+                <button
+                  onClick={onSignOut}
+                  className="w-full bg-rose-950/80 hover:bg-rose-900 text-rose-300 font-extrabold text-[11px] py-1.5 rounded-xl transition flex items-center justify-center gap-1.5 border border-rose-800 cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Đăng Xuất</span>
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="p-2 border-t border-blue-900/60 flex flex-col items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-500 text-[#0B192C] font-black flex items-center justify-center text-xs shadow-xs" title={authUser?.fullName || "Admin Quản Trị"}>
+              {authUser?.fullName ? authUser.fullName.charAt(0).toUpperCase() : "A"}
+            </div>
             {onSignOut && (
               <button
                 onClick={onSignOut}
-                className="w-full bg-rose-950/80 hover:bg-rose-900 text-rose-300 font-extrabold text-[11px] py-1.5 rounded-xl transition flex items-center justify-center gap-1.5 border border-rose-800 cursor-pointer"
+                className="p-2 rounded-xl bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800 transition cursor-pointer"
+                title="Đăng Xuất"
               >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Đăng Xuất</span>
+                <LogOut className="w-4 h-4" />
               </button>
             )}
           </div>
