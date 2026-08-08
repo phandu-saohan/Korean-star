@@ -528,30 +528,52 @@ interface SendTransferProps {
 }
 
 export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClose }) => {
-  const [targetLeaderCode, setTargetLeaderCode] = useState(ctvUser.teamLeaderId || "");
+  const leaderCode = ctvUser.teamLeaderId || "";
   const [amount, setAmount] = useState("");
   const [commission, setCommission] = useState("");
-  const [serviceName, setServiceName] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  // Tính Doanh số khả dụng = Doanh số tổng - Doanh số đã rút hoa hồng
+  const totalRevenue = ctvUser.totalRevenue || 0;
+  const totalCommission = ctvUser.totalCommission || 0;
+  const availableBalance = ctvUser.availableBalance || 0;
+  const pendingBalance = ctvUser.pendingBalance || 0;
+  
+  // Hoa hồng đã rút = Tổng hoa hồng - (Hoa hồng khả dụng + Hoa hồng chờ duyệt)
+  const withdrawnCommission = Math.max(0, totalCommission - availableBalance - pendingBalance);
+  // Doanh số tương ứng với hoa hồng đã rút (hoặc tính quy đổi)
+  const withdrawnRevenue = withdrawnCommission > 0 ? withdrawnCommission * 10 : 0;
+  const availableRevenue = Math.max(0, totalRevenue - withdrawnRevenue);
+
   const handleSend = async () => {
     setError("");
-    const leaderCode = targetLeaderCode.trim().toUpperCase();
-    if (!leaderCode) { setError("Vui lòng nhập Mã Trưởng nhóm nhận doanh số"); return; }
-    if (!serviceName.trim()) { setError("Vui lòng nhập tên dịch vụ"); return; }
-    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) { setError("Vui lòng nhập doanh số hợp lệ"); return; }
+    if (!leaderCode) {
+      setError("Bạn chưa thuộc nhóm nào. Vui lòng liên hệ Trưởng nhóm để được thêm vào nhóm.");
+      return;
+    }
+
+    const numAmount = Number(amount);
+    if (!amount || isNaN(numAmount) || numAmount <= 0) {
+      setError("Vui lòng nhập doanh số hợp lệ (lớn hơn 0)");
+      return;
+    }
+
+    if (numAmount > availableRevenue) {
+      setError(`Số tiền chuyển (${numAmount.toLocaleString("vi-VN")}đ) vượt quá Doanh số khả dụng (${availableRevenue.toLocaleString("vi-VN")}đ)`);
+      return;
+    }
 
     const transfer: TeamRevenueTransfer = {
       id: `transfer-${Date.now()}`,
       fromCtvCode: ctvUser.code,
       fromCtvName: ctvUser.name,
       toLeaderCode: leaderCode,
-      toLeaderName: "",
-      amount: Number(amount),
+      toLeaderName: ctvUser.teamName || "",
+      amount: numAmount,
       commission: Number(commission) || 0,
-      serviceName: serviceName.trim(),
+      serviceName: "Chuyển doanh số CTV",
       note: note.trim() || undefined,
       transferredAt: new Date().toLocaleString("vi-VN"),
       status: "pending"
@@ -563,7 +585,7 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
       all.push(transfer);
       localStorage.setItem("saohan_team_transfers", JSON.stringify(all));
 
-      // Sync to Supabase DB
+      // Lưu trực tiếp lên CSDL Supabase table team_revenue_transfers
       saveTransferRequestToSupabase(transfer).catch(console.error);
 
       setSuccess(true);
@@ -571,6 +593,23 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
       setError("Lỗi khi gửi yêu cầu. Vui lòng thử lại.");
     }
   };
+
+  if (!leaderCode) {
+    return (
+      <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+        <div className="bg-white rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl text-slate-900">
+          <AlertCircle className="w-12 h-12 mx-auto text-amber-500" />
+          <h3 className="font-black text-base text-slate-900">Bạn chưa thuộc nhóm nào</h3>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Hệ thống yêu cầu bạn phải được <strong>Trưởng nhóm thêm vào nhóm</strong> trước khi gửi yêu cầu chuyển doanh số.
+          </p>
+          <button onClick={onClose} className="w-full bg-slate-100 text-slate-700 font-bold py-2.5 rounded-2xl text-xs hover:bg-slate-200 transition cursor-pointer">
+            Đóng
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
@@ -589,41 +628,59 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
           <div className="text-center space-y-3 py-4">
             <CheckCircle2 className="w-12 h-12 mx-auto text-emerald-600" />
             <p className="font-black text-emerald-800">Đã gửi yêu cầu thành công!</p>
-            <p className="text-xs text-slate-500">Trưởng nhóm {targetLeaderCode} sẽ xem xét và phê duyệt doanh số của bạn.</p>
-            <button onClick={onClose} className="w-full bg-emerald-600 text-white font-black py-2.5 rounded-2xl text-xs hover:bg-emerald-700 transition cursor-pointer">Đóng</button>
+            <p className="text-xs text-slate-500">Trưởng nhóm <strong>{leaderCode}</strong> sẽ xem xét và phê duyệt doanh số của bạn.</p>
+            <button onClick={onClose} className="w-full bg-emerald-600 text-white font-black py-2.5 rounded-2xl text-xs hover:bg-emerald-700 transition cursor-pointer">
+              Đóng
+            </button>
           </div>
         ) : (
           <div className="space-y-3 text-xs font-medium">
-            <div>
-              <label className="block font-extrabold mb-1 text-slate-700">Mã Trưởng nhóm nhận doanh số (*):</label>
-              <input
-                type="text"
-                placeholder="VD: TRUONGNHOM01"
-                value={targetLeaderCode}
-                onChange={(e) => setTargetLeaderCode(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 uppercase"
-              />
+            {/* Tự động hiển thị Trưởng nhóm đã add */}
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-2xl flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-blue-600 font-bold block uppercase">Trưởng nhóm nhận:</span>
+                <span className="font-mono font-black text-xs text-blue-900">{leaderCode} {ctvUser.teamName ? `(${ctvUser.teamName})` : ''}</span>
+              </div>
+              <UserCheck className="w-5 h-5 text-blue-600 shrink-0" />
             </div>
 
-            <div>
-              <label className="block font-extrabold mb-1 text-slate-700">Tên dịch vụ (*):</label>
-              <input type="text" placeholder="VD: Nâng ngực Motiva..." value={serviceName}
-                onChange={(e) => setServiceName(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-900 focus:outline-none focus:border-amber-500"
-              />
+            {/* Khối Thống Kê Doanh Số Khả Dụng */}
+            <div className="bg-amber-50 border border-amber-200 p-3 rounded-2xl space-y-1.5">
+              <div className="flex justify-between items-center text-[11px]">
+                <span className="text-slate-500 font-bold">Doanh số tổng:</span>
+                <span className="font-mono font-bold text-slate-800">{totalRevenue.toLocaleString("vi-VN")} đ</span>
+              </div>
+              {withdrawnRevenue > 0 && (
+                <div className="flex justify-between items-center text-[11px]">
+                  <span className="text-slate-500 font-bold">Đã rút hoa hồng:</span>
+                  <span className="font-mono font-bold text-rose-600">-{withdrawnRevenue.toLocaleString("vi-VN")} đ</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center pt-1 border-t border-amber-200/80">
+                <span className="text-amber-800 font-extrabold">Doanh số khả dụng:</span>
+                <span className="font-mono font-black text-amber-900 text-sm">{availableRevenue.toLocaleString("vi-VN")} đ</span>
+              </div>
             </div>
 
+            {/* Nhập Doanh Số & Hoa Hồng */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block font-extrabold mb-1 text-slate-700">Doanh số (đ) (*):</label>
-                <input type="number" placeholder="VD: 50000000" value={amount}
+                <label className="block font-extrabold mb-1 text-slate-700">Doanh số chuyển (đ) (*):</label>
+                <input
+                  type="number"
+                  placeholder="VD: 10000000"
+                  value={amount}
+                  max={availableRevenue}
                   onChange={(e) => setAmount(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500"
                 />
               </div>
               <div>
                 <label className="block font-extrabold mb-1 text-slate-700">Hoa hồng (đ):</label>
-                <input type="number" placeholder="VD: 7500000" value={commission}
+                <input
+                  type="number"
+                  placeholder="VD: 1500000"
+                  value={commission}
                   onChange={(e) => setCommission(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500"
                 />
@@ -632,7 +689,10 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
 
             <div>
               <label className="block font-extrabold mb-1 text-slate-700">Ghi chú (tùy chọn):</label>
-              <textarea rows={2} placeholder="Thêm ghi chú gửi Trưởng nhóm..." value={note}
+              <textarea
+                rows={2}
+                placeholder="Thêm ghi chú gửi Trưởng nhóm..."
+                value={note}
                 onChange={(e) => setNote(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 focus:outline-none focus:border-amber-500"
               />
