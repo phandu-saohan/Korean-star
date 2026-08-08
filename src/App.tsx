@@ -36,6 +36,7 @@ import { SendTransferModal } from "./components/TeamLeaderDashboard";
 import { updateAppBadgeFromUnread, clearBadge } from "./lib/badge";
 import {
   fetchUserProfile,
+  fetchUserProfileByCtvCode,
   updateUserProfile,
   fetchServicesFromSupabase,
   saveServiceToSupabase,
@@ -356,7 +357,7 @@ export default function App() {
     showToast(`Đăng nhập thành công! Chào mừng CTV ${userProfile.fullName}`);
   };
 
-  // Sync authUser to ctvUser state & role/tab persistence (Lưu đầy đủ 8 trường đăng ký cá nhân)
+  // Sync authUser to ctvUser state & role/tab persistence (Lưu đầy đủ 8 trường đăng ký cá nhân + Nhóm CTV)
   useEffect(() => {
     if (authUser) {
       if (authUser.role && authUser.role !== currentRole) {
@@ -379,6 +380,8 @@ export default function App() {
         totalCommission: authUser.totalCommission ?? prev.totalCommission,
         idCardNumber: authUser.idCardNumber || (prev as any).idCardNumber,
         facilityName: authUser.facilityName || (prev as any).facilityName,
+        teamLeaderId: authUser.teamLeaderId || (prev as any).teamLeaderId,
+        teamName: authUser.teamName || (prev as any).teamName,
         bankAccount: {
           bankName: authUser.bankName || prev.bankAccount?.bankName || "MB Bank",
           accountNumber: authUser.accountNumber || prev.bankAccount?.accountNumber || "",
@@ -387,6 +390,40 @@ export default function App() {
       }));
     }
   }, [authUser]);
+
+  // Tự động kiểm tra và đồng bộ nhóm (teamLeaderId & teamName) từ LocalStorage và Supabase CSDL
+  useEffect(() => {
+    if (ctvUser?.code) {
+      const codeUpper = ctvUser.code.trim().toUpperCase();
+
+      // 1. Kiểm tra bộ nhớ cục bộ saohan_registered_users
+      try {
+        const raw = localStorage.getItem("saohan_registered_users");
+        if (raw) {
+          const all: any[] = JSON.parse(raw);
+          const match = all.find((u) => (u.ctvCode || u.code || "").trim().toUpperCase() === codeUpper);
+          if (match && match.teamLeaderId && match.teamLeaderId !== ctvUser.teamLeaderId) {
+            setCtvUser((prev) => ({
+              ...prev,
+              teamLeaderId: match.teamLeaderId,
+              teamName: match.teamName || prev.teamName
+            }));
+          }
+        }
+      } catch (e) {}
+
+      // 2. Tra cứu dữ liệu từ bảng user_profiles trên Supabase
+      fetchUserProfileByCtvCode(codeUpper).then((sbProfile) => {
+        if (sbProfile && sbProfile.teamLeaderId && sbProfile.teamLeaderId !== ctvUser.teamLeaderId) {
+          setCtvUser((prev) => ({
+            ...prev,
+            teamLeaderId: sbProfile.teamLeaderId,
+            teamName: sbProfile.teamName || prev.teamName
+          }));
+        }
+      });
+    }
+  }, [ctvUser?.code]);
 
   useEffect(() => {
     localStorage.setItem("saohan_active_tab", activeTab);
