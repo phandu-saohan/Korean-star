@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { formatCurrencyInput, parseCurrencyInput, formatDateTimeVN } from "../utils/formatters";
-import { CTVUser, ReferralLead, ServiceItem, ServiceFeedback, Appointment, AppointmentInvoice, PayoutRequest } from "../types";
+import { CTVUser, ReferralLead, ServiceItem, ServiceFeedback, Appointment, AppointmentInvoice, PayoutRequest, TeamRevenueTransfer } from "../types";
 import { 
   Wallet, 
   Crown, 
@@ -30,7 +30,11 @@ import {
   HeartPulse,
   Flame,
   LayoutGrid,
-  Trash2
+  Trash2,
+  Plus,
+  X,
+  XCircle,
+  AlertCircle
 } from "lucide-react";
 import {
   AreaChart,
@@ -66,6 +70,39 @@ interface CTVHubProps {
   onOpenTeamTransferModal?: () => void;
 }
 
+// Lấy danh sách CTV đã đăng ký từ localStorage
+function getRegisteredCTVs(leaderCode: string): any[] {
+  try {
+    const raw = localStorage.getItem("saohan_registered_users");
+    if (!raw) return [];
+    const all = JSON.parse(raw) as any[];
+    return all.filter(
+      (u) =>
+        u.role === "ctv" &&
+        u.teamLeaderId === leaderCode &&
+        u.ctvCode !== leaderCode
+    );
+  } catch {
+    return [];
+  }
+}
+
+// Lấy danh sách yêu cầu chuyển doanh số từ localStorage
+function getTransferRequests(leaderCode: string): TeamRevenueTransfer[] {
+  try {
+    const raw = localStorage.getItem("saohan_team_transfers");
+    if (!raw) return [];
+    const all = JSON.parse(raw) as TeamRevenueTransfer[];
+    return all.filter((t) => t.toLeaderCode === leaderCode);
+  } catch {
+    return [];
+  }
+}
+
+function saveTransferRequests(transfers: TeamRevenueTransfer[]) {
+  localStorage.setItem("saohan_team_transfers", JSON.stringify(transfers));
+}
+
 export const CTVHub: React.FC<CTVHubProps> = ({
   currentRole,
   ctvUser,
@@ -89,7 +126,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
         { month: "Hiện tại", revenue: ctvUser.totalRevenue, commission: ctvUser.totalCommission, referrals: ctvUser.successfulReferrals }
       ]
     : [];
-  const [activeSubTab, setActiveSubTab] = useState<"overview" | "services" | "feedbacks">("overview");
+  const [activeSubTab, setActiveSubTab] = useState<"overview" | "services" | "feedbacks" | "team-members" | "team-transfers">("overview");
   const [customCode, setCustomCode] = useState(ctvUser.code);
   const [customerDiscount, setCustomerDiscount] = useState("10");
   const [copiedLink, setCopiedLink] = useState(false);
@@ -97,6 +134,61 @@ export const CTVHub: React.FC<CTVHubProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Team Leader state & handlers
+  const leaderCode = ctvUser?.code || "";
+  const teamMembers = getRegisteredCTVs(leaderCode);
+  const [transfers, setTransfers] = useState<TeamRevenueTransfer[]>(() =>
+    getTransferRequests(leaderCode)
+  );
+
+  const [addMemberModalOpen, setAddMemberModalOpen] = useState(false);
+  const [memberCodeInput, setMemberCodeInput] = useState("");
+  const [memberError, setMemberError] = useState("");
+
+  const handleAddMember = () => {
+    setMemberError("");
+    const code = memberCodeInput.trim().toUpperCase();
+    if (!code) { setMemberError("Vui lòng nhập Mã CTV"); return; }
+
+    try {
+      const raw = localStorage.getItem("saohan_registered_users");
+      const all: any[] = raw ? JSON.parse(raw) : [];
+      const target = all.find((u) => u.ctvCode === code || u.ctvCode?.toUpperCase() === code);
+      if (!target) { setMemberError(`Không tìm thấy CTV có mã "${code}"`); return; }
+      if (target.teamLeaderId && target.teamLeaderId !== leaderCode) {
+        setMemberError(`CTV "${code}" đã thuộc nhóm khác rồi`); return;
+      }
+      if (target.ctvCode === leaderCode) { setMemberError("Không thể thêm chính mình vào nhóm"); return; }
+
+      target.teamLeaderId = leaderCode;
+      target.teamName = ctvUser.teamName || `Nhóm ${ctvUser.name}`;
+      const updatedAll = all.map((u) => (u.ctvCode === target.ctvCode ? target : u));
+      localStorage.setItem("saohan_registered_users", JSON.stringify(updatedAll));
+
+      setMemberCodeInput("");
+      setAddMemberModalOpen(false);
+      window.location.reload();
+    } catch {
+      setMemberError("Đã xảy ra lỗi. Vui lòng thử lại.");
+    }
+  };
+
+  const handleAcceptTransfer = (transfer: TeamRevenueTransfer) => {
+    const updated = transfers.map((t) =>
+      t.id === transfer.id ? { ...t, status: "accepted" as const } : t
+    );
+    setTransfers(updated);
+    saveTransferRequests(updated);
+  };
+
+  const handleRejectTransfer = (transfer: TeamRevenueTransfer) => {
+    const updated = transfers.map((t) =>
+      t.id === transfer.id ? { ...t, status: "rejected" as const } : t
+    );
+    setTransfers(updated);
+    saveTransferRequests(updated);
+  };
 
   const itemsPerPage = 6;
 
@@ -210,6 +302,190 @@ export const CTVHub: React.FC<CTVHubProps> = ({
           isAdmin={false}
           onBookAppointment={onBookAppointment || (() => {})}
         />
+      )}
+
+      {/* SUBTAB: THÀNH VIÊN NHÓM */}
+      {activeSubTab === "team-members" && (
+        <div className="space-y-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setActiveSubTab("overview")}
+                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                title="Quay lại Dashboard"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h2 className="font-black text-slate-900 text-base sm:text-lg flex items-center gap-2">
+                  <Users className="w-5 h-5 text-blue-600" />
+                  Danh Sách Thành Viên Nhóm ({teamMembers.length})
+                </h2>
+                <p className="text-xs text-slate-500 font-medium">Quản lý các cộng tác viên thuộc nhóm của bạn</p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setAddMemberModalOpen(true)}
+              className="bg-[#0B192C] hover:bg-slate-800 text-amber-400 font-black text-xs px-4 py-2.5 rounded-2xl flex items-center gap-1.5 transition shadow-sm w-full sm:w-auto justify-center cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Thêm thành viên nhóm
+            </button>
+          </div>
+
+          {teamMembers.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {teamMembers.map((member) => {
+                const memberLeads = leads.filter((l) => l.ctvCode === member.ctvCode);
+                return (
+                  <div key={member.ctvCode} className="bg-white border border-slate-200 rounded-3xl p-4 space-y-3 shadow-sm hover:border-blue-300 transition">
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                      <div className="w-10 h-10 rounded-2xl bg-slate-200 border border-slate-300 overflow-hidden flex items-center justify-center shrink-0 font-black text-slate-600">
+                        {member.avatarUrl ? (
+                          <img src={member.avatarUrl} alt={member.fullName} className="w-full h-full object-cover" />
+                        ) : (
+                          member.fullName?.[0] || "C"
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-black text-sm text-slate-900 truncate">{member.fullName}</div>
+                        <div className="font-mono text-[11px] text-blue-700 font-bold">{member.ctvCode}</div>
+                        <div className="text-[10px] text-slate-500">{member.phone}</div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 text-xs text-center">
+                      <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-200">
+                        <div className="font-black text-emerald-700 text-[11px] font-mono">
+                          {(member.totalRevenue || 0).toLocaleString("vi-VN")}đ
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-medium">Doanh số</div>
+                      </div>
+                      <div className="bg-amber-50 p-2 rounded-xl border border-amber-200">
+                        <div className="font-black text-amber-700 text-[11px] font-mono">
+                          {(member.totalCommission || 0).toLocaleString("vi-VN")}đ
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-medium">Hoa hồng</div>
+                      </div>
+                      <div className="bg-blue-50 p-2 rounded-xl border border-blue-200">
+                        <div className="font-black text-blue-700 text-[11px]">
+                          {memberLeads.length}
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-medium">Khách GT</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-3 shadow-sm">
+              <Users className="w-12 h-12 mx-auto text-slate-300" />
+              <div>
+                <p className="font-bold text-slate-700">Nhóm của bạn chưa có thành viên</p>
+                <p className="text-xs text-slate-500 mt-1">Nhập Mã CTV để thêm cộng tác viên vào nhóm của bạn.</p>
+              </div>
+              <button
+                onClick={() => setAddMemberModalOpen(true)}
+                className="bg-[#0B192C] text-amber-400 font-black px-5 py-2.5 rounded-2xl text-xs hover:bg-slate-800 transition cursor-pointer"
+              >
+                + Thêm thành viên đầu tiên
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SUBTAB: CHUYỂN DOANH SỐ (DẠNG GRID GỌN GÀNG) */}
+      {activeSubTab === "team-transfers" && (
+        <div className="space-y-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setActiveSubTab("overview")}
+                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                title="Quay lại Dashboard"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h2 className="font-black text-slate-900 text-base sm:text-lg flex items-center gap-2">
+                  <ArrowUpRight className="w-5 h-5 text-amber-600" />
+                  Danh Sách Yêu Cầu Chuyển Doanh Số Nhóm ({transfers.length})
+                </h2>
+                <p className="text-xs text-slate-500 font-medium">Duyệt hoặc từ chối các yêu cầu chuyển doanh số từ CTV thành viên</p>
+              </div>
+            </div>
+          </div>
+
+          {transfers.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {transfers.map((t) => (
+                <div key={t.id} className="bg-white border border-slate-200 rounded-3xl p-4 space-y-3 shadow-sm hover:border-amber-300 transition">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase block">CTV gửi:</span>
+                      <span className="font-black text-xs text-slate-900">{t.fromCtvName}</span>
+                      <span className="font-mono text-[10px] text-blue-700 font-bold ml-1.5">({t.fromCtvCode})</span>
+                    </div>
+                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${
+                      t.status === "pending" ? "bg-amber-100 text-amber-900 border-amber-300 animate-pulse" :
+                      t.status === "accepted" ? "bg-emerald-100 text-emerald-900 border-emerald-300" :
+                      "bg-rose-100 text-rose-900 border-rose-300"
+                    }`}>
+                      {t.status === "pending" ? "⏳ Chờ duyệt" : t.status === "accepted" ? "✓ Đã chấp nhận" : "✗ Đã từ chối"}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-200">
+                      <span className="text-[10px] text-slate-500 font-bold block">Dịch vụ</span>
+                      <span className="font-black text-slate-900 truncate block">{t.serviceName}</span>
+                    </div>
+                    <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-200">
+                      <span className="text-[10px] text-slate-500 font-bold block">Doanh số</span>
+                      <span className="font-mono font-black text-emerald-700 truncate block">{t.amount.toLocaleString("vi-VN")}đ</span>
+                    </div>
+                    <div className="bg-amber-50 p-2 rounded-xl border border-amber-200">
+                      <span className="text-[10px] text-slate-500 font-bold block">Hoa hồng</span>
+                      <span className="font-mono font-black text-amber-700 truncate block">{t.commission.toLocaleString("vi-VN")}đ</span>
+                    </div>
+                  </div>
+
+                  {t.note && (
+                    <p className="text-[11px] text-slate-600 italic bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
+                      Ghi chú: "{t.note}"
+                    </p>
+                  )}
+
+                  {t.status === "pending" && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={() => handleAcceptTransfer(t)}
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2 rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-xs cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Chấp nhận
+                      </button>
+                      <button
+                        onClick={() => handleRejectTransfer(t)}
+                        className="flex-1 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold py-2 rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <XCircle className="w-3.5 h-3.5" /> Từ chối
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-2 shadow-sm">
+              <ArrowUpRight className="w-12 h-12 mx-auto text-slate-300" />
+              <p className="font-bold text-slate-700">Chưa có yêu cầu chuyển doanh số</p>
+              <p className="text-xs text-slate-500">Khi CTV trong nhóm gửi yêu cầu chuyển doanh số, danh sách sẽ hiển thị dạng Grid tại đây.</p>
+            </div>
+          )}
+        </div>
       )}
 
       {activeSubTab === "overview" && (
@@ -505,8 +781,63 @@ export const CTVHub: React.FC<CTVHubProps> = ({
           </ResponsiveContainer>
         </div>
       </div>
-
         </>
+      )}
+
+      {/* Modal Thêm thành viên nhóm */}
+      {addMemberModalOpen && (
+        <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-sm flex items-center gap-2">
+                <Plus className="w-4 h-4 text-amber-600" /> Thêm thành viên vào nhóm
+              </h3>
+              <button onClick={() => { setAddMemberModalOpen(false); setMemberError(""); }} className="p-1 hover:bg-slate-100 rounded-full cursor-pointer">
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs font-medium">
+              <div>
+                <label className="block text-slate-700 font-extrabold mb-1">Mã CTV cần thêm vào nhóm (*):</label>
+                <input
+                  type="text"
+                  placeholder="VD: SAOHAN-NGUYENVANA0912"
+                  value={memberCodeInput}
+                  onChange={(e) => { setMemberCodeInput(e.target.value); setMemberError(""); }}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 uppercase"
+                />
+                <p className="text-[10px] text-slate-500 mt-1">
+                  CTV phải đã đăng ký tài khoản trên hệ thống và chưa thuộc nhóm nào.
+                </p>
+              </div>
+
+              {memberError && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-800 p-2.5 rounded-xl flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{memberError}</span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => { setAddMemberModalOpen(false); setMemberError(""); }}
+                  className="flex-1 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddMember}
+                  className="flex-1 py-2.5 bg-[#0B192C] text-amber-400 font-black rounded-xl hover:bg-slate-800 transition shadow-sm cursor-pointer"
+                >
+                  Xác nhận thêm
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

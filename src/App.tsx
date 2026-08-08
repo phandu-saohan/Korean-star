@@ -32,7 +32,7 @@ import { AuthModal } from "./components/AuthModal";
 import { AuthPage } from "./components/AuthPage";
 import { ProfileEditModal } from "./components/ProfileEditModal";
 import { HelpSupportModal } from "./components/HelpSupportModal";
-import { TeamLeaderDashboard, SendTransferModal } from "./components/TeamLeaderDashboard";
+import { SendTransferModal } from "./components/TeamLeaderDashboard";
 import { updateAppBadgeFromUnread, clearBadge } from "./lib/badge";
 import {
   fetchUserProfile,
@@ -1413,7 +1413,6 @@ export default function App() {
 
   const allQuickNavItems = [
     { id: "admin", title: "Bảng Admin", sub: "Quản trị & Phân quyền Supabase", icon: ShieldCheck, color: "from-[#0B192C] to-red-950", roles: ["admin"] },
-    { id: "team-leader", title: "Trưởng nhóm CTV", sub: "Quản lý nhóm & Doanh số", icon: Crown, color: "from-blue-700 to-blue-900", roles: ["admin", "team_leader"] },
     { id: "editor", title: "Biên Tập Viên", sub: "Cập nhật bài viết & ảnh 3D", icon: FileText, color: "from-purple-600 to-indigo-700", roles: ["admin", "editor"] },
     { id: "accountant", title: "Kế Toán Quỹ", sub: "Duyệt giải ngân VietQR", icon: Wallet, color: "from-emerald-600 to-teal-700", roles: ["admin", "accountant"] },
     { id: "ctv-dashboard", title: "Hoa Hồng CTV", sub: "Ví & Doanh số", icon: Coins, color: "from-amber-500 to-amber-600", roles: ["admin", "editor", "accountant", "ctv", "team_leader"] },
@@ -1924,14 +1923,6 @@ export default function App() {
             />
           )}
 
-          {/* Team Leader Dashboard */}
-          {activeTab === "team-leader" && (
-            <TeamLeaderDashboard
-              ctvUser={effectiveCtvUser}
-              leads={leads}
-            />
-          )}
-
           {/* CTV thành viên nhóm: nút chuyển doanh số lên Trưởng nhóm (hiện khi CTV có teamLeaderId) */}
           {teamTransferModalOpen && (
             <SendTransferModal
@@ -2268,33 +2259,7 @@ export default function App() {
                   <ChevronRight className="w-4 h-4 opacity-60" />
                 </button>
 
-                {/* 6. Trưởng nhóm CTV Dashboard Link */}
-                {(currentRole === "team_leader" || authUser?.role === "team_leader" || authUser?.role === "admin") && (
-                  <button
-                    onClick={() => {
-                      setCurrentRole("team_leader");
-                      setActiveTab("team-leader");
-                      setAccountDrawerOpen(false);
-                      showToast("Đã chuyển sang Dashboard Trưởng Nhóm CTV!");
-                    }}
-                    className={`w-full p-3.5 rounded-2xl border transition flex items-center justify-between text-left ${
-                      activeTab === "team-leader"
-                        ? "bg-blue-700 text-white font-black border-blue-700 shadow-sm"
-                        : "bg-slate-50 hover:bg-slate-100 text-slate-900 border-slate-200"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-900 flex items-center justify-center font-bold">
-                        <Crown className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="font-extrabold text-xs">Dashboard Trưởng Nhóm CTV</div>
-                        <div className="text-[10px] text-slate-500 font-medium">Quản lý thành viên & duyệt chuyển doanh số</div>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 opacity-60" />
-                  </button>
-                )}
+
 
                 {/* 7. CTV có Trưởng nhóm: nút Chuyển doanh số */}
                 {effectiveCtvUser?.teamLeaderId && currentRole !== "team_leader" && authUser?.role !== "team_leader" && (
