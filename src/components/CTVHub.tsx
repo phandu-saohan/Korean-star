@@ -145,6 +145,26 @@ export const CTVHub: React.FC<CTVHubProps> = ({
   const [addMemberModalOpen, setAddMemberModalOpen] = useState(false);
   const [memberCodeInput, setMemberCodeInput] = useState("");
   const [memberError, setMemberError] = useState("");
+  const [memberSearch, setMemberSearch] = useState("");
+  const [transferStatusFilter, setTransferStatusFilter] = useState<"ALL" | "pending" | "accepted" | "rejected">("ALL");
+
+  const handleRemoveMember = (memberCode: string) => {
+    if (!confirm(`Bạn có chắc chắn muốn gỡ CTV "${memberCode}" khỏi nhóm?`)) return;
+    try {
+      const raw = localStorage.getItem("saohan_registered_users");
+      const all: any[] = raw ? JSON.parse(raw) : [];
+      const updatedAll = all.map((u) => {
+        if (u.ctvCode === memberCode) {
+          return { ...u, teamLeaderId: null, teamName: null };
+        }
+        return u;
+      });
+      localStorage.setItem("saohan_registered_users", JSON.stringify(updatedAll));
+      window.location.reload();
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleAddMember = () => {
     setMemberError("");
