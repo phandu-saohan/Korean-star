@@ -41,6 +41,7 @@ import {
 import { RevenueInvoiceModule } from "./RevenueInvoiceModule";
 
 interface AdminDashboardProps {
+  userRole?: "admin" | "accountant" | "editor";
   ctvUser: CTVUser;
   leads: ReferralLead[];
   appointments: Appointment[];
@@ -72,6 +73,7 @@ interface AdminDashboardProps {
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
+  userRole,
   ctvUser,
   leads,
   appointments,
@@ -101,7 +103,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onUpdateInvoice = () => {},
   onCreditCTVCommission
 }) => {
-  const [activeTab, setActiveTab] = useState<"analytics" | "crm" | "payouts" | "invoices" | "services" | "feedbacks" | "settings">("analytics");
+  const effectiveRole = userRole || authUser?.role || "admin";
+  const [activeTab, setActiveTab] = useState<"analytics" | "crm" | "payouts" | "invoices" | "services" | "feedbacks" | "settings">(
+    effectiveRole === "accountant" ? "invoices" : "analytics"
+  );
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
@@ -177,8 +182,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       .slice(0, 5);
   }, [appointments]);
 
-  // Sidebar Menu Config
-  const menuItems = [
+  // Sidebar Menu Config phân quyền theo vai trò (Role-based Sidebar)
+  const allMenuItems = [
     {
       id: "analytics",
       title: "1. Tổng Quan & Phân Tích",
@@ -186,16 +191,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       icon: BarChart3,
       badge: "KPIs",
       badgeColor: "bg-emerald-900/80 text-emerald-300 border border-emerald-700",
-      description: "Thống kê doanh thu, phễu chuyển đổi & Top CTV"
+      description: "Thống kê doanh thu, phễu chuyển đổi & Top CTV",
+      roles: ["admin", "accountant", "editor"]
     },
     {
-      id: "crm",
-      title: "2. Quản Lý Lịch Hẹn CRM",
-      shortTitle: "Lịch Hẹn CRM",
-      icon: Stethoscope,
-      badge: appointments.length,
-      badgeColor: "bg-blue-900/80 text-blue-200 border border-blue-700",
-      description: "Quản lý phác đồ khám & thông tin khách hàng"
+      id: "invoices",
+      title: "2. Doanh Thu & Hóa Đơn",
+      shortTitle: "Doanh Thu & Hóa Đơn",
+      icon: Receipt,
+      badge: "Cọc ➔ CTV",
+      badgeColor: "bg-emerald-900/80 text-emerald-300 border border-emerald-700",
+      description: "Hóa đơn thu cọc, thu đủ & tự động trích hoa hồng CTV",
+      roles: ["admin", "accountant"]
     },
     {
       id: "payouts",
@@ -204,16 +211,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       icon: QrCode,
       badge: pendingPayoutsCount > 0 ? `${pendingPayoutsCount} chờ duyệt` : payoutRequests.length,
       badgeColor: pendingPayoutsCount > 0 ? "bg-amber-500 text-[#0B192C] font-black" : "bg-emerald-900/80 text-emerald-300 border border-emerald-700",
-      description: "Xử lý rút tiền & quét mã VietQR tự động"
+      description: "Xử lý rút tiền & quét mã VietQR tự động",
+      roles: ["admin", "accountant"]
     },
     {
-      id: "invoices",
-      title: "4. Quản Lý Doanh Thu & Hóa Đơn",
-      shortTitle: "Doanh Thu & Hóa Đơn",
-      icon: Receipt,
-      badge: "Cọc ➔ CTV",
-      badgeColor: "bg-emerald-900/80 text-emerald-300 border border-emerald-700",
-      description: "Hóa đơn thu cọc, thu đủ & tự động trích hoa hồng CTV"
+      id: "crm",
+      title: "4. Quản Lý Lịch Hẹn CRM",
+      shortTitle: "Lịch Hẹn CRM",
+      icon: Stethoscope,
+      badge: appointments.length,
+      badgeColor: "bg-blue-900/80 text-blue-200 border border-blue-700",
+      description: "Quản lý phác đồ khám & thông tin khách hàng",
+      roles: ["admin", "accountant", "editor"]
     },
     {
       id: "services",
@@ -222,7 +231,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       icon: Tag,
       badge: services.length,
       badgeColor: "bg-amber-900/80 text-amber-300 border border-amber-700",
-      description: "Quản lý danh mục & chiết khấu dịch vụ"
+      description: "Quản lý danh mục & chiết khấu dịch vụ",
+      roles: ["admin", "accountant", "editor"]
     },
     {
       id: "feedbacks",
@@ -231,7 +241,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       icon: Camera,
       badge: feedbacks.length,
       badgeColor: "bg-rose-900/80 text-rose-300 border border-rose-700",
-      description: "Thư viện ca phẫu thuật trước & sau"
+      description: "Thư viện ca phẫu thuật trước & sau",
+      roles: ["admin", "accountant", "editor"]
     },
     {
       id: "settings",
@@ -240,10 +251,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       icon: Settings,
       badge: "Hệ thống",
       badgeColor: "bg-purple-900/80 text-purple-300 border border-purple-700",
-      description: "Cấu hình Logo, tài khoản Admin & CTV"
+      description: "Cấu hình Logo, tài khoản Admin & CTV",
+      roles: ["admin"]
     }
   ];
 
+  const menuItems = allMenuItems.filter((item) => item.roles.includes(effectiveRole));
   const currentTabObj = menuItems.find((m) => m.id === activeTab) || menuItems[0];
 
   return (
@@ -256,7 +269,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <Crown className="w-4.5 h-4.5 text-[#0B192C]" />
           </div>
           <div>
-            <div className="font-black text-xs uppercase tracking-wider text-amber-400">Korean Star Admin</div>
+            <div className="font-black text-xs uppercase tracking-wider text-amber-400">
+              {effectiveRole === "accountant" ? "Korean Star Kế Toán" : effectiveRole === "editor" ? "Korean Star Editor" : "Korean Star Admin"}
+            </div>
             <div className="text-[11px] text-slate-300 font-bold truncate max-w-[180px]">{currentTabObj.shortTitle}</div>
           </div>
         </div>
@@ -296,7 +311,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     KOREAN STAR
                   </h1>
                   <span className="text-[10px] text-blue-200 font-extrabold uppercase bg-blue-950/80 px-2 py-0.5 rounded-full border border-blue-800">
-                    Executive Portal
+                    {effectiveRole === "accountant" ? "Accountant Portal" : effectiveRole === "editor" ? "Editor Portal" : "Executive Portal"}
                   </span>
                 </div>
               )}
@@ -371,10 +386,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 {authUser?.fullName ? authUser.fullName.charAt(0).toUpperCase() : "A"}
               </div>
               <div className="truncate min-w-0">
-                <div className="font-black text-xs text-white truncate">{authUser?.fullName || ctvUser?.name || "Admin Quản Trị"}</div>
+                <div className="font-black text-xs text-white truncate">{authUser?.fullName || ctvUser?.name || "Tài Khoản Kế Toán"}</div>
                 <div className="text-[10px] font-bold text-amber-400 flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3 text-amber-400 shrink-0" />
-                  <span>Tổng Giám Đốc / Admin</span>
+                  <span>
+                    {effectiveRole === "accountant" ? "Bộ Phận Kế Toán VietQR" : effectiveRole === "editor" ? "Biên Tập Viên Y Khoa" : "Tổng Giám Đốc / Admin"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -773,8 +790,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <PayoutManagementModule
               payoutRequests={payoutRequests}
               onUpdatePayoutRequest={onUpdatePayoutRequest || (() => {})}
-              currentRole="admin"
-              currentUserFullName={ctvUser.name || authUser?.fullName || "Admin Quản Trị"}
+              currentRole={effectiveRole === "accountant" ? "accountant" : "admin"}
+              currentUserFullName={authUser?.fullName || ctvUser.name || "Bộ Phận Kế Toán"}
             />
           )}
 
@@ -795,7 +812,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {activeTab === "services" && (
             <ServiceCatalog
               services={services}
-              isAdmin={true}
+              isAdmin={effectiveRole === "admin"}
               onBookAppointment={(srvName, notes) => {
                 if (onBookAppointment) onBookAppointment(srvName, notes || "");
               }}

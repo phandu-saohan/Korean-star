@@ -1886,14 +1886,24 @@ export default function App() {
               ctvUser={ctvUser}
               leads={leads}
               appointments={appointments}
+              services={services}
+              feedbacks={feedbacks}
               invoices={invoices}
               payoutRequests={payoutRequests}
+              authUser={authUser}
               onApprovePayoutRequest={handleApprovePayoutRequest}
               onRejectPayoutRequest={handleRejectPayoutRequest}
               onUpdatePayoutRequest={handleUpdatePayoutRequest}
               onUpdateInvoice={handleUpdateInvoice}
               onUpdateAppointmentStatus={handleUpdateStatus}
               onCreditCTVCommission={handleCreditCTVCommission}
+              onRoleChange={(role) => {
+                setCurrentRole(role);
+                if (role === "ctv") setActiveTab("ctv-dashboard");
+                else if (role === "customer") setActiveTab("service-catalog");
+                else setActiveTab("admin");
+              }}
+              onSignOut={handleSignOut}
             />
           )}
 
