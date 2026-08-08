@@ -23,7 +23,11 @@ import {
   Lock,
   ChevronRight,
   Sparkles,
-  DollarSign
+  DollarSign,
+  Workflow,
+  Eye,
+  Copy,
+  Check
 } from "lucide-react";
 import { formatDateVN, formatDateTimeVN } from "../utils/formatters";
 import { getBankLogo } from "../lib/banks";
@@ -45,6 +49,13 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [selectedLogRequest, setSelectedLogRequest] = useState<PayoutRequest | null>(null);
+
+  // Workflow 5-step Popup Modal State
+  const [showWorkflowModal, setShowWorkflowModal] = useState(false);
+
+  // Mobile Full Detail Modal Popup State
+  const [detailModalRequest, setDetailModalRequest] = useState<PayoutRequest | null>(null);
+  const [copiedStk, setCopiedStk] = useState(false);
 
   // Modal State for Step 4: Accountant transaction details input
   const [txModalRequest, setTxModalRequest] = useState<PayoutRequest | null>(null);
@@ -80,6 +91,7 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
     };
 
     onUpdatePayoutRequest(updated);
+    if (detailModalRequest?.id === req.id) setDetailModalRequest(updated);
   };
 
   // Step 3: Admin Approve
@@ -105,6 +117,7 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
     };
 
     onUpdatePayoutRequest(updated);
+    if (detailModalRequest?.id === req.id) setDetailModalRequest(updated);
     notifyPayoutCompleted({
       ctvUserId: req.ctvUserId || req.ctvCode,
       ctvName: req.ctvName,
@@ -143,6 +156,7 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
     };
 
     onUpdatePayoutRequest(updated);
+    if (detailModalRequest?.id === txModalRequest.id) setDetailModalRequest(updated);
     notifyPayoutCompleted({
       ctvUserId: txModalRequest.ctvUserId || txModalRequest.ctvCode,
       ctvName: txModalRequest.ctvName,
@@ -182,6 +196,7 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
     };
 
     onUpdatePayoutRequest(updated);
+    if (detailModalRequest?.id === rejectModalRequest.id) setDetailModalRequest(updated);
     notifyPayoutCompleted({
       ctvUserId: rejectModalRequest.ctvUserId || rejectModalRequest.ctvCode,
       ctvName: rejectModalRequest.ctvName,
@@ -204,73 +219,55 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
     return matchesSearch && matchesStatus;
   });
 
+  const getStatusBadge = (status: PayoutStatus) => {
+    switch (status) {
+      case "Chờ kế toán kiểm tra":
+        return { bg: "bg-amber-100 text-amber-900 border-amber-300", label: "Bước 1: Chờ KT kiểm tra", icon: Clock };
+      case "Kế toán đã kiểm tra - Chờ Admin duyệt":
+        return { bg: "bg-blue-100 text-blue-900 border-blue-300", label: "Bước 2: Chờ Admin duyệt", icon: UserCheck };
+      case "Admin đã phê duyệt - Chờ kế toán chi tiền":
+        return { bg: "bg-purple-100 text-purple-900 border-purple-300", label: "Bước 3: Chờ KT chi tiền", icon: Crown };
+      case "Hoàn thành - Đã chi tiền VietQR":
+        return { bg: "bg-emerald-100 text-emerald-900 border-emerald-300", label: "Hoàn thành VietQR", icon: CheckCircle2 };
+      case "Từ chối yêu cầu":
+        return { bg: "bg-rose-100 text-rose-900 border-rose-300", label: "Đã từ chối", icon: XCircle };
+      default:
+        return { bg: "bg-slate-100 text-slate-700 border-slate-300", label: status, icon: Clock };
+    }
+  };
+
+  const handleCopyStk = (stk: string) => {
+    navigator.clipboard.writeText(stk);
+    setCopiedStk(true);
+    setTimeout(() => setCopiedStk(false), 1500);
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 font-sans">
       
-      {/* Visual Workflow Header Banner - 5 Steps Flow */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-5 space-y-4 shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <span className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <ShieldCheck className="w-4.5 h-4.5 text-amber-600" /> QUY TRÌNH DUYỆT RÚT TIỀN 5 BƯỚC CHUẨN KẾ TOÁN & ADMIN:
-          </span>
-          <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-300">
-            Hệ Thống Ghi Log Audit 24/7
-          </span>
-        </div>
-
-        {/* 5 Steps Timeline Diagram */}
-        <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5 text-xs">
-          <div className="bg-amber-50/90 border border-amber-200 p-3 rounded-2xl space-y-1">
-            <div className="flex items-center gap-1.5 font-black text-amber-900 text-[11px]">
-              <span className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px]">1</span>
-              <span>CTV Gửi Yêu Cầu</span>
-            </div>
-            <p className="text-[10px] text-amber-800 leading-tight">Yêu cầu rút hoa hồng khả dụng về tài khoản</p>
-          </div>
-
-          <div className="bg-blue-50/90 border border-blue-200 p-3 rounded-2xl space-y-1">
-            <div className="flex items-center gap-1.5 font-black text-blue-900 text-[11px]">
-              <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px]">2</span>
-              <span>Kế Toán Kiểm Tra</span>
-            </div>
-            <p className="text-[10px] text-blue-800 leading-tight">Đối soát ngân hàng VietQR & số dư hoa hồng</p>
-          </div>
-
-          <div className="bg-purple-50/90 border border-purple-200 p-3 rounded-2xl space-y-1">
-            <div className="flex items-center gap-1.5 font-black text-purple-900 text-[11px]">
-              <span className="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px]">3</span>
-              <span>Admin Phê Duyệt</span>
-            </div>
-            <p className="text-[10px] text-purple-800 leading-tight">Ban Giám Đốc ký duyệt cấp phép giải ngân</p>
-          </div>
-
-          <div className="bg-emerald-50/90 border border-emerald-200 p-3 rounded-2xl space-y-1">
-            <div className="flex items-center gap-1.5 font-black text-emerald-900 text-[11px]">
-              <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">4</span>
-              <span>Kế Toán Chi Tiền</span>
-            </div>
-            <p className="text-[10px] text-emerald-800 leading-tight">Chuyển VietQR & nhập mã giao dịch chi tiết</p>
-          </div>
-
-          <div className="bg-slate-50 border border-slate-200 p-3 rounded-2xl space-y-1">
-            <div className="flex items-center gap-1.5 font-black text-slate-900 text-[11px]">
-              <span className="w-5 h-5 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px]">5</span>
-              <span>Ghi Log Chi Tiết</span>
-            </div>
-            <p className="text-[10px] text-slate-600 leading-tight">Tự động lưu lịch sử người duyệt & mốc thời gian</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Filter & Search Bar */}
+      {/* Search & Filter Header Bar with Workflow Button */}
       <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 space-y-3.5 shadow-sm">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-            <Filter className="w-4 h-4 text-amber-600" /> Tìm Kiếm & Lọc Yêu Cầu Rút Tiền:
-          </span>
-          <span className="text-[11px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">
-            {filteredRequests.length} Yêu Cầu Trong Danh Sách
-          </span>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4.5 h-4.5 text-amber-600" />
+            <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+              TÌM KIẾM & LỌC YÊU CẦU RÚT TIỀN:
+            </h2>
+            <span className="text-[11px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">
+              {filteredRequests.length} Yêu Cầu
+            </span>
+          </div>
+
+          {/* Button Tên Quy Trình Duyệt 5 Bước */}
+          <button
+            onClick={() => setShowWorkflowModal(true)}
+            className="bg-[#0B192C] hover:bg-slate-800 text-amber-400 border border-blue-900/60 font-black text-xs px-4 py-2 rounded-2xl flex items-center gap-2 shadow-xs transition cursor-pointer self-stretch sm:self-auto justify-center"
+            title="Xem sơ đồ Quy trình duyệt 5 bước chuẩn Kế toán & Admin"
+          >
+            <Workflow className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>Quy Trình Duyệt (5 Bước)</span>
+            <ChevronRight className="w-3.5 h-3.5 opacity-70" />
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
@@ -302,198 +299,543 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
         </div>
       </div>
 
-      {/* Payout Cards Grid List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {/* ============================================================ */}
+      {/* 1. DESKTOP LAYOUT: DATA TABLE (DẠNG BẢNG CHO MÀN HÌNH MÁY TÍNH) */}
+      {/* ============================================================ */}
+      <div className="hidden md:block bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-[#0B192C] text-white text-[11px] font-black uppercase tracking-wider border-b border-blue-900">
+                <th className="p-3.5 pl-5">Mã Yêu Cầu & Trạng Thái</th>
+                <th className="p-3.5">Cộng Tác Viên</th>
+                <th className="p-3.5 text-right">Số Tiền Rút</th>
+                <th className="p-3.5">Tài Khoản Thụ Hưởng VietQR</th>
+                <th className="p-3.5">Thời Gian Yêu Cầu</th>
+                <th className="p-3.5">Mã GD / Biên Lai</th>
+                <th className="p-3.5 text-center pr-5">Thao Tác Duyệt</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-800">
+              {filteredRequests.length > 0 ? (
+                filteredRequests.map((req) => {
+                  const badge = getStatusBadge(req.status);
+                  const StatusIcon = badge.icon;
+
+                  return (
+                    <tr key={req.id} className="hover:bg-slate-50/90 transition group">
+                      {/* 1. Code & Status */}
+                      <td className="p-3.5 pl-5 space-y-1">
+                        <span className="font-mono font-black text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 block w-max text-xs">
+                          {req.id}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border inline-flex items-center gap-1 ${badge.bg}`}>
+                          <StatusIcon className="w-3 h-3" />
+                          <span>{badge.label}</span>
+                        </span>
+                      </td>
+
+                      {/* 2. CTV Info */}
+                      <td className="p-3.5 space-y-0.5">
+                        <div className="font-black text-slate-900 text-sm">{req.ctvName}</div>
+                        <span className="font-mono text-[11px] text-blue-700 font-extrabold bg-blue-50 px-2 py-0.5 rounded border border-blue-200 inline-block">
+                          {req.ctvCode}
+                        </span>
+                      </td>
+
+                      {/* 3. Amount */}
+                      <td className="p-3.5 text-right">
+                        <div className="font-mono font-black text-base text-emerald-700">
+                          {req.amount.toLocaleString("vi-VN")} <span className="text-xs">đ</span>
+                        </div>
+                      </td>
+
+                      {/* 4. Bank Details */}
+                      <td className="p-3.5 space-y-1">
+                        <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                          <img 
+                            src={getBankLogo(req.bankName)} 
+                            alt={req.bankName} 
+                            className="w-4 h-4 object-contain rounded bg-white p-0.5 border border-slate-200 shrink-0" 
+                          />
+                          <span>{req.bankName}</span>
+                        </div>
+                        <div className="font-mono font-black text-blue-900 flex items-center gap-1">
+                          <span>{req.accountNumber}</span>
+                          <button 
+                            onClick={() => handleCopyStk(req.accountNumber)}
+                            className="text-slate-400 hover:text-blue-700 transition" 
+                            title="Sao chép STK"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-bold uppercase">{req.accountHolder}</div>
+                      </td>
+
+                      {/* 5. Requested Time */}
+                      <td className="p-3.5 font-mono text-[11px] text-slate-600">
+                        {req.requestedAt}
+                      </td>
+
+                      {/* 6. Tx Ref & Receipt */}
+                      <td className="p-3.5 space-y-1">
+                        {req.transactionRef ? (
+                          <div className="font-mono font-black text-emerald-800 text-[11px]">
+                            {req.transactionRef}
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 italic">Chưa phát sinh</span>
+                        )}
+
+                        {req.proofImage && (
+                          <button
+                            onClick={() => setViewingProofImage(req.proofImage!)}
+                            className="text-[10px] font-bold text-emerald-800 hover:underline flex items-center gap-1"
+                          >
+                            <FileText className="w-3 h-3 text-emerald-700" /> Xem biên lai
+                          </button>
+                        )}
+                      </td>
+
+                      {/* 7. Action Buttons */}
+                      <td className="p-3.5 pr-5 text-center space-y-1">
+                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                          {req.status === "Chờ kế toán kiểm tra" && (
+                            <button
+                              onClick={() => handleAccountantVerify(req)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white font-black px-3 py-1.5 rounded-xl text-xs transition shadow-xs flex items-center gap-1"
+                            >
+                              <UserCheck className="w-3.5 h-3.5" />
+                              <span>KT Kiểm Tra</span>
+                            </button>
+                          )}
+
+                          {req.status === "Kế toán đã kiểm tra - Chờ Admin duyệt" && (
+                            <button
+                              onClick={() => handleAdminApprove(req)}
+                              className="bg-amber-500 hover:bg-amber-400 text-[#0B192C] font-black px-3 py-1.5 rounded-xl text-xs transition shadow-xs flex items-center gap-1"
+                            >
+                              <Crown className="w-3.5 h-3.5" />
+                              <span>Admin Duyệt</span>
+                            </button>
+                          )}
+
+                          {req.status === "Admin đã phê duyệt - Chờ kế toán chi tiền" && (
+                            <button
+                              onClick={() => setTxModalRequest(req)}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-3 py-1.5 rounded-xl text-xs transition shadow-xs flex items-center gap-1"
+                            >
+                              <QrCode className="w-3.5 h-3.5" />
+                              <span>KT Chi Tiền</span>
+                            </button>
+                          )}
+
+                          {req.status !== "Hoàn thành - Đã chi tiền VietQR" && req.status !== "Từ chối yêu cầu" && (
+                            <button
+                              onClick={() => setRejectModalRequest(req)}
+                              className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-xl transition"
+                              title="Từ chối yêu cầu"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => setSelectedLogRequest(req)}
+                            className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition"
+                            title="Xem nhật ký Audit Log"
+                          >
+                            <History className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-slate-500 font-medium">
+                    Không tìm thấy yêu cầu rút tiền nào phù hợp.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* 2. MOBILE LAYOUT: COMPACT GRID GỌN GÀNG (CHO MOBILE/TABLET) */}
+      {/* ============================================================ */}
+      <div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
         {filteredRequests.length > 0 ? (
           filteredRequests.map((req) => {
-            const statusBadgeConfig = {
-              "Chờ kế toán kiểm tra": { bg: "bg-amber-100 text-amber-900 border-amber-300", step: "Bước 1/4", icon: Clock },
-              "Kế toán đã kiểm tra - Chờ Admin duyệt": { bg: "bg-blue-100 text-blue-900 border-blue-300", step: "Bước 2/4", icon: UserCheck },
-              "Admin đã phê duyệt - Chờ kế toán chi tiền": { bg: "bg-purple-100 text-purple-900 border-purple-300", step: "Bước 3/4", icon: Crown },
-              "Hoàn thành - Đã chi tiền VietQR": { bg: "bg-emerald-100 text-emerald-900 border-emerald-300", step: "Hoàn thành", icon: CheckCircle2 },
-              "Từ chối yêu cầu": { bg: "bg-rose-100 text-rose-900 border-rose-300", step: "Đã hủy", icon: XCircle }
-            }[req.status] || { bg: "bg-slate-100 text-slate-700 border-slate-300", step: "CRM", icon: Clock };
-
-            const StatusIcon = statusBadgeConfig.icon;
+            const badge = getStatusBadge(req.status);
+            const StatusIcon = badge.icon;
 
             return (
               <div
                 key={req.id}
-                className="bg-white border border-slate-200 hover:border-amber-400 rounded-3xl p-5 text-slate-900 space-y-4 shadow-sm hover:shadow-md transition flex flex-col justify-between"
+                className="bg-white border border-slate-200 hover:border-amber-400 rounded-3xl p-4 text-slate-900 space-y-3 shadow-xs transition flex flex-col justify-between"
               >
-                <div className="space-y-3.5">
-                  
-                  {/* Top Bar: ID & Status Badge */}
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <span className="text-amber-800 font-mono font-black text-xs bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                <div className="space-y-2.5">
+                  {/* Top Bar: Code & Status */}
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <span className="text-amber-800 font-mono font-black text-xs bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
                       {req.id}
                     </span>
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black border flex items-center gap-1 ${statusBadgeConfig.bg}`}>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border flex items-center gap-1 ${badge.bg}`}>
                       <StatusIcon className="w-3 h-3" />
-                      <span>{req.status}</span>
+                      <span>{badge.label}</span>
                     </span>
                   </div>
 
-                  {/* CTV Info & Amount */}
+                  {/* CTV Name & Amount */}
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h4 className="font-black text-base text-slate-900">{req.ctvName}</h4>
-                      <span className="font-mono text-xs text-blue-700 font-extrabold bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
+                      <h4 className="font-black text-sm text-slate-900">{req.ctvName}</h4>
+                      <span className="font-mono text-[10px] text-blue-700 font-extrabold bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
                         {req.ctvCode}
                       </span>
                     </div>
 
                     <div className="text-right">
-                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Số tiền rút:</span>
-                      <span className="text-base font-black font-mono text-emerald-700">
-                        {req.amount.toLocaleString("vi-VN")} <span className="text-xs">đ</span>
+                      <span className="text-[10px] text-slate-400 font-bold block">Rút tiền:</span>
+                      <span className="text-sm font-black font-mono text-emerald-700">
+                        {req.amount.toLocaleString("vi-VN")}đ
                       </span>
                     </div>
                   </div>
 
-                  {/* Bank Account Box */}
-                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs space-y-1.5 font-medium">
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-500 font-bold">Ngân hàng thụ hưởng:</span>
-                        <div className="flex items-center gap-1.5">
-                          <img 
-                            src={getBankLogo(req.bankName)} 
-                            alt={req.bankName} 
-                            className="w-5 h-5 object-contain rounded bg-white p-0.5 border border-slate-200 shrink-0" 
-                          />
-                          <span className="font-bold text-slate-900">{req.bankName}</span>
-                        </div>
-                      </div>
-
+                  {/* Bank Snippet */}
+                  <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 text-xs space-y-1 font-medium">
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-500 font-bold">Số tài khoản:</span>
+                      <span className="text-slate-500 font-bold text-[11px]">Ngân hàng:</span>
+                      <span className="font-bold text-slate-900">{req.bankName}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 font-bold text-[11px]">STK:</span>
                       <span className="font-mono font-black text-blue-800">{req.accountNumber}</span>
                     </div>
-
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-500 font-bold">Chủ tài khoản:</span>
-                      <span className="font-black text-slate-900 uppercase">{req.accountHolder}</span>
-                    </div>
-
-                    <div className="flex justify-between items-center pt-1.5 border-t border-slate-200/60">
-                      <span className="text-slate-500 font-bold">Thời gian yêu cầu:</span>
-                      <span className="font-mono text-[11px] text-slate-600">{req.requestedAt}</span>
-                    </div>
                   </div>
-
-                  {/* Transaction Ref & Proof Image Badge */}
-                  {req.transactionRef && (
-                    <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl text-xs space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-600 font-bold">Mã Giao Dịch Chi Tiết:</span>
-                        <span className="font-mono font-black text-emerald-800">{req.transactionRef}</span>
-                      </div>
-
-                      {req.proofImage && (
-                        <div 
-                          onClick={() => setViewingProofImage(req.proofImage!)}
-                          className="flex items-center justify-between pt-1 border-t border-emerald-200/80 cursor-pointer hover:underline text-[11px] font-bold text-emerald-900"
-                        >
-                          <span className="flex items-center gap-1">
-                            <FileText className="w-3.5 h-3.5 text-emerald-700" />
-                            <span>Biên lai chuyển khoản:</span>
-                          </span>
-                          <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded font-extrabold">Xem ảnh</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {req.rejectedReason && (
-                    <div className="bg-rose-50 border border-rose-200 p-2.5 rounded-xl text-xs text-rose-800 italic">
-                      Lý do từ chối: "{req.rejectedReason}"
-                    </div>
-                  )}
                 </div>
 
-                {/* Bottom Step Actions & Audit Log Button */}
-                <div className="pt-3 border-t border-slate-100 space-y-2">
-                  
-                  {/* Step Action Buttons depending on role & status */}
-                  {req.status === "Chờ kế toán kiểm tra" && (
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleAccountantVerify(req)}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-2 rounded-xl text-xs transition shadow-xs flex items-center justify-center gap-1.5"
-                      >
-                        <UserCheck className="w-3.5 h-3.5" />
-                        <span>Kế Toán Kiểm Tra</span>
-                      </button>
+                {/* Bottom Action & Detail Popup Trigger Button */}
+                <div className="pt-2 border-t border-slate-100 space-y-1.5">
+                  <button
+                    onClick={() => setDetailModalRequest(req)}
+                    className="w-full bg-[#0B192C] hover:bg-slate-800 text-amber-400 font-black text-xs py-2 rounded-2xl transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Xem Chi Tiết & VietQR</span>
+                  </button>
 
-                      <button
-                        onClick={() => setRejectModalRequest(req)}
-                        className="px-3 py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-xl text-xs transition"
-                        title="Từ chối"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
+                  {/* Quick Action Button for Mobile */}
+                  {req.status === "Chờ kế toán kiểm tra" && (
+                    <button
+                      onClick={() => handleAccountantVerify(req)}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-1.5 rounded-2xl text-xs transition flex items-center justify-center gap-1"
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>Kế Toán Kiểm Tra</span>
+                    </button>
                   )}
 
                   {req.status === "Kế toán đã kiểm tra - Chờ Admin duyệt" && (
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleAdminApprove(req)}
-                        className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-[#0B192C] font-black py-2 rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5"
-                      >
-                        <Crown className="w-4 h-4" />
-                        <span>Admin Duyệt Giải Ngân</span>
-                      </button>
-
-                      <button
-                        onClick={() => setRejectModalRequest(req)}
-                        className="px-3 py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-xl text-xs transition"
-                        title="Từ chối"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleAdminApprove(req)}
+                      className="w-full bg-amber-500 hover:bg-amber-400 text-[#0B192C] font-black py-1.5 rounded-2xl text-xs transition flex items-center justify-center gap-1"
+                    >
+                      <Crown className="w-3.5 h-3.5" />
+                      <span>Admin Phê Duyệt</span>
+                    </button>
                   )}
 
                   {req.status === "Admin đã phê duyệt - Chờ kế toán chi tiền" && (
                     <button
-                      onClick={() => {
-                        setTxModalRequest(req);
-                        setTxCodeInput(`FT${Date.now().toString().slice(-10)}`);
-                      }}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5"
+                      onClick={() => setTxModalRequest(req)}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-1.5 rounded-2xl text-xs transition flex items-center justify-center gap-1"
                     >
-                      <QrCode className="w-4 h-4" />
-                      <span>Kế Toán Cập Nhật Mã VietQR</span>
+                      <QrCode className="w-3.5 h-3.5" />
+                      <span>Nhập Mã GD VietQR</span>
                     </button>
                   )}
-
-                  {/* Audit Log Timeline Drawer Button */}
-                  <button
-                    onClick={() => setSelectedLogRequest(req)}
-                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2 rounded-xl text-[11px] transition flex items-center justify-center gap-1.5"
-                  >
-                    <History className="w-3.5 h-3.5 text-slate-600" />
-                    <span>Xem Audit Log Chi Tiết ({req.logs?.length || 0} bước)</span>
-                  </button>
                 </div>
               </div>
             );
           })
         ) : (
-          <div className="col-span-full text-center py-12 bg-white rounded-3xl border border-slate-200 text-slate-500 text-xs font-medium space-y-2">
-            <p>Không có yêu cầu rút tiền nào phù hợp với bộ lọc.</p>
+          <div className="col-span-full bg-white p-6 text-center text-slate-500 text-xs font-medium rounded-3xl border border-slate-200">
+            Không tìm thấy yêu cầu rút tiền nào phù hợp.
           </div>
         )}
       </div>
 
-      {/* MODAL 1: STEP 4 - ACCOUNTANT SUBMIT TRANSACTION CODE (FT...) */}
+      {/* ============================================================ */}
+      {/* MODAL WORKFLOW 5 BƯỚC (QUY TRÌNH DUYỆT RÚT TIỀN) */}
+      {/* ============================================================ */}
+      {showWorkflowModal && (
+        <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-6 text-slate-900 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Workflow className="w-5 h-5 text-amber-600" />
+                <h3 className="font-black text-base text-slate-900 uppercase">
+                  QUY TRÌNH DUYỆT RÚT TIỀN 5 BƯỚC CHUẨN KẾ TOÁN & ADMIN
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowWorkflowModal(false)}
+                className="p-1 hover:bg-slate-100 rounded-full text-slate-400"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="bg-amber-50 border border-amber-200 p-3.5 rounded-2xl space-y-1">
+                <div className="flex items-center justify-between font-black text-amber-900">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px]">1</span>
+                    CTV Gửi Yêu Cầu Rút Tiền
+                  </span>
+                  <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded font-bold">Khởi tạo</span>
+                </div>
+                <p className="text-slate-600">CTV gửi lệnh yêu cầu rút tiền khả dụng trong ví hoa hồng về tài khoản ngân hàng cá nhân.</p>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 p-3.5 rounded-2xl space-y-1">
+                <div className="flex items-center justify-between font-black text-blue-900">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px]">2</span>
+                    Kế Toán Kiểm Tra & Đối Soát
+                  </span>
+                  <span className="text-[10px] bg-blue-200 text-blue-900 px-2 py-0.5 rounded font-bold">Bộ Phận Kế Toán</span>
+                </div>
+                <p className="text-slate-600">Kế toán viên đối soát thông tin chủ tài khoản, số dư hoa hồng lũy kế và xác nhận tính chính xác.</p>
+              </div>
+
+              <div className="bg-purple-50 border border-purple-200 p-3.5 rounded-2xl space-y-1">
+                <div className="flex items-center justify-between font-black text-purple-900">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px]">3</span>
+                    Admin Phê Duyệt Giải Ngân
+                  </span>
+                  <span className="text-[10px] bg-purple-200 text-purple-900 px-2 py-0.5 rounded font-bold">Ban Giám Đốc / Admin</span>
+                </div>
+                <p className="text-slate-600">Admin/Ban Giám Đốc xem xét hạn mức và ký duyệt điện tử cho phép giải ngân ngân sách.</p>
+              </div>
+
+              <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-2xl space-y-1">
+                <div className="flex items-center justify-between font-black text-emerald-900">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">4</span>
+                    Kế Toán Chi Tiền & Quét Mã VietQR
+                  </span>
+                  <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded font-bold">Bộ Phận Kế Toán</span>
+                </div>
+                <p className="text-slate-600">Kế toán mở mã VietQR tự động, quét mã chuyển tiền qua App ngân hàng và nhập Mã Giao Dịch + Biên lai.</p>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl space-y-1">
+                <div className="flex items-center justify-between font-black text-slate-900">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px]">5</span>
+                    Tự Động Ghi Log Audit 24/7
+                  </span>
+                  <span className="text-[10px] bg-slate-200 text-slate-800 px-2 py-0.5 rounded font-bold">Hệ Thống</span>
+                </div>
+                <p className="text-slate-600">Tự động ghi nhận mốc thời gian, người thao tác duyệt và gửi thông báo hoàn thành giải ngân cho CTV.</p>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex justify-end">
+              <button
+                onClick={() => setShowWorkflowModal(false)}
+                className="px-5 py-2.5 bg-[#0B192C] text-amber-400 font-extrabold rounded-2xl text-xs hover:bg-slate-800 transition"
+              >
+                Đã Hiểu Quy Trình
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* MODAL CHÍNH CHI TIẾT POPUP CHO MOBILE (FULL POPUP CHO MOBILE) */}
+      {/* ============================================================ */}
+      {detailModalRequest && (
+        <div className="fixed inset-0 z-50 bg-[#0B192C]/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-5 space-y-4 max-h-[92vh] overflow-y-auto shadow-2xl relative text-slate-900">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <span className="font-mono font-black text-xs text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                  {detailModalRequest.id}
+                </span>
+                <h3 className="font-black text-base text-slate-900 mt-1">Chi Tiết Yêu Cầu Rút Tiền</h3>
+              </div>
+              <button
+                onClick={() => setDetailModalRequest(null)}
+                className="p-1 hover:bg-slate-100 rounded-full text-slate-400"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* VietQR Quick Scan Box */}
+            <div className="bg-gradient-to-b from-blue-900 to-[#0B192C] text-white p-4 rounded-3xl space-y-3 text-center border border-blue-800 shadow-md">
+              <span className="text-[11px] font-extrabold text-amber-400 uppercase tracking-wider block">
+                Mã VietQR Chuyển Khoản Nhanh 24/7
+              </span>
+              
+              <div className="bg-white p-2.5 rounded-2xl inline-block shadow-lg mx-auto">
+                <img
+                  src={`https://img.vietqr.io/image/${detailModalRequest.bankName.replace(/\s+/g, "")}-${detailModalRequest.accountNumber}-compact.png?amount=${detailModalRequest.amount}&addInfo=${encodeURIComponent(detailModalRequest.id + " " + detailModalRequest.ctvCode)}&accountName=${encodeURIComponent(detailModalRequest.accountHolder)}`}
+                  alt="VietQR Scan Code"
+                  className="w-44 h-44 object-contain mx-auto"
+                />
+              </div>
+
+              <div className="font-mono font-black text-lg text-emerald-400">
+                {detailModalRequest.amount.toLocaleString("vi-VN")} VNĐ
+              </div>
+            </div>
+
+            {/* CTV & Bank Details List */}
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs space-y-2 font-medium">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-bold">Cộng tác viên:</span>
+                <span className="font-black text-slate-900">{detailModalRequest.ctvName} ({detailModalRequest.ctvCode})</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-bold">Ngân hàng thụ hưởng:</span>
+                <div className="flex items-center gap-1 font-bold text-slate-900">
+                  <img 
+                    src={getBankLogo(detailModalRequest.bankName)} 
+                    alt={detailModalRequest.bankName} 
+                    className="w-4 h-4 object-contain rounded bg-white p-0.5 border border-slate-200 shrink-0" 
+                  />
+                  <span>{detailModalRequest.bankName}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-bold">Số tài khoản:</span>
+                <div className="flex items-center gap-1">
+                  <span className="font-mono font-black text-blue-900 text-sm">{detailModalRequest.accountNumber}</span>
+                  <button
+                    onClick={() => handleCopyStk(detailModalRequest.accountNumber)}
+                    className="p-1 text-slate-500 hover:text-blue-700 bg-white rounded border border-slate-200"
+                    title="Sao chép STK"
+                  >
+                    {copiedStk ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-bold">Chủ tài khoản:</span>
+                <span className="font-black text-slate-900 uppercase">{detailModalRequest.accountHolder}</span>
+              </div>
+
+              <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                <span className="text-slate-500 font-bold">Thời gian tạo lệnh:</span>
+                <span className="font-mono text-slate-600">{detailModalRequest.requestedAt}</span>
+              </div>
+            </div>
+
+            {/* Audit Logs Summary */}
+            <div className="space-y-2">
+              <span className="text-xs font-black text-slate-800 uppercase block">Lịch sử thao tác duyệt:</span>
+              <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+                {detailModalRequest.logs && detailModalRequest.logs.length > 0 ? (
+                  detailModalRequest.logs.map((log, i) => (
+                    <div key={i} className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-[11px] space-y-0.5">
+                      <div className="flex justify-between font-bold text-slate-900">
+                        <span>{log.action}</span>
+                        <span className="font-mono text-[10px] text-slate-500">{log.timestamp}</span>
+                      </div>
+                      <div className="text-slate-600">{log.actorName} ({log.actorRole})</div>
+                    </div>
+                  ))
+                ) : (
+                  <span className="text-xs text-slate-500 italic block">Chưa có lịch sử audit log.</span>
+                )}
+              </div>
+            </div>
+
+            {/* Interactive Action Buttons */}
+            <div className="pt-3 border-t border-slate-100 space-y-2">
+              {detailModalRequest.status === "Chờ kế toán kiểm tra" && (
+                <button
+                  onClick={() => handleAccountantVerify(detailModalRequest)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-2.5 rounded-2xl text-xs transition shadow-md flex items-center justify-center gap-1.5"
+                >
+                  <UserCheck className="w-4 h-4" />
+                  <span>Xác Nhận Kế Toán Kiểm Tra</span>
+                </button>
+              )}
+
+              {detailModalRequest.status === "Kế toán đã kiểm tra - Chờ Admin duyệt" && (
+                <button
+                  onClick={() => handleAdminApprove(detailModalRequest)}
+                  className="w-full bg-amber-500 hover:bg-amber-400 text-[#0B192C] font-black py-2.5 rounded-2xl text-xs transition shadow-md flex items-center justify-center gap-1.5"
+                >
+                  <Crown className="w-4 h-4" />
+                  <span>Ký Duyệt Admin Cấp Phép</span>
+                </button>
+              )}
+
+              {detailModalRequest.status === "Admin đã phê duyệt - Chờ kế toán chi tiền" && (
+                <button
+                  onClick={() => {
+                    const req = detailModalRequest;
+                    setDetailModalRequest(null);
+                    setTxModalRequest(req);
+                  }}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-2xl text-xs transition shadow-md flex items-center justify-center gap-1.5"
+                >
+                  <QrCode className="w-4 h-4" />
+                  <span>Nhập Mã GD VietQR & Hoàn Thành</span>
+                </button>
+              )}
+
+              {detailModalRequest.status !== "Hoàn thành - Đã chi tiền VietQR" && detailModalRequest.status !== "Từ chối yêu cầu" && (
+                <button
+                  onClick={() => {
+                    const req = detailModalRequest;
+                    setDetailModalRequest(null);
+                    setRejectModalRequest(req);
+                  }}
+                  className="w-full bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold py-2 rounded-2xl text-xs transition"
+                >
+                  Từ Chối Yêu Cầu Này
+                </button>
+              )}
+
+              <button
+                onClick={() => setDetailModalRequest(null)}
+                className="w-full bg-slate-100 text-slate-700 font-bold py-2 rounded-2xl text-xs hover:bg-slate-200 transition"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* MODAL COMPLETE TRANSACTION & PROOF IMAGE */}
+      {/* ============================================================ */}
       {txModalRequest && (
         <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 text-slate-900 space-y-4 shadow-2xl relative">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 text-slate-900 space-y-4 shadow-2xl relative">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
-                <QrCode className="w-5 h-5 text-emerald-600" /> Kế Toán Cập Nhật Giao Dịch Chi Tiết
+              <h3 className="font-black text-base text-emerald-800 flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-emerald-600" /> Xác Nhận Giải Ngân Chuyển Tiền VietQR
               </h3>
               <button
                 onClick={() => setTxModalRequest(null)}
@@ -612,7 +954,7 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
         </div>
       )}
 
-      {/* MODAL 2: REJECT REQUEST */}
+      {/* MODAL REJECT REQUEST */}
       {rejectModalRequest && (
         <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 text-slate-900 space-y-4 shadow-2xl relative">
@@ -661,14 +1003,14 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
         </div>
       )}
 
-      {/* MODAL 3: AUDIT LOG TIMELINE DRAWER */}
+      {/* MODAL AUDIT LOG TIMELINE */}
       {selectedLogRequest && (
         <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full p-6 text-slate-900 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl relative">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
-                  <History className="w-5 h-5 text-amber-600" /> Nật Ký Audit Log Chi Tiết Giao Dịch
+                  <History className="w-5 h-5 text-amber-600" /> Nhật Ký Audit Log Chi Tiết Giao Dịch
                 </h3>
                 <p className="text-xs text-slate-500 font-mono mt-0.5">
                   Mã lệnh chi: {selectedLogRequest.id} • CTV {selectedLogRequest.ctvName}
@@ -683,7 +1025,6 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
               </button>
             </div>
 
-            {/* Audit Log Timeline */}
             <div className="space-y-4 relative before:absolute before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
               {selectedLogRequest.logs && selectedLogRequest.logs.length > 0 ? (
                 selectedLogRequest.logs.map((log, idx) => (
@@ -766,7 +1107,7 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
         </div>
       )}
 
-      {/* MODAL 4: PROOF IMAGE LIGHTBOX */}
+      {/* MODAL PROOF IMAGE LIGHTBOX */}
       {viewingProofImage && (
         <div className="fixed inset-0 z-50 bg-[#0B192C]/90 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-4 space-y-3 shadow-2xl relative">
