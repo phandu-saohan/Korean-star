@@ -955,13 +955,13 @@ export default function App() {
     const computedPending = depositedComm + pendingAptComm;
     const pendingBalance = computedPending > 0 ? computedPending : ctvUser.pendingBalance;
 
-    // Metric 3: DOANH SỐ TÍCH LŨY
+    // Metric 3: DOANH SỐ TÍCH LŨY (Chỉ tính khi lịch hẹn HOÀN THÀNH hoặc hóa đơn ĐÃ THU ĐỦ)
     const invoiceRevenue = ctvInvoices
-      .filter(i => i.paymentStatus === "Đã cọc" || i.paymentStatus === "Đã thu đủ (Hoàn thành)")
+      .filter(i => i.paymentStatus === "Đã thu đủ (Hoàn thành)")
       .reduce((sum, i) => sum + (i.totalAmount || 0), 0);
 
     const aptRevenue = ctvAppointments
-      .filter(a => !invoiceAptIds.has(a.id) && (a.status === "Hoàn thành" || a.status === "Đã xác nhận"))
+      .filter(a => !invoiceAptIds.has(a.id) && a.status === "Hoàn thành")
       .reduce((sum, a) => sum + 35000000, 0);
 
     const computedRevenue = invoiceRevenue + aptRevenue;
