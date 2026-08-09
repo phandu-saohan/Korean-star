@@ -599,7 +599,7 @@ export const fetchMyTransferRequestsFromSupabase = async (ctvCode: string): Prom
       .from("team_revenue_transfers")
       .select("*")
       .ilike("from_ctv_code", clean)
-      .order("transferred_at", { ascending: false });
+      .order("created_at", { ascending: false });
 
     if (data && Array.isArray(data)) {
       return data.map((d: any) => ({
@@ -612,7 +612,7 @@ export const fetchMyTransferRequestsFromSupabase = async (ctvCode: string): Prom
         commission: Number(d.commission) || 0,
         serviceName: d.service_name,
         note: d.note || undefined,
-        transferredAt: d.transferred_at ? new Date(d.transferred_at).toLocaleString("vi-VN") : "",
+        transferredAt: d.transferred_at || (d.created_at ? new Date(d.created_at).toLocaleString("vi-VN") : ""),
         status: d.status || "pending"
       }));
     }
@@ -620,6 +620,54 @@ export const fetchMyTransferRequestsFromSupabase = async (ctvCode: string): Prom
     console.error("Fetch transfers error:", e);
   }
   return [];
+};
+
+// 5g. Fetch Transfer Requests received by Team Leader from Supabase
+export const fetchLeaderTransferRequestsFromSupabase = async (leaderCode: string): Promise<any[]> => {
+  if (!leaderCode) return [];
+  try {
+    const clean = leaderCode.trim().toUpperCase();
+    const { data } = await supabase
+      .from("team_revenue_transfers")
+      .select("*")
+      .ilike("to_leader_code", clean)
+      .order("created_at", { ascending: false });
+
+    if (data && Array.isArray(data)) {
+      return data.map((d: any) => ({
+        id: d.id,
+        fromCtvCode: d.from_ctv_code,
+        fromCtvName: d.from_ctv_name,
+        toLeaderCode: d.to_leader_code,
+        toLeaderName: d.to_leader_name || "",
+        amount: Number(d.amount) || 0,
+        commission: Number(d.commission) || 0,
+        serviceName: d.service_name || "Chuyển doanh số CTV",
+        note: d.note || undefined,
+        transferredAt: d.transferred_at || (d.created_at ? new Date(d.created_at).toLocaleString("vi-VN") : ""),
+        status: d.status || "pending"
+      }));
+    }
+  } catch (e) {
+    console.error("Fetch leader transfers error:", e);
+  }
+  return [];
+};
+
+// 5h. Update Transfer Request Status in Supabase
+export const updateTransferStatusInSupabase = async (transferId: string, status: "accepted" | "rejected") => {
+  if (!transferId) return;
+  try {
+    await supabase
+      .from("team_revenue_transfers")
+      .update({
+        status,
+        processed_at: new Date().toISOString()
+      })
+      .eq("id", transferId);
+  } catch (e) {
+    console.error("Update transfer status error:", e);
+  }
 };
 
 // Memory Cache Variables to prevent repetitive network spam on 520 / CORS errors

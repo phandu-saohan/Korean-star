@@ -21,7 +21,7 @@ import {
   Crown,
   Pencil
 } from "lucide-react";
-import { saveTransferRequestToSupabase, updateTeamLeaderInSupabase } from "../lib/supabase";
+import { saveTransferRequestToSupabase, updateTeamLeaderInSupabase, updateTransferStatusInSupabase, fetchLeaderTransferRequestsFromSupabase } from "../lib/supabase";
 import { CTVUser, ReferralLead, TeamRevenueTransfer } from "../types";
 
 interface TeamLeaderDashboardProps {
@@ -128,6 +128,7 @@ export const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({
     );
     setTransfers(updated);
     saveTransferRequests(updated);
+    updateTransferStatusInSupabase(transfer.id, "accepted").catch(console.error);
     onTransferAccept?.(transfer);
   };
 
@@ -138,6 +139,7 @@ export const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({
     );
     setTransfers(updated);
     saveTransferRequests(updated);
+    updateTransferStatusInSupabase(transfer.id, "rejected").catch(console.error);
     onTransferReject?.(transfer);
   };
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { formatCurrencyInput, parseCurrencyInput, formatDateTimeVN } from "../utils/formatters";
 import { CTVUser, ReferralLead, ServiceItem, ServiceFeedback, Appointment, AppointmentInvoice, PayoutRequest, TeamRevenueTransfer } from "../types";
-import { fetchUserProfileByCtvCode, updateTeamLeaderInSupabase, fetchMyTransferRequestsFromSupabase } from "../lib/supabase";
+import { fetchUserProfileByCtvCode, updateTeamLeaderInSupabase, fetchMyTransferRequestsFromSupabase, fetchLeaderTransferRequestsFromSupabase, updateTransferStatusInSupabase } from "../lib/supabase";
 import { 
   Wallet, 
   Crown, 
@@ -243,6 +243,21 @@ export const CTVHub: React.FC<CTVHubProps> = ({
     getTransferRequests(leaderCode)
   );
 
+  useEffect(() => {
+    if (leaderCode) {
+      fetchLeaderTransferRequestsFromSupabase(leaderCode).then((sbTransfers) => {
+        if (sbTransfers && sbTransfers.length > 0) {
+          setTransfers((prev) => {
+            const map = new Map<string, TeamRevenueTransfer>();
+            prev.forEach((t) => map.set(t.id, t));
+            sbTransfers.forEach((t) => map.set(t.id, t));
+            return Array.from(map.values());
+          });
+        }
+      });
+    }
+  }, [leaderCode]);
+
   const [addMemberModalOpen, setAddMemberModalOpen] = useState(false);
   const [memberCodeInput, setMemberCodeInput] = useState("");
   const [memberNameInput, setMemberNameInput] = useState("");
@@ -461,6 +476,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
     );
     setTransfers(updated);
     saveTransferRequests(updated);
+    updateTransferStatusInSupabase(transfer.id, "accepted").catch(console.error);
   };
 
   const handleRejectTransfer = (transfer: TeamRevenueTransfer) => {
@@ -469,6 +485,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
     );
     setTransfers(updated);
     saveTransferRequests(updated);
+    updateTransferStatusInSupabase(transfer.id, "rejected").catch(console.error);
   };
 
   const itemsPerPage = 6;
