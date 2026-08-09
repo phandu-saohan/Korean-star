@@ -807,18 +807,35 @@ export default function App() {
     };
 
     setLeads((prevLeads) => {
-      const aptMap = new Map<string, Appointment>();
-      appointments.forEach((apt) => {
-        aptMap.set(apt.id, apt);
-        const leadId = apt.id.startsWith("lead-") ? apt.id : `lead-${apt.id}`;
-        aptMap.set(leadId, apt);
+      let hasChanges = false;
+      const seenKeys = new Set<string>();
+      const deduplicatedPrev: ReferralLead[] = [];
+
+      // Lọc trùng lập danh sách lead hiện tại trước khi xử lý
+      prevLeads.forEach((l) => {
+        const phoneKey = l.customerPhone && l.serviceName ? `${l.customerPhone.trim()}_${l.serviceName.trim()}` : "";
+        const key = l.id || phoneKey;
+        if (key && !seenKeys.has(key) && (!phoneKey || !seenKeys.has(phoneKey))) {
+          seenKeys.add(l.id);
+          if (phoneKey) seenKeys.add(phoneKey);
+          deduplicatedPrev.push(l);
+        }
       });
 
-      let hasChanges = false;
+      if (deduplicatedPrev.length !== prevLeads.length) {
+        hasChanges = true;
+      }
 
       // 1. Cập nhật trạng thái Realtime cho các khách hàng giới thiệu hiện tại
-      const updatedLeads = prevLeads.map((lead) => {
-        const matchingApt = aptMap.get(lead.id);
+      const updatedLeads = deduplicatedPrev.map((lead) => {
+        const matchingApt = appointments.find(
+          (apt) =>
+            apt.id === lead.id ||
+            `lead-${apt.id}` === lead.id ||
+            apt.id === `lead-${lead.id}` ||
+            (apt.customerPhone && lead.customerPhone && apt.customerPhone.trim() === lead.customerPhone.trim() && apt.serviceName === lead.serviceName)
+        );
+
         if (matchingApt) {
           const expectedStatus = mapStatus(matchingApt.status);
           if (
@@ -832,10 +849,10 @@ export default function App() {
             return {
               ...lead,
               status: expectedStatus,
-              customerName: matchingApt.customerName,
+              customerName: matchingApt.customerName || lead.customerName,
               customerPhone: matchingApt.customerPhone || lead.customerPhone,
-              serviceName: matchingApt.serviceName,
-              appointmentDate: matchingApt.date,
+              serviceName: matchingApt.serviceName || lead.serviceName,
+              appointmentDate: matchingApt.date || lead.appointmentDate,
               doctorAssigned: matchingApt.doctorName || lead.doctorAssigned
             };
           }
@@ -843,15 +860,22 @@ export default function App() {
         return lead;
       });
 
-      // 2. Thêm khách hàng giới thiệu mới từ lịch hẹn nếu chưa có trong danh sách
-      const existingIds = new Set(updatedLeads.map((l) => l.id));
+      // 2. Thêm khách hàng giới thiệu mới từ lịch hẹn nếu chưa có
       const newLeadsFromApts: ReferralLead[] = [];
-
       appointments.forEach((apt) => {
         const leadId = apt.id.startsWith("lead-") ? apt.id : `lead-${apt.id}`;
-        if (!existingIds.has(leadId) && !existingIds.has(apt.id)) {
+        const phoneKey = apt.customerPhone && apt.serviceName ? `${apt.customerPhone.trim()}_${apt.serviceName.trim()}` : "";
+
+        const alreadyExists = updatedLeads.some(
+          (l) =>
+            l.id === apt.id ||
+            l.id === leadId ||
+            (apt.customerPhone && l.customerPhone && apt.customerPhone.trim() === l.customerPhone.trim() && apt.serviceName === l.serviceName)
+        );
+
+        if (!alreadyExists && !seenKeys.has(leadId) && (!phoneKey || !seenKeys.has(phoneKey))) {
           hasChanges = true;
-          newLeadsFromApts.push({
+          const newLead: ReferralLead = {
             id: leadId,
             customerName: apt.customerName,
             customerPhone: apt.customerPhone,
@@ -865,7 +889,10 @@ export default function App() {
             commission: 5250000,
             doctorAssigned: apt.doctorName,
             appointmentDate: apt.date
-          });
+          };
+          newLeadsFromApts.push(newLead);
+          seenKeys.add(leadId);
+          if (phoneKey) seenKeys.add(phoneKey);
         }
       });
 
@@ -965,7 +992,29 @@ export default function App() {
       .reduce((sum, a) => sum + 35000000, 0);
 
     const computedRevenue = invoiceRevenue + aptRevenue;
-    const totalRevenue = computedRevenue > 0 ? computedRevenue : ctvUser.totalRevenue;
+
+    // Doanh số chuyển tiền (chuyển đi trừ bớt, chuyển đến cộng thêm)
+    let netTransferredRevenue = 0;
+    try {
+      const rawTransfers = localStorage.getItem("saohan_team_transfers");
+      if (rawTransfers) {
+        const allTransfers: TeamRevenueTransfer[] = JSON.parse(rawTransfers);
+        const myCodeUpper = (ctvUser.code || "").trim().toUpperCase();
+
+        const transferredOut = allTransfers
+          .filter((t) => (t.fromCtvCode || "").trim().toUpperCase() === myCodeUpper && t.status === "accepted")
+          .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+        const transferredIn = allTransfers
+          .filter((t) => (t.toLeaderCode || "").trim().toUpperCase() === myCodeUpper && t.status === "accepted")
+          .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+        netTransferredRevenue = transferredIn - transferredOut;
+      }
+    } catch (e) {}
+
+    const baseRevenue = ctvUser.totalRevenue !== undefined ? ctvUser.totalRevenue : computedRevenue;
+    const totalRevenue = Math.max(0, (computedRevenue > 0 ? computedRevenue : baseRevenue) + netTransferredRevenue);
 
     // Tính Cấp Bạc / Vàng / Bạch Kim / Kim Cương động theo doanh số tích lũy
     let tier = "Bạc";
