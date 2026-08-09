@@ -21,7 +21,7 @@ import {
   Crown,
   Pencil
 } from "lucide-react";
-import { saveTransferRequestToSupabase, updateTeamLeaderInSupabase, updateTransferStatusInSupabase, fetchLeaderTransferRequestsFromSupabase } from "../lib/supabase";
+import { saveTransferRequestToSupabase, updateTeamLeaderInSupabase, updateTransferStatusInSupabase, fetchLeaderTransferRequestsFromSupabase, addRevenueToLeaderInSupabase } from "../lib/supabase";
 import { CTVUser, ReferralLead, TeamRevenueTransfer } from "../types";
 
 interface TeamLeaderDashboardProps {
@@ -122,13 +122,28 @@ export const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({
   };
 
   // Xử lý chấp nhận chuyển doanh số
-  const handleAccept = (transfer: TeamRevenueTransfer) => {
+  const handleAccept = async (transfer: TeamRevenueTransfer) => {
     const updated = transfers.map((t) =>
       t.id === transfer.id ? { ...t, status: "accepted" as const } : t
     );
     setTransfers(updated);
     saveTransferRequests(updated);
+
+    // 1. Đồng bộ 'accepted' lên Supabase DB
     updateTransferStatusInSupabase(transfer.id, "accepted").catch(console.error);
+
+    // 2. Tự động cộng doanh số và hoa hồng cho Trưởng nhóm
+    const leaderCodeToUpdate = transfer.toLeaderCode || leaderCode;
+    const calcComm = transfer.commission || Math.round(transfer.amount * 0.15);
+    await addRevenueToLeaderInSupabase(leaderCodeToUpdate, transfer.amount, calcComm);
+
+    // 3. Cập nhật trực tiếp ctvUser state tại chỗ nếu khớp Trưởng nhóm đang đăng nhập
+    if (ctvUser && (ctvUser.code || "").trim().toUpperCase() === leaderCodeToUpdate.trim().toUpperCase()) {
+      ctvUser.totalRevenue = (ctvUser.totalRevenue || 0) + transfer.amount;
+      ctvUser.totalCommission = (ctvUser.totalCommission || 0) + calcComm;
+      ctvUser.availableBalance = (ctvUser.availableBalance || 0) + calcComm;
+    }
+
     onTransferAccept?.(transfer);
   };
 

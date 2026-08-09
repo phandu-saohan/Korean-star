@@ -670,6 +670,77 @@ export const updateTransferStatusInSupabase = async (transferId: string, status:
   }
 };
 
+// 5i. Add transferred revenue and commission to Team Leader in Supabase and LocalStorage
+export const addRevenueToLeaderInSupabase = async (leaderCode: string, addedRevenue: number, addedCommission: number) => {
+  if (!leaderCode || addedRevenue <= 0) return;
+  try {
+    const clean = leaderCode.trim().toUpperCase();
+
+    // 1. Cập nhật LocalStorage saohan_registered_users
+    try {
+      const rawReg = localStorage.getItem("saohan_registered_users");
+      if (rawReg) {
+        const regList: any[] = JSON.parse(rawReg);
+        const match = regList.find((u) => (u.ctvCode || u.code || "").trim().toUpperCase() === clean);
+        if (match) {
+          match.totalRevenue = (Number(match.totalRevenue) || 0) + addedRevenue;
+          match.totalCommission = (Number(match.totalCommission) || 0) + addedCommission;
+          match.availableBalance = (Number(match.availableBalance) || 0) + addedCommission;
+          localStorage.setItem("saohan_registered_users", JSON.stringify(regList));
+        }
+      }
+    } catch (e) {}
+
+    // 2. Cập nhật LocalStorage saohan_ctv_user & saohan_auth_user nếu là tài khoản Trưởng nhóm đang đăng nhập
+    try {
+      const savedCtv = localStorage.getItem("saohan_ctv_user");
+      if (savedCtv) {
+        const ctvObj = JSON.parse(savedCtv);
+        if ((ctvObj.code || ctvObj.ctvCode)?.trim().toUpperCase() === clean) {
+          ctvObj.totalRevenue = (Number(ctvObj.totalRevenue) || 0) + addedRevenue;
+          ctvObj.totalCommission = (Number(ctvObj.totalCommission) || 0) + addedCommission;
+          ctvObj.availableBalance = (Number(ctvObj.availableBalance) || 0) + addedCommission;
+          localStorage.setItem("saohan_ctv_user", JSON.stringify(ctvObj));
+        }
+      }
+      const savedAuth = localStorage.getItem("saohan_auth_user");
+      if (savedAuth) {
+        const authObj = JSON.parse(savedAuth);
+        if ((authObj.ctvCode || authObj.code)?.trim().toUpperCase() === clean) {
+          authObj.totalRevenue = (Number(authObj.totalRevenue) || 0) + addedRevenue;
+          authObj.totalCommission = (Number(authObj.totalCommission) || 0) + addedCommission;
+          authObj.availableBalance = (Number(authObj.availableBalance) || 0) + addedCommission;
+          localStorage.setItem("saohan_auth_user", JSON.stringify(authObj));
+        }
+      }
+    } catch (e) {}
+
+    // 3. Cập nhật trực tiếp CSDL Supabase table user_profiles
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("id, total_revenue, total_commission, available_balance")
+      .ilike("ctv_code", clean)
+      .maybeSingle();
+
+    if (profile) {
+      const newRev = (Number(profile.total_revenue) || 0) + addedRevenue;
+      const newComm = (Number(profile.total_commission) || 0) + addedCommission;
+      const newAvail = (Number(profile.available_balance) || 0) + addedCommission;
+
+      await supabase
+        .from("user_profiles")
+        .update({
+          total_revenue: newRev,
+          total_commission: newComm,
+          available_balance: newAvail
+        })
+        .eq("id", profile.id);
+    }
+  } catch (e) {
+    console.error("Add revenue to leader error:", e);
+  }
+};
+
 // Memory Cache Variables to prevent repetitive network spam on 520 / CORS errors
 let _cachedProfiles: AuthUserProfile[] | null = null;
 let _lastProfilesFetchTime = 0;

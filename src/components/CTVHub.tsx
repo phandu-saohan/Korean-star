@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { formatCurrencyInput, parseCurrencyInput, formatDateTimeVN } from "../utils/formatters";
 import { CTVUser, ReferralLead, ServiceItem, ServiceFeedback, Appointment, AppointmentInvoice, PayoutRequest, TeamRevenueTransfer } from "../types";
-import { fetchUserProfileByCtvCode, updateTeamLeaderInSupabase, fetchMyTransferRequestsFromSupabase, fetchLeaderTransferRequestsFromSupabase, updateTransferStatusInSupabase } from "../lib/supabase";
+import { fetchUserProfileByCtvCode, updateTeamLeaderInSupabase, fetchMyTransferRequestsFromSupabase, fetchLeaderTransferRequestsFromSupabase, updateTransferStatusInSupabase, addRevenueToLeaderInSupabase } from "../lib/supabase";
 import { 
   Wallet, 
   Crown, 
@@ -470,13 +470,28 @@ export const CTVHub: React.FC<CTVHubProps> = ({
     }
   };
 
-  const handleAcceptTransfer = (transfer: TeamRevenueTransfer) => {
+  const handleAcceptTransfer = async (transfer: TeamRevenueTransfer) => {
     const updated = transfers.map((t) =>
       t.id === transfer.id ? { ...t, status: "accepted" as const } : t
     );
     setTransfers(updated);
     saveTransferRequests(updated);
+
+    // 1. Đồng bộ trạng thái 'accepted' lên Supabase CSDL
     updateTransferStatusInSupabase(transfer.id, "accepted").catch(console.error);
+
+    // 2. Tự động cộng doanh số và hoa hồng cho Trưởng nhóm
+    const leaderCodeToUpdate = transfer.toLeaderCode || ctvUser.code;
+    const calcComm = transfer.commission || Math.round(transfer.amount * 0.15);
+
+    await addRevenueToLeaderInSupabase(leaderCodeToUpdate, transfer.amount, calcComm);
+
+    // 3. Cập nhật trực tiếp ctvUser state tại chỗ nếu người duyệt là Trưởng nhóm đang đăng nhập
+    if (ctvUser && (ctvUser.code || "").trim().toUpperCase() === leaderCodeToUpdate.trim().toUpperCase()) {
+      ctvUser.totalRevenue = (ctvUser.totalRevenue || 0) + transfer.amount;
+      ctvUser.totalCommission = (ctvUser.totalCommission || 0) + calcComm;
+      ctvUser.availableBalance = (ctvUser.availableBalance || 0) + calcComm;
+    }
   };
 
   const handleRejectTransfer = (transfer: TeamRevenueTransfer) => {
