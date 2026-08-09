@@ -480,17 +480,14 @@ export const CTVHub: React.FC<CTVHubProps> = ({
     // 1. Đồng bộ trạng thái 'accepted' lên Supabase CSDL
     updateTransferStatusInSupabase(transfer.id, "accepted").catch(console.error);
 
-    // 2. Tự động cộng doanh số và hoa hồng cho Trưởng nhóm
+    // 2. Tự động cộng CHỈ DOANH SỐ (không cộng hoa hồng) cho Trưởng nhóm
     const leaderCodeToUpdate = transfer.toLeaderCode || ctvUser.code;
-    const calcComm = transfer.commission || Math.round(transfer.amount * 0.15);
 
-    await addRevenueToLeaderInSupabase(leaderCodeToUpdate, transfer.amount, calcComm);
+    await addRevenueToLeaderInSupabase(leaderCodeToUpdate, transfer.amount, 0);
 
     // 3. Cập nhật trực tiếp ctvUser state tại chỗ nếu người duyệt là Trưởng nhóm đang đăng nhập
     if (ctvUser && (ctvUser.code || "").trim().toUpperCase() === leaderCodeToUpdate.trim().toUpperCase()) {
       ctvUser.totalRevenue = (ctvUser.totalRevenue || 0) + transfer.amount;
-      ctvUser.totalCommission = (ctvUser.totalCommission || 0) + calcComm;
-      ctvUser.availableBalance = (ctvUser.availableBalance || 0) + calcComm;
     }
   };
 
@@ -865,18 +862,14 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="bg-slate-50 p-2 rounded-xl border border-slate-200 min-w-0">
-                        <span className="text-[10px] text-slate-400 font-bold block truncate">Dịch vụ</span>
+                        <span className="text-[10px] text-slate-400 font-bold block truncate">Nội dung</span>
                         <span className="font-black text-slate-900 truncate block text-[11px]">{t.serviceName}</span>
                       </div>
                       <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-200 min-w-0">
-                        <span className="text-[10px] text-emerald-600 font-bold block truncate">Doanh số</span>
+                        <span className="text-[10px] text-emerald-600 font-bold block truncate">Doanh số chuyển</span>
                         <span className="font-mono font-black text-emerald-700 truncate block text-[11px]">{t.amount.toLocaleString("vi-VN")}đ</span>
-                      </div>
-                      <div className="bg-amber-50 p-2 rounded-xl border border-amber-200 min-w-0">
-                        <span className="text-[10px] text-amber-600 font-bold block truncate">Hoa hồng</span>
-                        <span className="font-mono font-black text-amber-700 truncate block text-[11px]">{t.commission.toLocaleString("vi-VN")}đ</span>
                       </div>
                     </div>
 
@@ -985,18 +978,14 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="bg-slate-50 p-2 rounded-xl border border-slate-200 min-w-0">
-                      <span className="text-[10px] text-slate-400 font-bold block truncate">Dịch vụ</span>
+                      <span className="text-[10px] text-slate-400 font-bold block truncate">Nội dung</span>
                       <span className="font-black text-slate-900 truncate block text-[11px]">{t.serviceName}</span>
                     </div>
                     <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-200 min-w-0">
-                      <span className="text-[10px] text-emerald-600 font-bold block truncate">Doanh số</span>
+                      <span className="text-[10px] text-emerald-600 font-bold block truncate">Doanh số chuyển</span>
                       <span className="font-mono font-black text-emerald-700 truncate block text-[11px]">{t.amount.toLocaleString("vi-VN")}đ</span>
-                    </div>
-                    <div className="bg-amber-50 p-2 rounded-xl border border-amber-200 min-w-0">
-                      <span className="text-[10px] text-amber-600 font-bold block truncate">Hoa hồng</span>
-                      <span className="font-mono font-black text-amber-700 truncate block text-[11px]">{t.commission.toLocaleString("vi-VN")}đ</span>
                     </div>
                   </div>
 

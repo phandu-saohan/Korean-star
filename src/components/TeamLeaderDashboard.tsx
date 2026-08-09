@@ -132,16 +132,13 @@ export const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({
     // 1. Đồng bộ 'accepted' lên Supabase DB
     updateTransferStatusInSupabase(transfer.id, "accepted").catch(console.error);
 
-    // 2. Tự động cộng doanh số và hoa hồng cho Trưởng nhóm
+    // 2. Tự động cộng CHỈ DOANH SỐ (0 hoa hồng) cho Trưởng nhóm
     const leaderCodeToUpdate = transfer.toLeaderCode || leaderCode;
-    const calcComm = transfer.commission || Math.round(transfer.amount * 0.15);
-    await addRevenueToLeaderInSupabase(leaderCodeToUpdate, transfer.amount, calcComm);
+    await addRevenueToLeaderInSupabase(leaderCodeToUpdate, transfer.amount, 0);
 
     // 3. Cập nhật trực tiếp ctvUser state tại chỗ nếu khớp Trưởng nhóm đang đăng nhập
     if (ctvUser && (ctvUser.code || "").trim().toUpperCase() === leaderCodeToUpdate.trim().toUpperCase()) {
       ctvUser.totalRevenue = (ctvUser.totalRevenue || 0) + transfer.amount;
-      ctvUser.totalCommission = (ctvUser.totalCommission || 0) + calcComm;
-      ctvUser.availableBalance = (ctvUser.availableBalance || 0) + calcComm;
     }
 
     onTransferAccept?.(transfer);
@@ -566,7 +563,6 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
 
   const [targetLeaderCode, setTargetLeaderCode] = useState(getInitialLeaderCode());
   const [amount, setAmount] = useState("");
-  const [commission, setCommission] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -610,7 +606,7 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
       toLeaderCode: leaderCode,
       toLeaderName: ctvUser.teamName || "",
       amount: numAmount,
-      commission: Number(commission) || 0,
+      commission: 0,
       serviceName: "Chuyển doanh số CTV",
       note: note.trim() || undefined,
       transferredAt: new Date().toLocaleString("vi-VN"),
@@ -692,29 +688,17 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
               </div>
             </div>
 
-            {/* Nhập Doanh Số & Hoa Hồng */}
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block font-extrabold mb-1 text-slate-700">Doanh số chuyển (đ) (*):</label>
-                <input
-                  type="number"
-                  placeholder="VD: 10000000"
-                  value={amount}
-                  max={availableRevenue}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500"
-                />
-              </div>
-              <div>
-                <label className="block font-extrabold mb-1 text-slate-700">Hoa hồng (đ):</label>
-                <input
-                  type="number"
-                  placeholder="VD: 1500000"
-                  value={commission}
-                  onChange={(e) => setCommission(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500"
-                />
-              </div>
+            {/* Nhập Doanh Số Chuyển */}
+            <div>
+              <label className="block font-extrabold mb-1 text-slate-700">Doanh số chuyển (đ) (*):</label>
+              <input
+                type="number"
+                placeholder="VD: 10000000"
+                value={amount}
+                max={availableRevenue}
+                onChange={(e) => setAmount(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500"
+              />
             </div>
 
             <div>
