@@ -70,6 +70,7 @@ interface CTVHubProps {
   onDeleteLead?: (leadId: string) => void;
   onClearAllLeads?: () => void;
   onOpenTeamTransferModal?: () => void;
+  onSubTabChange?: (subTab: string) => void;
 }
 
 // Lấy danh sách CTV đã đăng ký từ localStorage với chuẩn hóa Họ tên, SĐT, Avatar
@@ -137,7 +138,8 @@ export const CTVHub: React.FC<CTVHubProps> = ({
   onViewBeforeAfter,
   onDeleteLead,
   onClearAllLeads,
-  onOpenTeamTransferModal
+  onOpenTeamTransferModal,
+  onSubTabChange
 }) => {
   const PERFORMANCE_DATA = ctvUser.totalRevenue > 0 || ctvUser.successfulReferrals > 0
     ? [
@@ -145,6 +147,10 @@ export const CTVHub: React.FC<CTVHubProps> = ({
       ]
     : [];
   const [activeSubTab, setActiveSubTab] = useState<"overview" | "services" | "feedbacks" | "team-members" | "team-transfers" | "ctv-transfers">("overview");
+
+  useEffect(() => {
+    onSubTabChange?.(activeSubTab);
+  }, [activeSubTab, onSubTabChange]);
   const [customCode, setCustomCode] = useState(ctvUser.code);
   const [customerDiscount, setCustomerDiscount] = useState("10");
   const [copiedLink, setCopiedLink] = useState(false);
