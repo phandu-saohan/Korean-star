@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { UserRole, CTVUser, ReferralLead, Appointment, RealtimeNotification, ServiceItem, Promotion, VideoGuide, PayoutRequest, ServiceFeedback, AppointmentInvoice } from "./types";
+import { UserRole, CTVUser, ReferralLead, Appointment, RealtimeNotification, ServiceItem, Promotion, VideoGuide, PayoutRequest, ServiceFeedback, AppointmentInvoice, TeamRevenueTransfer } from "./types";
 import { 
   INITIAL_CTV, 
   SERVICES_DATA, 
