@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { formatCurrencyInput, parseCurrencyInput } from "../utils/formatters";
 import {
   Users,
   Star,
@@ -688,15 +689,17 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
               </div>
             </div>
 
-            {/* Nhập Doanh Số Chuyển */}
+            {/* Nhập Doanh Số Chuyển (Phần Ngàn) */}
             <div>
               <label className="block font-extrabold mb-1 text-slate-700">Doanh số chuyển (đ) (*):</label>
               <input
-                type="number"
-                placeholder="VD: 10000000"
-                value={amount}
-                max={availableRevenue}
-                onChange={(e) => setAmount(e.target.value)}
+                type="text"
+                placeholder="VD: 10.000.000"
+                value={formatCurrencyInput(amount)}
+                onChange={(e) => {
+                  const parsed = parseCurrencyInput(e.target.value);
+                  setAmount(parsed ? String(parsed) : "");
+                }}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500"
               />
             </div>
