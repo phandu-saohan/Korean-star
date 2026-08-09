@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { formatCurrencyInput, parseCurrencyInput, formatDateTimeVN } from "../utils/formatters";
 import { CTVUser, ReferralLead, ServiceItem, ServiceFeedback, Appointment, AppointmentInvoice, PayoutRequest, TeamRevenueTransfer } from "../types";
-import { fetchUserProfileByCtvCode, updateTeamLeaderInSupabase, fetchMyTransferRequestsFromSupabase, fetchLeaderTransferRequestsFromSupabase, updateTransferStatusInSupabase, addRevenueToLeaderInSupabase } from "../lib/supabase";
+import { fetchUserProfileByCtvCode, updateTeamLeaderInSupabase, fetchMyTransferRequestsFromSupabase, fetchLeaderTransferRequestsFromSupabase, updateTransferStatusInSupabase, addRevenueToLeaderInSupabase, deductRevenueFromCtvInSupabase } from "../lib/supabase";
 import { 
   Wallet, 
   Crown, 
@@ -486,14 +486,27 @@ export const CTVHub: React.FC<CTVHubProps> = ({
     // 1. Đồng bộ trạng thái 'accepted' lên Supabase CSDL
     updateTransferStatusInSupabase(transfer.id, "accepted").catch(console.error);
 
-    // 2. Tự động cộng CHỈ DOANH SỐ (không cộng hoa hồng) cho Trưởng nhóm
-    const leaderCodeToUpdate = transfer.toLeaderCode || ctvUser.code;
+    // 2. Trừ doanh số ở CTV thành viên gửi đi
+    if (transfer.fromCtvCode) {
+      await deductRevenueFromCtvInSupabase(transfer.fromCtvCode, transfer.amount);
+    }
 
+    // 3. Tự động cộng doanh số cho Trưởng nhóm nhận
+    const leaderCodeToUpdate = transfer.toLeaderCode || ctvUser.code;
     await addRevenueToLeaderInSupabase(leaderCodeToUpdate, transfer.amount, 0);
 
-    // 3. Cập nhật trực tiếp ctvUser state tại chỗ nếu người duyệt là Trưởng nhóm đang đăng nhập
-    if (ctvUser && (ctvUser.code || "").trim().toUpperCase() === leaderCodeToUpdate.trim().toUpperCase()) {
-      ctvUser.totalRevenue = (ctvUser.totalRevenue || 0) + transfer.amount;
+    // 4. Cập nhật trực tiếp ctvUser state tại chỗ
+    if (ctvUser) {
+      const myCodeUpper = (ctvUser.code || "").trim().toUpperCase();
+      const fromCodeUpper = (transfer.fromCtvCode || "").trim().toUpperCase();
+      const leaderCodeUpper = leaderCodeToUpdate.trim().toUpperCase();
+
+      if (myCodeUpper === fromCodeUpper) {
+        ctvUser.totalRevenue = Math.max(0, (ctvUser.totalRevenue || 0) - transfer.amount);
+      }
+      if (myCodeUpper === leaderCodeUpper) {
+        ctvUser.totalRevenue = (ctvUser.totalRevenue || 0) + transfer.amount;
+      }
     }
   };
 

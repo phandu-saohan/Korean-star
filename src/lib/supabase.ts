@@ -741,6 +741,66 @@ export const addRevenueToLeaderInSupabase = async (leaderCode: string, addedReve
   }
 };
 
+// 5j. Deduct transferred revenue from CTV member in Supabase and LocalStorage
+export const deductRevenueFromCtvInSupabase = async (ctvCode: string, deductedRevenue: number) => {
+  if (!ctvCode || deductedRevenue <= 0) return;
+  try {
+    const clean = ctvCode.trim().toUpperCase();
+
+    // 1. Cập nhật LocalStorage saohan_registered_users
+    try {
+      const rawReg = localStorage.getItem("saohan_registered_users");
+      if (rawReg) {
+        const regList: any[] = JSON.parse(rawReg);
+        const match = regList.find((u) => (u.ctvCode || u.code || "").trim().toUpperCase() === clean);
+        if (match) {
+          match.totalRevenue = Math.max(0, (Number(match.totalRevenue) || 0) - deductedRevenue);
+          localStorage.setItem("saohan_registered_users", JSON.stringify(regList));
+        }
+      }
+    } catch (e) {}
+
+    // 2. Cập nhật LocalStorage saohan_ctv_user & saohan_auth_user nếu là tài khoản CTV đang đăng nhập
+    try {
+      const savedCtv = localStorage.getItem("saohan_ctv_user");
+      if (savedCtv) {
+        const ctvObj = JSON.parse(savedCtv);
+        if ((ctvObj.code || ctvObj.ctvCode)?.trim().toUpperCase() === clean) {
+          ctvObj.totalRevenue = Math.max(0, (Number(ctvObj.totalRevenue) || 0) - deductedRevenue);
+          localStorage.setItem("saohan_ctv_user", JSON.stringify(ctvObj));
+        }
+      }
+      const savedAuth = localStorage.getItem("saohan_auth_user");
+      if (savedAuth) {
+        const authObj = JSON.parse(savedAuth);
+        if ((authObj.ctvCode || authObj.code)?.trim().toUpperCase() === clean) {
+          authObj.totalRevenue = Math.max(0, (Number(authObj.totalRevenue) || 0) - deductedRevenue);
+          localStorage.setItem("saohan_auth_user", JSON.stringify(authObj));
+        }
+      }
+    } catch (e) {}
+
+    // 3. Cập nhật trực tiếp CSDL Supabase table user_profiles
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("id, total_revenue")
+      .ilike("ctv_code", clean)
+      .maybeSingle();
+
+    if (profile) {
+      const newRev = Math.max(0, (Number(profile.total_revenue) || 0) - deductedRevenue);
+      await supabase
+        .from("user_profiles")
+        .update({
+          total_revenue: newRev
+        })
+        .eq("id", profile.id);
+    }
+  } catch (e) {
+    console.error("Deduct revenue from CTV error:", e);
+  }
+};
+
 // Memory Cache Variables to prevent repetitive network spam on 520 / CORS errors
 let _cachedProfiles: AuthUserProfile[] | null = null;
 let _lastProfilesFetchTime = 0;

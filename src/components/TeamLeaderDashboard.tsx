@@ -22,7 +22,7 @@ import {
   Crown,
   Pencil
 } from "lucide-react";
-import { saveTransferRequestToSupabase, updateTeamLeaderInSupabase, updateTransferStatusInSupabase, fetchLeaderTransferRequestsFromSupabase, addRevenueToLeaderInSupabase } from "../lib/supabase";
+import { saveTransferRequestToSupabase, updateTeamLeaderInSupabase, updateTransferStatusInSupabase, fetchLeaderTransferRequestsFromSupabase, addRevenueToLeaderInSupabase, deductRevenueFromCtvInSupabase } from "../lib/supabase";
 import { CTVUser, ReferralLead, TeamRevenueTransfer } from "../types";
 
 interface TeamLeaderDashboardProps {
@@ -133,13 +133,27 @@ export const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({
     // 1. Đồng bộ 'accepted' lên Supabase DB
     updateTransferStatusInSupabase(transfer.id, "accepted").catch(console.error);
 
-    // 2. Tự động cộng CHỈ DOANH SỐ (0 hoa hồng) cho Trưởng nhóm
+    // 2. Trừ doanh số ở CTV thành viên gửi đi
+    if (transfer.fromCtvCode) {
+      await deductRevenueFromCtvInSupabase(transfer.fromCtvCode, transfer.amount);
+    }
+
+    // 3. Tự động cộng doanh số cho Trưởng nhóm nhận
     const leaderCodeToUpdate = transfer.toLeaderCode || leaderCode;
     await addRevenueToLeaderInSupabase(leaderCodeToUpdate, transfer.amount, 0);
 
-    // 3. Cập nhật trực tiếp ctvUser state tại chỗ nếu khớp Trưởng nhóm đang đăng nhập
-    if (ctvUser && (ctvUser.code || "").trim().toUpperCase() === leaderCodeToUpdate.trim().toUpperCase()) {
-      ctvUser.totalRevenue = (ctvUser.totalRevenue || 0) + transfer.amount;
+    // 4. Cập nhật trực tiếp ctvUser state tại chỗ
+    if (ctvUser) {
+      const myCodeUpper = (ctvUser.code || "").trim().toUpperCase();
+      const fromCodeUpper = (transfer.fromCtvCode || "").trim().toUpperCase();
+      const leaderCodeUpper = leaderCodeToUpdate.trim().toUpperCase();
+
+      if (myCodeUpper === fromCodeUpper) {
+        ctvUser.totalRevenue = Math.max(0, (ctvUser.totalRevenue || 0) - transfer.amount);
+      }
+      if (myCodeUpper === leaderCodeUpper) {
+        ctvUser.totalRevenue = (ctvUser.totalRevenue || 0) + transfer.amount;
+      }
     }
 
     onTransferAccept?.(transfer);
