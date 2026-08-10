@@ -35,7 +35,9 @@ import {
   ChevronDown,
   ChevronUp,
   Eye,
-  Info
+  Info,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 
 import { formatDateVN, formatCurrencyInput } from "../utils/formatters";
@@ -204,12 +206,45 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
     status: "Chờ xác nhận" as Appointment["status"]
   });
 
+  // Multi-step Booking Form State (Optimized for Mobile)
+  const [bookingStep, setBookingStep] = useState<number>(1);
+  const [stepError, setStepError] = useState<string>("");
+
+  const handleNextStep = () => {
+    setStepError("");
+    if (bookingStep === 1) {
+      if (!form.customerName.trim()) {
+        setStepError("Vui lòng nhập Họ & Tên khách hàng!");
+        return;
+      }
+      if (!form.customerPhone.trim()) {
+        setStepError("Vui lòng nhập Số điện thoại khách hàng!");
+        return;
+      }
+      setBookingStep(2);
+    } else if (bookingStep === 2) {
+      if (!form.serviceName.trim() && selectedServiceItems.length === 0) {
+        setStepError("Vui lòng chọn hoặc nhập ít nhất 1 dịch vụ thẩm mỹ!");
+        return;
+      }
+      setBookingStep(3);
+    } else if (bookingStep === 3) {
+      if (!form.date) {
+        setStepError("Vui lòng chọn ngày khám dự kiến!");
+        return;
+      }
+      setBookingStep(4);
+    }
+  };
+
   // Open modal for NEW appointment
   const handleOpenCreateModal = () => {
     setEditingAppointment(null);
     setSelectedServiceItems([]);
     setServiceSearchInput("");
     setServiceCategoryFilter("ALL");
+    setBookingStep(1);
+    setStepError("");
     setForm({
       customerName: "",
       customerPhone: "",
@@ -232,6 +267,8 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
     setEditingAppointment(apt);
     setServiceSearchInput("");
     setServiceCategoryFilter("ALL");
+    setBookingStep(1);
+    setStepError("");
 
     // Match existing service names with catalog items
     const rawServices = (apt.serviceName || "").split(/\s*\+\s*|\s*,\s*/).map((s) => s.trim().toLowerCase()).filter(Boolean);
@@ -1191,474 +1228,623 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
         </div>
       )}
 
-      {/* BOOKING / EDIT MODAL */}
+      {/* BOOKING / EDIT MODAL (OPTIMIZED FOR MOBILE WITH STEPPER) */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full p-6 text-slate-900 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl relative">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-amber-500" />
-                {editingAppointment ? "Chỉnh Sửa Lịch Hẹn CRM" : "Đặt Lịch Hẹn Khám & Tư Vấn Thẩm Mỹ"}
-              </h3>
+        <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full text-slate-900 shadow-2xl relative flex flex-col max-h-[92vh] overflow-hidden">
+            
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/50">
+              <div>
+                <h3 className="font-black text-sm sm:text-base text-slate-900 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-amber-500 shrink-0" />
+                  {editingAppointment ? "Chỉnh Sửa Lịch Hẹn CRM" : "Đặt Lịch Hẹn Khám & Tư Vấn Thẩm Mỹ"}
+                </h3>
+                <p className="text-[11px] text-slate-500 font-medium mt-0.5">Vui lòng hoàn thành theo từng bước bên dưới</p>
+              </div>
               <button
                 onClick={() => {
                   setShowModal(false);
                   setEditingAppointment(null);
                 }}
-                className="p-1 hover:bg-slate-100 rounded-full text-slate-400"
+                className="p-1.5 hover:bg-slate-200/60 rounded-full text-slate-400 hover:text-slate-600 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleBookingSubmit} className="space-y-4 text-xs font-medium">
-              {/* 1. LOẠI LỊCH HẸN */}
-              <div>
-                <label className="block text-slate-700 font-bold mb-1.5">Loại Lịch Hẹn (*):</label>
-                <div className="flex gap-2">
-                  {(["Lịch tư vấn", "Lịch tái khám"] as const).map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => {
-                        setForm({ ...form, appointmentType: type });
-                        if (type === "Lịch tư vấn") {
-                          setPatientSearchTerm("");
-                          setShowPatientDropdown(false);
-                        }
-                      }}
-                      className={`flex-1 py-2.5 rounded-xl border-2 font-extrabold text-xs transition ${
-                        form.appointmentType === type
-                          ? type === "Lịch tư vấn"
-                            ? "bg-blue-600 border-blue-600 text-white shadow-md"
-                            : "bg-emerald-600 border-emerald-600 text-white shadow-md"
-                          : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
-                      }`}
-                    >
-                      {type === "Lịch tư vấn" ? "💬" : "🔄"} {type}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* DROPDOWN TÌM KIẾM BỆNH NHÂN TƯ VẤN (KHI CHỌN LỊCH TÁI KHÁM) */}
-              {form.appointmentType === "Lịch tái khám" && (
-                <div className="bg-emerald-50/90 border border-emerald-200 p-3 rounded-2xl space-y-2 relative">
-                  <label className="block text-emerald-900 font-extrabold text-xs flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <span>🔍</span> Chọn Bệnh Nhân Đã Đặt Lịch Tư Vấn:
-                    </span>
-                    <span className="text-[10px] text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
-                      {consultationPatients.length} Bệnh nhân tư vấn
-                    </span>
-                  </label>
-
-                  <div className="relative">
-                    <Search className="w-4 h-4 text-emerald-600 absolute left-3 top-3" />
-                    <input
-                      type="text"
-                      placeholder="Gõ tên hoặc SĐT bệnh nhân đã khám..."
-                      value={patientSearchTerm}
-                      onFocus={() => setShowPatientDropdown(true)}
-                      onChange={(e) => {
-                        setPatientSearchTerm(e.target.value);
-                        setShowPatientDropdown(true);
-                      }}
-                      className="w-full bg-white border border-emerald-300 rounded-xl pl-9 pr-8 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs"
-                    />
-                    {patientSearchTerm && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPatientSearchTerm("");
-                          setShowPatientDropdown(true);
-                        }}
-                        className="absolute right-2.5 top-2.5 text-xs text-slate-400 hover:text-slate-600 font-bold"
-                      >
-                        ✕
-                      </button>
-                    )}
-
-                    {showPatientDropdown && (
-                      <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-emerald-200 rounded-2xl shadow-2xl z-30 max-h-52 overflow-y-auto p-1.5 space-y-1">
-                        {filteredConsultationPatients.length > 0 ? (
-                          filteredConsultationPatients.map((patient) => (
-                            <div
-                              key={patient.id}
-                              onClick={() => {
-                                setForm((prev) => ({
-                                  ...prev,
-                                  customerName: patient.customerName,
-                                  customerPhone: patient.customerPhone,
-                                  serviceName: patient.serviceName || prev.serviceName,
-                                  doctorName: patient.doctorName || prev.doctorName,
-                                  customerMedia: patient.customerMedia || prev.customerMedia,
-                                  customerMediaType: patient.customerMediaType || prev.customerMediaType
-                                }));
-                                setPatientSearchTerm(`${patient.customerName} - ${patient.customerPhone}`);
-                                setShowPatientDropdown(false);
-                              }}
-                              className="p-2.5 hover:bg-emerald-50 rounded-xl cursor-pointer transition flex items-center justify-between border border-transparent hover:border-emerald-200"
-                            >
-                              <div>
-                                <div className="font-black text-slate-900 text-xs flex items-center gap-1.5">
-                                  <span>👤 {patient.customerName}</span>
-                                  <span className="font-mono text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded text-[10px]">
-                                    {patient.customerPhone}
-                                  </span>
-                                </div>
-                                <div className="text-[10px] text-slate-500 font-medium mt-0.5">
-                                  Dịch vụ đã tư vấn: <span className="font-bold text-slate-700">{patient.serviceName}</span>
-                                </div>
-                              </div>
-                              <span className="text-[10px] bg-emerald-600 text-white font-extrabold px-2.5 py-1 rounded-lg shrink-0 shadow-xs">
-                                Chọn
-                              </span>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="p-3 text-center text-xs text-slate-400 font-medium">
-                            Không tìm thấy bệnh nhân tư vấn phù hợp
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* 2. HỌ TÊN & SỐ ĐIỆN THOẠI */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Họ & Tên Khách Hàng (*):</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ví dụ: Nguyễn Thanh Vân..."
-                    value={form.customerName}
-                    onChange={(e) => setForm({ ...form, customerName: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-bold focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Số Điện Thoại Khách Hàng (*):</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="0912345678"
-                    value={form.customerPhone}
-                    onChange={(e) => setForm({ ...form, customerPhone: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-mono font-bold focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-              </div>
-
-              {/* 3. SMART MULTI-SERVICE SELECTION INPUT (BẢNG GIÁ DỊCH VỤ) */}
-              <div className="bg-amber-50/80 border border-amber-200/90 p-3.5 rounded-2xl space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="block text-amber-900 font-extrabold text-xs flex items-center gap-1.5">
-                    <ShoppingBag className="w-4 h-4 text-amber-600" />
-                    <span>Chọn Nhiều Dịch Vụ Từ Bảng Giá Niêm Yết:</span>
-                  </label>
-                  <span className="text-[10px] text-amber-800 font-bold bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
-                    Đã chọn {selectedServiceItems.length} dịch vụ
+            {/* Stepper Progress Header */}
+            <div className="px-4 sm:px-5 pt-3 pb-2 bg-white border-b border-slate-100 space-y-2 shrink-0">
+              <div className="flex items-center justify-between text-xs font-black text-slate-800">
+                <span className="flex items-center gap-1.5 truncate">
+                  <span className="w-5 h-5 rounded-full bg-[#0B192C] text-amber-400 text-[10px] flex items-center justify-center font-mono shrink-0">
+                    {bookingStep}
                   </span>
-                </div>
-
-                {/* Smart Service Search Bar */}
-                <div className="relative">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  <input
-                    type="text"
-                    placeholder="Tìm nhanh dịch vụ trong bảng giá (tên, danh mục, giá tiền)..."
-                    value={serviceSearchInput}
-                    onFocus={() => setShowServicePicker(true)}
-                    onChange={(e) => {
-                      setServiceSearchInput(e.target.value);
-                      setShowServicePicker(true);
-                    }}
-                    className="w-full bg-white border border-amber-300 rounded-xl pl-9 pr-8 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-500 shadow-xs"
-                  />
-                  {serviceSearchInput && (
-                    <button
-                      type="button"
-                      onClick={() => setServiceSearchInput("")}
-                      className="absolute right-2.5 top-2.5 text-xs text-slate-400 hover:text-slate-600 font-bold"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-
-                {/* Category Filter Chips for Smart Search */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                  {[
-                    { id: "ALL", label: "Tất cả" },
-                    { id: "phau-thuat", label: "Phẫu Thuật" },
-                    { id: "da-lieu", label: "Da Liễu" },
-                    { id: "tre-hoa", label: "Trẻ Hóa" },
-                    { id: "voc-dang", label: "Vóc Dáng" }
-                  ].map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => {
-                        setServiceCategoryFilter(cat.id);
-                        setShowServicePicker(true);
-                      }}
-                      className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition whitespace-nowrap ${
-                        serviceCategoryFilter === cat.id
-                          ? "bg-amber-600 border-amber-600 text-white shadow-xs"
-                          : "bg-white border-amber-200 text-slate-700 hover:bg-amber-100"
-                      }`}
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Dropdown list of catalog services for multi-selection */}
-                {showServicePicker && (
-                  <div className="bg-white border border-amber-200 rounded-2xl shadow-xl p-2 max-h-56 overflow-y-auto space-y-1 z-20">
-                    <div className="flex items-center justify-between px-2 py-1 border-b border-slate-100 text-[10px] font-extrabold text-slate-500 uppercase">
-                      <span>Tích chọn dịch vụ mong muốn:</span>
-                      <button
-                        type="button"
-                        onClick={() => setShowServicePicker(false)}
-                        className="text-amber-700 hover:underline"
-                      >
-                        Đóng danh sách
-                      </button>
-                    </div>
-
-                    {filteredSmartServices.length > 0 ? (
-                      filteredSmartServices.map((srv) => {
-                        const isSelected = selectedServiceItems.some((s) => s.id === srv.id);
-                        return (
-                          <div
-                            key={srv.id}
-                            onClick={() => toggleSelectService(srv)}
-                            className={`p-2.5 rounded-xl cursor-pointer transition flex items-center justify-between border ${
-                              isSelected
-                                ? "bg-amber-50 border-amber-400 shadow-xs"
-                                : "bg-white border-slate-100 hover:bg-slate-50"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <div className={`w-4 h-4 rounded border flex items-center justify-center font-bold text-xs shrink-0 ${
-                                isSelected ? "bg-amber-500 border-amber-600 text-[#0B192C]" : "border-slate-300 bg-white"
-                              }`}>
-                                {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-extrabold text-slate-900 text-xs truncate">{srv.name}</div>
-                                <div className="text-[10px] text-slate-500 font-medium">
-                                  {srv.categoryName || srv.category} • <span className="font-mono text-emerald-700 font-bold">{formatCurrencyInput(srv.price)} VNĐ</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                              isSelected ? "bg-amber-200 text-amber-900" : "bg-slate-100 text-slate-600"
-                            }`}>
-                              {isSelected ? "Đã chọn" : "+ Thêm"}
-                            </span>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="p-3 text-center text-xs text-slate-400 font-medium">
-                        Không tìm thấy dịch vụ phù hợp từ khóa
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Selected Service Badges */}
-                {selectedServiceItems.length > 0 && (
-                  <div className="space-y-1.5 pt-1">
-                    <span className="text-[10px] text-slate-600 font-extrabold block">Các dịch vụ đã chọn:</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedServiceItems.map((srv) => (
-                        <span
-                          key={srv.id}
-                          className="bg-white border border-amber-400 text-amber-900 text-[11px] font-extrabold px-2.5 py-1 rounded-xl shadow-xs flex items-center gap-1.5"
-                        >
-                          <span>{srv.name}</span>
-                          <span className="font-mono text-[10px] text-emerald-700">({formatCurrencyInput(srv.price)}đ)</span>
-                          <button
-                            type="button"
-                            onClick={() => removeSelectedService(srv.id)}
-                            className="hover:bg-rose-100 hover:text-rose-700 rounded-full p-0.5 text-slate-400 transition"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-
-                    {totalEstimatedCost > 0 && (
-                      <div className="flex items-center justify-between text-xs font-black text-amber-900 bg-white p-2 rounded-xl border border-amber-300 mt-2">
-                        <span>Tổng chi phí dự kiến ({selectedServiceItems.length} dịch vụ):</span>
-                        <span className="font-mono text-emerald-700 text-sm">
-                          {formatCurrencyInput(totalEstimatedCost)} VNĐ
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Combined Custom Service Text Input */}
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1 text-[11px]">
-                    Tên Dịch Vụ Niêm Yết Tổng Hợp (Tự động cập nhật hoặc chỉnh sửa thủ công):
-                  </label>
-                  <input
-                    type="text"
-                    value={form.serviceName}
-                    onChange={(e) => setForm({ ...form, serviceName: e.target.value })}
-                    className="w-full bg-white border border-amber-300 rounded-xl p-2.5 text-amber-900 font-extrabold focus:outline-none focus:border-amber-500 text-xs shadow-xs"
-                  />
-                </div>
-              </div>
-
-              {/* 4. CHỌN BÁC SĨ & KHUNG GIỜ & NGÀY KHÁM */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Chọn Bác Sĩ:</label>
-                  <select
-                    value={form.doctorName}
-                    onChange={(e) => setForm({ ...form, doctorName: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-bold focus:outline-none focus:border-amber-500 text-xs"
-                  >
-                    <option value="Bs. CKII Nguyễn Văn Hùng">Bs. CKII Nguyễn Văn Hùng</option>
-                    <option value="Bs. CKI Trần Thị Thu">Bs. CKI Trần Thị Thu</option>
-                    <option value="Bs. CKI Phạm Đức Anh">Bs. CKI Phạm Đức Anh</option>
-                    <option value="Ths. Bs. Trần Mỹ Linh">Ths. Bs. Trần Mỹ Linh</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Khung Giờ Hẹn Khám:</label>
-                  <select
-                    value={form.time}
-                    onChange={(e) => setForm({ ...form, time: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-bold focus:outline-none focus:border-amber-500 text-xs"
-                  >
-                    <option value="09:00 AM">09:00 AM</option>
-                    <option value="10:30 AM">10:30 AM</option>
-                    <option value="02:00 PM">02:00 PM</option>
-                    <option value="04:30 PM">04:30 PM</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Ngày Khám Dự Kiến:</label>
-                  <input
-                    type="date"
-                    value={form.date}
-                    onChange={(e) => setForm({ ...form, date: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-bold focus:outline-none focus:border-amber-500 text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Trạng Thái CRM (*):</label>
-                  {isUserAdmin ? (
-                    <select
-                      value={form.status}
-                      onChange={(e) => setForm({ ...form, status: e.target.value as any })}
-                      className="w-full bg-slate-50 border border-amber-300 rounded-xl p-2.5 text-amber-900 font-extrabold focus:outline-none focus:border-amber-500 text-xs shadow-xs cursor-pointer"
-                    >
-                      <option value="Chờ xác nhận">⏳ Chờ xác nhận</option>
-                      <option value="Đã xác nhận">✅ Đã xác nhận</option>
-                      <option value="Đang điều trị">🏥 Đang điều trị</option>
-                      <option value="Hoàn thành">🎉 Hoàn thành</option>
-                      <option value="Đã hủy">❌ Đã hủy</option>
-                    </select>
-                  ) : (
-                    <div className="w-full bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-amber-900 font-extrabold text-xs flex items-center justify-between">
-                      <span>{getStatusConfig(form.status).label}</span>
-                      <span className="text-[10px] text-amber-700 font-normal italic">(Chỉ Admin mới có quyền cập nhật)</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 5. TẢI media VỀ TÌNH TRẠNG */}
-              <div>
-                <label className="block text-slate-700 font-bold mb-1 flex items-center justify-between">
-                  <span className="flex items-center gap-1 text-amber-800">
-                    <Upload className="w-4 h-4 text-amber-600" /> Tải Ảnh Hoặc Video Tình Trạng Hiện Tại Của Khách:
+                  <span className="truncate">
+                    {bookingStep === 1 && "Bước 1: Thông Tin Khách Hàng"}
+                    {bookingStep === 2 && "Bước 2: Chọn Dịch Vụ Thẩm Mỹ"}
+                    {bookingStep === 3 && "Bước 3: Lịch Khám & Bác Sĩ"}
+                    {bookingStep === 4 && "Bước 4: Tình Trạng & Xác Nhận"}
                   </span>
-                </label>
-
-                <div className="bg-slate-50 border border-dashed border-slate-300 rounded-2xl p-3 text-center space-y-2">
-                  {form.customerMedia && isValidMediaUrl(form.customerMedia) ? (
-                    <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-900">
-                      {form.customerMediaType === "video" ? (
-                        <video src={form.customerMedia} controls className="w-full h-36 object-cover" />
-                      ) : (
-                        <img src={form.customerMedia} alt="Xem trước" className="w-full h-36 object-cover" />
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setForm((prev) => ({ ...prev, customerMedia: "" }))}
-                        className="absolute top-2 right-2 bg-rose-600 text-white p-1 rounded-full text-xs shadow-md font-bold"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="cursor-pointer flex flex-col items-center justify-center py-2 space-y-1">
-                      <Upload className="w-6 h-6 text-amber-500" />
-                      <span className="text-xs font-bold text-slate-700">Bấm để tải từ máy ảnh hoặc thư viện</span>
-                      <span className="text-[10px] text-slate-400">Hỗ trợ định dạng ảnh và video dung lượng cao</span>
-                      <input
-                        type="file"
-                        accept="image/*,video/*"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  )}
-                </div>
+                </span>
+                <span className="text-[11px] font-bold text-slate-400 shrink-0">Bước {bookingStep}/4</span>
               </div>
 
-              {/* GHI CHÚ */}
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Ghi Chú Yêu Cầu Từ Khách Hàng:</label>
-                <textarea
-                  rows={2}
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  placeholder="Nhập mong muốn của khách (ví dụ: dáng S-Line tự nhiên)..."
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 text-xs focus:outline-none focus:border-amber-500"
+              {/* Progress Bar */}
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden flex">
+                <div
+                  className="h-full bg-gradient-to-r from-amber-500 via-amber-400 to-emerald-500 transition-all duration-300 rounded-full"
+                  style={{ width: `${(bookingStep / 4) * 100}%` }}
                 />
               </div>
 
-              {/* FOOTER ACTION BUTTONS */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowModal(false);
-                    setEditingAppointment(null);
-                  }}
-                  className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-[#0B192C] font-black rounded-xl shadow-md transition flex items-center gap-1.5"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>{editingAppointment ? "Lưu Cập Nhật Lịch Hẹn" : "Xác Nhận Đặt Lịch CRM"}</span>
-                </button>
+              {/* Step Navigation Badges */}
+              <div className="grid grid-cols-4 gap-1 text-[10px]">
+                {[
+                  { step: 1, label: "Khách hàng", icon: "👤" },
+                  { step: 2, label: "Dịch vụ", icon: "🩺" },
+                  { step: 3, label: "Lịch hẹn", icon: "📅" },
+                  { step: 4, label: "Xác nhận", icon: "✓" },
+                ].map((s) => {
+                  const isCurrent = bookingStep === s.step;
+                  const isCompleted = bookingStep > s.step;
+                  return (
+                    <button
+                      key={s.step}
+                      type="button"
+                      onClick={() => {
+                        if (isCompleted || editingAppointment) {
+                          setBookingStep(s.step);
+                          setStepError("");
+                        }
+                      }}
+                      className={`py-1 px-1 rounded-xl text-center font-bold transition flex items-center justify-center gap-1 ${
+                        isCurrent
+                          ? "bg-[#0B192C] text-amber-400 shadow-xs"
+                          : isCompleted
+                          ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 cursor-pointer"
+                          : "bg-slate-50 text-slate-400 border border-slate-200/50"
+                      }`}
+                    >
+                      <span>{s.icon}</span>
+                      <span className="hidden sm:inline truncate">{s.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Scrollable Form Step Content */}
+            <form onSubmit={handleBookingSubmit} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-4 text-xs font-medium">
+                {stepError && (
+                  <div className="bg-rose-50 border border-rose-200 p-3 rounded-2xl text-rose-800 text-xs font-bold flex items-center gap-2 animate-fadeIn">
+                    <AlertCircle className="w-4.5 h-4.5 text-rose-600 shrink-0" />
+                    <span>{stepError}</span>
+                  </div>
+                )}
+
+                {/* BƯỚC 1: THÔNG TIN KHÁCH HÀNG */}
+                {bookingStep === 1 && (
+                  <div className="space-y-4 animate-fadeIn">
+                    <div>
+                      <label className="block text-slate-800 font-extrabold text-xs mb-1.5">Loại Lịch Hẹn (*):</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(["Lịch tư vấn", "Lịch tái khám"] as const).map((type) => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => {
+                              setForm({ ...form, appointmentType: type });
+                              if (type === "Lịch tư vấn") {
+                                setPatientSearchTerm("");
+                                setShowPatientDropdown(false);
+                              }
+                            }}
+                            className={`py-3 rounded-2xl border-2 font-extrabold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                              form.appointmentType === type
+                                ? type === "Lịch tư vấn"
+                                  ? "bg-blue-600 border-blue-600 text-white shadow-md"
+                                  : "bg-emerald-600 border-emerald-600 text-white shadow-md"
+                                : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
+                            }`}
+                          >
+                            <span>{type === "Lịch tư vấn" ? "💬" : "🔄"}</span>
+                            <span>{type}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {form.appointmentType === "Lịch tái khám" && (
+                      <div className="bg-emerald-50/90 border border-emerald-200 p-3.5 rounded-2xl space-y-2 relative">
+                        <label className="block text-emerald-900 font-extrabold text-xs flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <span>🔍</span> Chọn Bệnh Nhân Đã Đặt Lịch Tư Vấn:
+                          </span>
+                          <span className="text-[10px] text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
+                            {consultationPatients.length} Bệnh nhân
+                          </span>
+                        </label>
+
+                        <div className="relative">
+                          <Search className="w-4 h-4 text-emerald-600 absolute left-3 top-3" />
+                          <input
+                            type="text"
+                            placeholder="Gõ tên hoặc SĐT bệnh nhân đã khám..."
+                            value={patientSearchTerm}
+                            onFocus={() => setShowPatientDropdown(true)}
+                            onChange={(e) => {
+                              setPatientSearchTerm(e.target.value);
+                              setShowPatientDropdown(true);
+                            }}
+                            className="w-full bg-white border border-emerald-300 rounded-xl pl-9 pr-8 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs"
+                          />
+                          {patientSearchTerm && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPatientSearchTerm("");
+                                setShowPatientDropdown(true);
+                              }}
+                              className="absolute right-2.5 top-2.5 text-xs text-slate-400 hover:text-slate-600 font-bold"
+                            >
+                              ✕
+                            </button>
+                          )}
+
+                          {showPatientDropdown && (
+                            <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-emerald-200 rounded-2xl shadow-2xl z-30 max-h-52 overflow-y-auto p-1.5 space-y-1">
+                              {filteredConsultationPatients.length > 0 ? (
+                                filteredConsultationPatients.map((patient) => (
+                                  <div
+                                    key={patient.id}
+                                    onClick={() => {
+                                      setForm((prev) => ({
+                                        ...prev,
+                                        customerName: patient.customerName,
+                                        customerPhone: patient.customerPhone,
+                                        serviceName: patient.serviceName || prev.serviceName,
+                                        doctorName: patient.doctorName || prev.doctorName,
+                                        customerMedia: patient.customerMedia || prev.customerMedia,
+                                        customerMediaType: patient.customerMediaType || prev.customerMediaType
+                                      }));
+                                      setPatientSearchTerm(`${patient.customerName} - ${patient.customerPhone}`);
+                                      setShowPatientDropdown(false);
+                                    }}
+                                    className="p-2.5 hover:bg-emerald-50 rounded-xl cursor-pointer transition flex items-center justify-between border border-transparent hover:border-emerald-200"
+                                  >
+                                    <div>
+                                      <div className="font-black text-slate-900 text-xs flex items-center gap-1.5">
+                                        <span>👤 {patient.customerName}</span>
+                                        <span className="font-mono text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded text-[10px]">
+                                          {patient.customerPhone}
+                                        </span>
+                                      </div>
+                                      <div className="text-[10px] text-slate-500 font-medium mt-0.5">
+                                        Dịch vụ đã tư vấn: <span className="font-bold text-slate-700">{patient.serviceName}</span>
+                                      </div>
+                                    </div>
+                                    <span className="text-[10px] bg-emerald-600 text-white font-extrabold px-2.5 py-1 rounded-lg shrink-0 shadow-xs">
+                                      Chọn
+                                    </span>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="p-3 text-center text-xs text-slate-400 font-medium">
+                                  Không tìm thấy bệnh nhân tư vấn phù hợp
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-slate-800 font-extrabold text-xs mb-1">Họ & Tên Khách Hàng (*):</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ví dụ: Nguyễn Thanh Vân..."
+                          value={form.customerName}
+                          onChange={(e) => {
+                            setForm({ ...form, customerName: e.target.value });
+                            if (stepError) setStepError("");
+                          }}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-bold focus:bg-white focus:outline-none focus:border-amber-500 text-xs shadow-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-800 font-extrabold text-xs mb-1">Số Điện Thoại Khách Hàng (*):</label>
+                        <input
+                          type="tel"
+                          required
+                          placeholder="Ví dụ: 0912345678"
+                          value={form.customerPhone}
+                          onChange={(e) => {
+                            setForm({ ...form, customerPhone: e.target.value });
+                            if (stepError) setStepError("");
+                          }}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-mono font-bold focus:bg-white focus:outline-none focus:border-amber-500 text-xs shadow-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* BƯỚC 2: CHỌN DỊCH VỤ THẨM MỸ */}
+                {bookingStep === 2 && (
+                  <div className="space-y-3 animate-fadeIn">
+                    <div className="bg-amber-50/90 border border-amber-200 p-3.5 rounded-2xl space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-amber-900 font-extrabold text-xs flex items-center gap-1.5">
+                          <ShoppingBag className="w-4 h-4 text-amber-600" />
+                          <span>Chọn Dịch Vụ Từ Bảng Giá Niêm Yết:</span>
+                        </label>
+                        <span className="text-[10px] text-amber-800 font-bold bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
+                          Đã chọn {selectedServiceItems.length} dịch vụ
+                        </span>
+                      </div>
+
+                      <div className="relative">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                        <input
+                          type="text"
+                          placeholder="Tìm nhanh dịch vụ trong bảng giá (tên, danh mục, giá)..."
+                          value={serviceSearchInput}
+                          onFocus={() => setShowServicePicker(true)}
+                          onChange={(e) => {
+                            setServiceSearchInput(e.target.value);
+                            setShowServicePicker(true);
+                          }}
+                          className="w-full bg-white border border-amber-300 rounded-xl pl-9 pr-8 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-500 shadow-xs"
+                        />
+                        {serviceSearchInput && (
+                          <button
+                            type="button"
+                            onClick={() => setServiceSearchInput("")}
+                            className="absolute right-2.5 top-2.5 text-xs text-slate-400 hover:text-slate-600 font-bold"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                        {[
+                          { id: "ALL", label: "Tất cả" },
+                          { id: "phau-thuat", label: "Phẫu Thuật" },
+                          { id: "da-lieu", label: "Da Liễu" },
+                          { id: "tre-hoa", label: "Trẻ Hóa" },
+                          { id: "voc-dang", label: "Vóc Dáng" }
+                        ].map((cat) => (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => {
+                              setServiceCategoryFilter(cat.id);
+                              setShowServicePicker(true);
+                            }}
+                            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition whitespace-nowrap cursor-pointer ${
+                              serviceCategoryFilter === cat.id
+                                ? "bg-amber-600 border-amber-600 text-white shadow-xs"
+                                : "bg-white border-amber-200 text-slate-700 hover:bg-amber-100"
+                            }`}
+                          >
+                            {cat.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {showServicePicker && (
+                        <div className="bg-white border border-amber-200 rounded-2xl shadow-xl p-2 max-h-52 overflow-y-auto space-y-1">
+                          <div className="flex items-center justify-between px-2 py-1 border-b border-slate-100 text-[10px] font-extrabold text-slate-500 uppercase">
+                            <span>Tích chọn dịch vụ mong muốn:</span>
+                            <button
+                              type="button"
+                              onClick={() => setShowServicePicker(false)}
+                              className="text-amber-700 hover:underline cursor-pointer"
+                            >
+                              Đóng danh sách
+                            </button>
+                          </div>
+
+                          {filteredSmartServices.length > 0 ? (
+                            filteredSmartServices.map((srv) => {
+                              const isSelected = selectedServiceItems.some((s) => s.id === srv.id);
+                              return (
+                                <div
+                                  key={srv.id}
+                                  onClick={() => toggleSelectService(srv)}
+                                  className={`p-2.5 rounded-xl cursor-pointer transition flex items-center justify-between border ${
+                                    isSelected
+                                      ? "bg-amber-50 border-amber-400 shadow-xs"
+                                      : "bg-white border-slate-100 hover:bg-slate-50"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className={`w-4 h-4 rounded border flex items-center justify-center font-bold text-xs shrink-0 ${
+                                      isSelected ? "bg-amber-500 border-amber-600 text-[#0B192C]" : "border-slate-300 bg-white"
+                                    }`}>
+                                      {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <div className="font-extrabold text-slate-900 text-xs truncate">{srv.name}</div>
+                                      <div className="text-[10px] text-slate-500 font-medium">
+                                        {srv.categoryName || srv.category} • <span className="font-mono text-emerald-700 font-bold">{formatCurrencyInput(srv.price)} VNĐ</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                                    isSelected ? "bg-amber-200 text-amber-900" : "bg-slate-100 text-slate-600"
+                                  }`}>
+                                    {isSelected ? "Đã chọn" : "+ Thêm"}
+                                  </span>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="p-3 text-center text-xs text-slate-400 font-medium">
+                              Không tìm thấy dịch vụ phù hợp từ khóa
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {selectedServiceItems.length > 0 && (
+                        <div className="space-y-1.5 pt-1">
+                          <span className="text-[10px] text-slate-600 font-extrabold block">Các dịch vụ đã chọn:</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {selectedServiceItems.map((srv) => (
+                              <span
+                                key={srv.id}
+                                className="bg-white border border-amber-400 text-amber-900 text-[11px] font-extrabold px-2.5 py-1 rounded-xl shadow-xs flex items-center gap-1.5"
+                              >
+                                <span>{srv.name}</span>
+                                <span className="font-mono text-[10px] text-emerald-700">({formatCurrencyInput(srv.price)}đ)</span>
+                                <button
+                                  type="button"
+                                  onClick={() => removeSelectedService(srv.id)}
+                                  className="hover:bg-rose-100 hover:text-rose-700 rounded-full p-0.5 text-slate-400 transition cursor-pointer"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+
+                          {totalEstimatedCost > 0 && (
+                            <div className="flex items-center justify-between text-xs font-black text-amber-900 bg-white p-2.5 rounded-xl border border-amber-300 mt-2">
+                              <span>Tổng chi phí dự kiến ({selectedServiceItems.length} dịch vụ):</span>
+                              <span className="font-mono text-emerald-700 text-sm">
+                                {formatCurrencyInput(totalEstimatedCost)} VNĐ
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1 text-[11px]">
+                          Tên Dịch Vụ Niêm Yết Tổng Hợp (*):
+                        </label>
+                        <input
+                          type="text"
+                          value={form.serviceName}
+                          onChange={(e) => {
+                            setForm({ ...form, serviceName: e.target.value });
+                            if (stepError) setStepError("");
+                          }}
+                          className="w-full bg-white border border-amber-300 rounded-xl p-2.5 text-amber-900 font-extrabold focus:outline-none focus:border-amber-500 text-xs shadow-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* BƯỚC 3: LỊCH KHÁM & BÁC SĨ */}
+                {bookingStep === 3 && (
+                  <div className="space-y-3.5 animate-fadeIn">
+                    <div>
+                      <label className="block text-slate-800 font-extrabold text-xs mb-1">Chọn Bác Sĩ Phụ Trách (*):</label>
+                      <select
+                        value={form.doctorName}
+                        onChange={(e) => setForm({ ...form, doctorName: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-bold focus:bg-white focus:outline-none focus:border-amber-500 text-xs cursor-pointer"
+                      >
+                        <option value="Bs. CKII Nguyễn Văn Hùng">Bs. CKII Nguyễn Văn Hùng (Chuyên gia Phẫu thuật Nâng ngực & Vóc dáng)</option>
+                        <option value="Bs. CKI Trần Thị Thu">Bs. CKI Trần Thị Thu (Chuyên gia Da liễu & Trẻ hóa AI)</option>
+                        <option value="Bs. CKI Phạm Đức Anh">Bs. CKI Phạm Đức Anh (Chuyên gia Tạo hình Khuôn mặt)</option>
+                        <option value="Ths. Bs. Trần Mỹ Linh">Ths. Bs. Trần Mỹ Linh (Chuyên gia Hậu phẫu & Phục hồi)</option>
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-800 font-extrabold text-xs mb-1">Ngày Khám Dự Kiến (*):</label>
+                        <input
+                          type="date"
+                          required
+                          value={form.date}
+                          onChange={(e) => {
+                            setForm({ ...form, date: e.target.value });
+                            if (stepError) setStepError("");
+                          }}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-bold focus:bg-white focus:outline-none focus:border-amber-500 text-xs cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-800 font-extrabold text-xs mb-1">Khung Giờ Hẹn Khám (*):</label>
+                        <select
+                          value={form.time}
+                          onChange={(e) => setForm({ ...form, time: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-bold focus:bg-white focus:outline-none focus:border-amber-500 text-xs cursor-pointer"
+                        >
+                          <option value="09:00 AM">09:00 AM (Buổi sáng)</option>
+                          <option value="10:30 AM">10:30 AM (Buổi sáng)</option>
+                          <option value="02:00 PM">02:00 PM (Buổi chiều)</option>
+                          <option value="04:30 PM">04:30 PM (Buổi chiều)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-800 font-extrabold text-xs mb-1">Trạng Thái CRM (*):</label>
+                      {isUserAdmin ? (
+                        <select
+                          value={form.status}
+                          onChange={(e) => setForm({ ...form, status: e.target.value as any })}
+                          className="w-full bg-slate-50 border border-amber-300 rounded-xl p-3 text-amber-900 font-extrabold focus:bg-white focus:outline-none focus:border-amber-500 text-xs shadow-xs cursor-pointer"
+                        >
+                          <option value="Chờ xác nhận">⏳ Chờ xác nhận</option>
+                          <option value="Đã xác nhận">✅ Đã xác nhận</option>
+                          <option value="Đang điều trị">🏥 Đang điều trị</option>
+                          <option value="Hoàn thành">🎉 Hoàn thành</option>
+                          <option value="Đã hủy">❌ Đã hủy</option>
+                        </select>
+                      ) : (
+                        <div className="w-full bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-900 font-extrabold text-xs flex items-center justify-between">
+                          <span>{getStatusConfig(form.status).label}</span>
+                          <span className="text-[10px] text-amber-700 font-normal italic">(Tự động ghi nhận cho CTV)</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* BƯỚC 4: TÌNH TRẠNG & TỔNG QUAN XÁC NHẬN */}
+                {bookingStep === 4 && (
+                  <div className="space-y-4 animate-fadeIn">
+                    <div>
+                      <label className="block text-slate-800 font-extrabold text-xs mb-1.5 flex items-center gap-1 text-amber-800">
+                        <Upload className="w-4 h-4 text-amber-600" /> Tải Ảnh Hoặc Video Tình Trạng Hiện Tại Của Khách:
+                      </label>
+
+                      <div className="bg-slate-50 border border-dashed border-slate-300 rounded-2xl p-3 text-center space-y-2">
+                        {form.customerMedia && isValidMediaUrl(form.customerMedia) ? (
+                          <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-900">
+                            {form.customerMediaType === "video" ? (
+                              <video src={form.customerMedia} controls className="w-full h-36 object-cover" />
+                            ) : (
+                              <img src={form.customerMedia} alt="Xem trước" className="w-full h-36 object-cover" />
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setForm((prev) => ({ ...prev, customerMedia: "" }))}
+                              className="absolute top-2 right-2 bg-rose-600 text-white p-1 rounded-full text-xs shadow-md font-bold cursor-pointer"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="cursor-pointer flex flex-col items-center justify-center py-3 space-y-1">
+                            <Upload className="w-7 h-7 text-amber-500" />
+                            <span className="text-xs font-extrabold text-slate-800">Bấm để tải từ máy ảnh hoặc thư viện</span>
+                            <span className="text-[10px] text-slate-400">Hỗ trợ định dạng ảnh và video dung lượng cao</span>
+                            <input
+                              type="file"
+                              accept="image/*,video/*"
+                              onChange={handleFileUpload}
+                              className="hidden"
+                            />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-800 font-extrabold text-xs mb-1">Ghi Chú Yêu Cầu Từ Khách Hàng:</label>
+                      <textarea
+                        rows={2}
+                        value={form.notes}
+                        onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                        placeholder="Nhập mong muốn của khách (ví dụ: dáng S-Line tự nhiên, tư vấn kĩ thủ thuật)..."
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 text-xs focus:bg-white focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    {/* TỔNG QUAN XÁC NHẬN */}
+                    <div className="bg-amber-50/80 border border-amber-300/80 p-3.5 rounded-2xl space-y-2 text-xs">
+                      <div className="font-extrabold text-amber-900 border-b border-amber-200/80 pb-1.5 flex items-center justify-between">
+                        <span>📋 Tổng Quan Lịch Hẹn Đặt CRM</span>
+                        <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full font-bold">{form.appointmentType}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                        <div>
+                          <span className="text-slate-500 font-bold block">Khách hàng:</span>
+                          <span className="font-black text-slate-900">{form.customerName || "Chưa nhập"}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 font-bold block">Số điện thoại:</span>
+                          <span className="font-mono font-black text-blue-700">{form.customerPhone || "Chưa nhập"}</span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-slate-500 font-bold block">Dịch vụ:</span>
+                          <span className="font-black text-amber-900">{form.serviceName}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 font-bold block">Bác sĩ phụ trách:</span>
+                          <span className="font-bold text-slate-800">{form.doctorName}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 font-bold block">Thời gian:</span>
+                          <span className="font-bold text-slate-800">{form.time} • {form.date}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Fixed Navigation Action Footer */}
+              <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2 shrink-0">
+                {bookingStep > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBookingStep(bookingStep - 1);
+                      setStepError("");
+                    }}
+                    className="px-4 py-2.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-extrabold rounded-2xl transition text-xs flex items-center gap-1 cursor-pointer shadow-2xs"
+                  >
+                    <ChevronLeft className="w-4 h-4" /> Quay lại
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      setEditingAppointment(null);
+                    }}
+                    className="px-4 py-2.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-2xl transition text-xs cursor-pointer shadow-2xs"
+                  >
+                    Hủy
+                  </button>
+                )}
+
+                {bookingStep < 4 ? (
+                  <button
+                    type="button"
+                    onClick={handleNextStep}
+                    className="px-5 py-2.5 bg-[#0B192C] hover:bg-slate-800 text-amber-400 font-black rounded-2xl shadow-md transition text-xs flex items-center gap-1.5 cursor-pointer ml-auto"
+                  >
+                    <span>Tiếp theo</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-lg transition text-xs flex items-center gap-1.5 cursor-pointer ml-auto"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{editingAppointment ? "Lưu Cập Nhật Lịch Hẹn" : "Xác Nhận Đặt Lịch CRM"}</span>
+                  </button>
+                )}
               </div>
             </form>
           </div>
