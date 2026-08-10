@@ -273,6 +273,24 @@ export default function App() {
     showToast("Đã xóa khách hàng khỏi danh sách!");
   };
 
+  const handleDeleteInvoice = (invoiceId: string) => {
+    setInvoices((prev) => {
+      const updated = prev.filter((i) => i.id !== invoiceId);
+      safeSetLocalStorage("saohan_invoices", JSON.stringify(updated));
+      return updated;
+    });
+    showToast("Đã xóa hóa đơn doanh thu khỏi hệ thống!");
+  };
+
+  const handleDeletePayoutRequest = (payoutId: string) => {
+    setPayoutRequests((prev) => {
+      const updated = prev.filter((p) => p.id !== payoutId);
+      safeSetLocalStorage("saohan_payout_requests", JSON.stringify(updated));
+      return updated;
+    });
+    showToast("Đã xóa yêu cầu rút hoa hồng khỏi hệ thống!");
+  };
+
   const handleClearAllLeads = () => {
     setLeads([]);
     safeSetLocalStorage("saohan_leads", JSON.stringify([]));
@@ -1639,12 +1657,14 @@ export default function App() {
               onDeleteAppointment={handleDeleteAppointment}
               onUpdateStatus={handleUpdateStatus}
               onUpdatePayoutRequest={handleUpdatePayoutRequest}
+              onDeletePayoutRequest={handleDeletePayoutRequest}
               onViewBeforeAfter={(serviceId) => handleViewBeforeAfter(serviceId)}
               onBookAppointment={(serviceName, notes) => handleBookFromComponent(serviceName, notes)}
               onGenerateServiceLink={(serviceName) => handleGenerateServiceLink(serviceName)}
               onRefreshAppointments={handleRefreshAppointments}
               invoices={invoices}
               onUpdateInvoice={handleUpdateInvoice}
+              onDeleteInvoice={handleDeleteInvoice}
               onCreditCTVCommission={handleCreditCTVCommission}
               onRoleChange={(role) => {
                 setCurrentRole(role);

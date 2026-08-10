@@ -69,6 +69,7 @@ interface AdminDashboardProps {
   onSignOut?: () => void;
   invoices?: AppointmentInvoice[];
   onUpdateInvoice?: (updatedInvoice: AppointmentInvoice) => void;
+  onDeleteInvoice?: (invoiceId: string) => void;
   onCreditCTVCommission?: (ctvCode: string, commissionAmount: number, serviceName: string) => void;
 }
 
@@ -93,6 +94,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onDeleteAppointment,
   onUpdateStatus,
   onUpdatePayoutRequest,
+  onDeletePayoutRequest,
   onViewBeforeAfter,
   onBookAppointment,
   onGenerateServiceLink,
@@ -100,7 +102,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onRoleChange,
   onSignOut,
   invoices = [],
-  onUpdateInvoice = () => {},
+  onUpdateInvoice,
+  onDeleteInvoice,
   onCreditCTVCommission
 }) => {
   const effectiveRole = userRole || authUser?.role || "admin";
@@ -788,6 +791,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <PayoutManagementModule
               payoutRequests={payoutRequests}
               onUpdatePayoutRequest={onUpdatePayoutRequest || (() => {})}
+              onDeletePayoutRequest={onDeletePayoutRequest}
               currentRole={effectiveRole === "accountant" ? "accountant" : "admin"}
               currentUserFullName={authUser?.fullName || ctvUser.name || "Bộ Phận Kế Toán"}
             />
@@ -800,6 +804,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               ctvUser={ctvUser}
               invoices={invoices}
               onUpdateInvoice={onUpdateInvoice}
+              onDeleteInvoice={onDeleteInvoice}
               onUpdateAppointmentStatus={onUpdateStatus}
               onCreditCTVCommission={onCreditCTVCommission}
               isAdmin={true}

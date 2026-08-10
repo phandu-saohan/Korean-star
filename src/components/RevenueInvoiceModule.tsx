@@ -33,7 +33,8 @@ import {
   Upload,
   Camera,
   Eye,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Trash2
 } from "lucide-react";
 
 interface RevenueInvoiceModuleProps {
@@ -42,6 +43,7 @@ interface RevenueInvoiceModuleProps {
   invoices: AppointmentInvoice[];
   onUpdateInvoice: (updatedInvoice: AppointmentInvoice) => void;
   onAddInvoice?: (newInvoice: AppointmentInvoice) => void;
+  onDeleteInvoice?: (invoiceId: string) => void;
   onUpdateAppointmentStatus?: (appointmentId: string, status: Appointment["status"]) => void;
   onCreditCTVCommission?: (ctvCode: string, commissionAmount: number, serviceName: string) => void;
   isAdmin?: boolean;
@@ -53,6 +55,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
   invoices = [],
   onUpdateInvoice,
   onAddInvoice,
+  onDeleteInvoice,
   onUpdateAppointmentStatus,
   onCreditCTVCommission,
   isAdmin = true
@@ -673,6 +676,22 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                           <Printer className="w-3.5 h-3.5 text-slate-600" />
                           <span>In Phiếu</span>
                         </button>
+
+                        {/* 5. Xóa Hóa Đơn Doanh Thu (Admin Only) */}
+                        {isAdmin && (
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Bạn có chắc chắn muốn xóa hóa đơn doanh thu ${inv.id} của khách hàng "${inv.customerName}"?`)) {
+                                if (onDeleteInvoice) onDeleteInvoice(inv.id);
+                              }
+                            }}
+                            className="bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px] px-2 py-1.5 rounded-xl transition inline-flex items-center gap-1 border border-rose-300 cursor-pointer"
+                            title="Xóa hóa đơn doanh thu này"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                            <span>Xóa</span>
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
@@ -753,6 +772,19 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                 >
                   In Phiếu
                 </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`Bạn có chắc chắn muốn xóa hóa đơn doanh thu ${inv.id} của khách hàng "${inv.customerName}"?`)) {
+                        if (onDeleteInvoice) onDeleteInvoice(inv.id);
+                      }
+                    }}
+                    className="bg-rose-50 text-rose-700 font-bold text-xs px-3 py-2 rounded-xl border border-rose-300 flex items-center gap-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Xóa</span>
+                  </button>
+                )}
               </div>
             </div>
           ))}

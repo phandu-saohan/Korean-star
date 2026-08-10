@@ -27,7 +27,8 @@ import {
   Workflow,
   Eye,
   Copy,
-  Check
+  Check,
+  Trash2
 } from "lucide-react";
 import { formatDateVN, formatDateTimeVN } from "../utils/formatters";
 import { getBankLogo } from "../lib/banks";
@@ -36,6 +37,7 @@ import { notifyPayoutCompleted } from "../lib/onesignal";
 interface PayoutManagementModuleProps {
   payoutRequests: PayoutRequest[];
   onUpdatePayoutRequest: (updatedReq: PayoutRequest) => void;
+  onDeletePayoutRequest?: (id: string) => void;
   currentRole: "admin" | "accountant" | "ctv" | "editor" | "customer";
   currentUserFullName?: string;
 }
@@ -43,6 +45,7 @@ interface PayoutManagementModuleProps {
 export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
   payoutRequests,
   onUpdatePayoutRequest,
+  onDeletePayoutRequest,
   currentRole,
   currentUserFullName = "Nguyễn Thị B"
 }) => {
@@ -402,13 +405,25 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
                       <td className="p-3.5 pr-5 text-center space-y-1">
                         <div className="flex items-center justify-center gap-1.5 flex-wrap">
                           {req.status === "Chờ kế toán kiểm tra" && (
-                            <button
-                              onClick={() => handleAccountantVerify(req)}
-                              className="bg-blue-600 hover:bg-blue-700 text-white font-black px-3 py-1.5 rounded-xl text-xs transition shadow-xs flex items-center gap-1"
-                            >
-                              <UserCheck className="w-3.5 h-3.5" />
-                              <span>KT Kiểm Tra</span>
-                            </button>
+                            <>
+                              <button
+                                onClick={() => handleAccountantVerify(req)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-black px-3 py-1.5 rounded-xl text-xs transition shadow-xs flex items-center gap-1"
+                              >
+                                <UserCheck className="w-3.5 h-3.5" />
+                                <span>KT Kiểm Tra</span>
+                              </button>
+                              {currentRole === "admin" && (
+                                <button
+                                  onClick={() => handleAdminApprove(req)}
+                                  className="bg-amber-500 hover:bg-amber-400 text-[#0B192C] font-black px-3 py-1.5 rounded-xl text-xs transition shadow-xs flex items-center gap-1"
+                                  title="Admin duyệt trực tiếp khoản hoa hồng này"
+                                >
+                                  <Crown className="w-3.5 h-3.5" />
+                                  <span>Admin Duyệt Nhanh</span>
+                                </button>
+                              )}
+                            </>
                           )}
 
                           {req.status === "Kế toán đã kiểm tra - Chờ Admin duyệt" && (
@@ -448,6 +463,20 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
                           >
                             <History className="w-4 h-4" />
                           </button>
+
+                          {(currentRole === "admin" || onDeletePayoutRequest) && (
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Bạn có chắc chắn muốn xóa yêu cầu rút hoa hồng ${req.id} của CTV ${req.ctvName}?`)) {
+                                  if (onDeletePayoutRequest) onDeletePayoutRequest(req.id);
+                                }
+                              }}
+                              className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl border border-rose-200 transition"
+                              title="Xóa yêu cầu rút tiền này"
+                            >
+                              <Trash2 className="w-4 h-4 text-rose-600" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

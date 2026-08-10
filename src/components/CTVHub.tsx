@@ -1506,6 +1506,24 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                         Ghi chú: "{lead.notes}"
                       </p>
                     )}
+
+                    {(onDeleteLead || isUserAdmin) && (
+                      <div className="pt-2 border-t border-slate-100 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`Bạn có chắc chắn muốn xóa khách hàng "${lead.customerName}" khỏi danh sách doanh thu?`)) {
+                              if (onDeleteLead) onDeleteLead(lead.id);
+                            }
+                          }}
+                          className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-extrabold text-[11px] px-2.5 py-1 rounded-xl transition flex items-center gap-1 cursor-pointer"
+                          title="Xóa thông tin khách hàng / doanh thu"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                          <span>Xóa doanh thu</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
