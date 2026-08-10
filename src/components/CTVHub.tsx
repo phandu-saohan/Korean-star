@@ -178,7 +178,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
         { month: "Hiện tại", revenue: ctvUser.totalRevenue, commission: ctvUser.totalCommission, referrals: ctvUser.successfulReferrals }
       ]
     : [];
-  const [activeSubTab, setActiveSubTab] = useState<"overview" | "services" | "feedbacks" | "team-members" | "team-transfers" | "ctv-transfers">("overview");
+  const [activeSubTab, setActiveSubTab] = useState<"overview" | "services" | "feedbacks" | "team-members" | "team-transfers" | "ctv-transfers" | "my-customers">("overview");
 
   useEffect(() => {
     onSubTabChange?.(activeSubTab);
@@ -190,6 +190,12 @@ export const CTVHub: React.FC<CTVHubProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Bộ lọc chuyên dụng cho CRM Module Khách Hàng của CTV
+  const [customerSearchTerm, setCustomerSearchTerm] = useState("");
+  const [customerStatusFilter, setCustomerStatusFilter] = useState("ALL");
+  const [customerMonthFilter, setCustomerMonthFilter] = useState("ALL");
+  const [customerYearFilter, setCustomerYearFilter] = useState("ALL");
 
   // My CTV Revenue Transfers state & Supabase sync
   const [myTransfers, setMyTransfers] = useState<TeamRevenueTransfer[]>(() => {
@@ -582,6 +588,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
   const hasTeamLeader = Boolean(ctvUser?.teamLeaderId || myTeamLeaderId);
 
   const baseModules = [
+    { id: "my-customers", title: "Khách Hàng", sub: "Quản lý khách của tôi", icon: UserCheck, color: "from-blue-600 to-indigo-600" },
     { id: "service-catalog", title: "Bảng Dịch Vụ", sub: "Giá & % Hoa Hồng", icon: Stethoscope, color: "from-emerald-500 to-teal-600" },
     { id: "before-after", title: "Ảnh Trước Sau", sub: "Thư viện 3D lâm sàng", icon: Camera, color: "from-purple-500 to-indigo-600" },
     { id: "medical-knowledge", title: "Kiến Thức Y Khoa", sub: "Video & Bài viết sale", icon: GraduationCap, color: "from-blue-500 to-cyan-600" },
@@ -1281,6 +1288,238 @@ export const CTVHub: React.FC<CTVHubProps> = ({
         );
       })()}
 
+      {/* SUBTAB: QUẢN LÝ KHÁCH HÀNG CRM CỦA CỘNG TÁC VIÊN */}
+      {activeSubTab === "my-customers" && (() => {
+        const ctvLeads = myLeads.filter((lead) => {
+          const matchesSearch =
+            (lead.customerName || "").toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+            (lead.serviceName || "").toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+            (lead.customerPhone && lead.customerPhone.includes(customerSearchTerm));
+          const matchesStatus = customerStatusFilter === "ALL" || lead.status === customerStatusFilter;
+          
+          let matchesDate = true;
+          if (customerMonthFilter !== "ALL" || customerYearFilter !== "ALL") {
+            const parsed = parseTransferDate(lead.createdAt);
+            if (parsed) {
+              if (customerMonthFilter !== "ALL" && parsed.month !== parseInt(customerMonthFilter, 10)) matchesDate = false;
+              if (customerYearFilter !== "ALL" && parsed.year !== parseInt(customerYearFilter, 10)) matchesDate = false;
+            }
+          }
+
+          return matchesSearch && matchesStatus && matchesDate;
+        });
+
+        return (
+          <div className="space-y-4 animate-fadeIn">
+            {/* Header Bar */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setActiveSubTab("overview")}
+                  className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                  title="Quay lại Dashboard"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <div>
+                  <h2 className="font-black text-slate-900 text-base sm:text-lg flex items-center gap-2">
+                    <UserCheck className="w-5 h-5 text-blue-600" />
+                    Quản Lý Khách Hàng CRM ({ctvLeads.length}/{myLeads.length})
+                  </h2>
+                  <p className="text-xs text-slate-500 font-medium">Danh sách các khách hàng do chính bạn đặt lịch & giới thiệu</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  if (onSelectTab) onSelectTab("crm-appointments");
+                }}
+                className="bg-[#0B192C] hover:bg-slate-800 text-amber-400 font-black text-xs px-4 py-2.5 rounded-2xl flex items-center gap-1.5 transition shadow-sm w-full sm:w-auto justify-center cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                Đặt lịch hẹn mới
+              </button>
+            </div>
+
+            {/* Thống kê nhanh khách hàng */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="bg-blue-50 border border-blue-200 p-3 rounded-2xl">
+                <span className="text-[10px] text-blue-700 font-extrabold uppercase block">Tổng khách hàng</span>
+                <span className="text-base sm:text-lg font-black text-blue-900 font-mono">{myLeads.length} người</span>
+              </div>
+              <div className="bg-amber-50 border border-amber-200 p-3 rounded-2xl">
+                <span className="text-[10px] text-amber-700 font-extrabold uppercase block">⏳ Chờ xử lý / Đặt lịch</span>
+                <span className="text-base sm:text-lg font-black text-amber-900 font-mono">
+                  {myLeads.filter((l) => l.status === "Chờ xác nhận" || l.status === "Mới" || l.status === "Đã đặt lịch").length} người
+                </span>
+              </div>
+              <div className="bg-indigo-50 border border-indigo-200 p-3 rounded-2xl">
+                <span className="text-[10px] text-indigo-700 font-extrabold uppercase block">🩺 Đã tư vấn / Điều trị</span>
+                <span className="text-base sm:text-lg font-black text-indigo-900 font-mono">
+                  {myLeads.filter((l) => l.status === "Đã tư vấn" || l.status === "Đang điều trị" || l.status === "Đã xác nhận").length} người
+                </span>
+              </div>
+              <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">
+                <span className="text-[10px] text-emerald-700 font-extrabold uppercase block">✓ Đã hoàn thành</span>
+                <span className="text-base sm:text-lg font-black text-emerald-900 font-mono">
+                  {myLeads.filter((l) => l.status === "Đã hoàn thành" || l.status === "Hoàn thành").length} người
+                </span>
+              </div>
+            </div>
+
+            {/* Thanh Tìm kiếm & Lọc CRM */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-3 space-y-2.5 shadow-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                <div className="relative sm:col-span-2">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Tìm tên khách hàng, số điện thoại, dịch vụ..."
+                    value={customerSearchTerm}
+                    onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium"
+                  />
+                  {customerSearchTerm && (
+                    <button
+                      onClick={() => setCustomerSearchTerm("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+                  <span className="text-[11px] font-bold text-slate-600 shrink-0">Trạng thái:</span>
+                  <select
+                    value={customerStatusFilter}
+                    onChange={(e) => setCustomerStatusFilter(e.target.value)}
+                    className="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
+                  >
+                    <option value="ALL">Tất cả trạng thái</option>
+                    <option value="Chờ xác nhận">Chờ xác nhận</option>
+                    <option value="Đã đặt lịch">Đã đặt lịch</option>
+                    <option value="Đã xác nhận">Đã xác nhận</option>
+                    <option value="Đã tư vấn">Đã tư vấn</option>
+                    <option value="Đang điều trị">Đang điều trị</option>
+                    <option value="Đã hoàn thành">Đã hoàn thành</option>
+                    <option value="Đã hủy">Đã hủy</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+                  <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span className="text-[11px] font-bold text-slate-600 shrink-0">Tháng:</span>
+                  <select
+                    value={customerMonthFilter}
+                    onChange={(e) => setCustomerMonthFilter(e.target.value)}
+                    className="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
+                  >
+                    <option value="ALL">Tất cả tháng</option>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                      <option key={m} value={m.toString()}>Tháng {m}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Dòng hiển thị bộ lọc đang dùng */}
+              {(customerSearchTerm || customerStatusFilter !== "ALL" || customerMonthFilter !== "ALL" || customerYearFilter !== "ALL") && (
+                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                  <span className="truncate max-w-[80%]">
+                    Đang lọc: {[
+                      customerSearchTerm ? `Tìm kiếm: "${customerSearchTerm}"` : null,
+                      customerStatusFilter !== "ALL" ? `Trạng thái: ${customerStatusFilter}` : null,
+                      customerMonthFilter !== "ALL" ? `Tháng ${customerMonthFilter}` : null,
+                      customerYearFilter !== "ALL" ? `Năm ${customerYearFilter}` : null
+                    ].filter(Boolean).join(" • ")}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setCustomerSearchTerm("");
+                      setCustomerStatusFilter("ALL");
+                      setCustomerMonthFilter("ALL");
+                      setCustomerYearFilter("ALL");
+                    }}
+                    className="text-amber-700 hover:text-amber-900 font-extrabold flex items-center gap-1 shrink-0 hover:underline cursor-pointer"
+                  >
+                    <X className="w-3 h-3" /> Xóa lọc
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Thẻ danh sách khách hàng CRM */}
+            {ctvLeads.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {ctvLeads.map((lead) => (
+                  <div
+                    key={lead.id}
+                    className="bg-white border border-slate-200 hover:border-blue-400 rounded-3xl p-4 space-y-3 shadow-sm transition group"
+                  >
+                    <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-extrabold text-sm text-slate-900 truncate">{lead.customerName}</h4>
+                        <div className="flex items-center gap-1 text-slate-500 text-xs mt-0.5">
+                          <Phone className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <span className="font-mono text-xs font-bold text-blue-800 truncate">{lead.customerPhone}</span>
+                        </div>
+                      </div>
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-black shrink-0 inline-flex items-center gap-1 border ${
+                          lead.status === "Đã hoàn thành" || lead.status === "Hoàn thành"
+                            ? "bg-emerald-100 text-emerald-900 border-emerald-300"
+                            : lead.status === "Đang điều trị" || lead.status === "Đã tư vấn"
+                            ? "bg-indigo-100 text-indigo-900 border-indigo-300"
+                            : lead.status === "Đã xác nhận"
+                            ? "bg-blue-100 text-blue-900 border-blue-300"
+                            : lead.status === "Hủy" || lead.status === "Đã hủy"
+                            ? "bg-rose-100 text-rose-900 border-rose-300"
+                            : "bg-amber-100 text-amber-900 border-amber-300"
+                        }`}
+                      >
+                        {(lead.status === "Đã hoàn thành" || lead.status === "Hoàn thành") && <CheckCircle2 className="w-3 h-3" />}
+                        {lead.status}
+                      </span>
+                    </div>
+
+                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 space-y-1 text-xs">
+                      <div className="text-slate-900 font-bold truncate">{lead.serviceName}</div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                        <span>BS phụ trách: <strong className="text-slate-700">{lead.doctorAssigned || "BS Saohan"}</strong></span>
+                        <span className="font-mono text-[10px]">{formatDateTimeVN(lead.createdAt)}</span>
+                      </div>
+                    </div>
+
+                    {lead.notes && (
+                      <p className="text-[11px] text-slate-600 italic bg-amber-50/50 p-2 rounded-xl border border-amber-100">
+                        Ghi chú: "{lead.notes}"
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-3 shadow-sm">
+                <UserCheck className="w-12 h-12 mx-auto text-slate-300" />
+                <div>
+                  <p className="font-bold text-slate-700 text-sm">Chưa có khách hàng nào do bạn đặt lịch</p>
+                  <p className="text-xs text-slate-500 mt-1">Chỉ những khách hàng do chính bạn tạo lịch hẹn hoặc giới thiệu mới hiển thị tại đây.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    if (onSelectTab) onSelectTab("crm-appointments");
+                  }}
+                  className="bg-[#0B192C] text-amber-400 font-black px-5 py-2.5 rounded-2xl text-xs hover:bg-slate-800 transition cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" /> Đặt lịch hẹn khách hàng mới
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {activeSubTab === "overview" && (
         <>
       <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
@@ -1378,7 +1617,10 @@ export const CTVHub: React.FC<CTVHubProps> = ({
               <button
                 key={mod.id}
                 onClick={() => {
-                  if (mod.id === "team-members") {
+                  if (mod.id === "my-customers") {
+                    setActiveSubTab("my-customers");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  } else if (mod.id === "team-members") {
                     setActiveSubTab("team-members");
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   } else if (mod.id === "team-transfers") {

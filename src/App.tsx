@@ -1681,8 +1681,8 @@ export default function App() {
       ) : (
         <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pt-4 pb-28 sm:py-6 flex-1 flex flex-col space-y-5">
         
-        {/* User Status Summary Banner - Tailored per role (Ẩn khi ở các subtab Quản lý thành viên & Chuyển doanh số) */}
-        {activeTab === "ctv-dashboard" && ctvHubSubTab !== "team-members" && ctvHubSubTab !== "team-transfers" && ctvHubSubTab !== "ctv-transfers" && (
+        {/* User Status Summary Banner - Tailored per role (Ẩn khi ở các subtab Quản lý thành viên, Chuyển doanh số, Khách hàng) */}
+        {activeTab === "ctv-dashboard" && ctvHubSubTab !== "team-members" && ctvHubSubTab !== "team-transfers" && ctvHubSubTab !== "ctv-transfers" && ctvHubSubTab !== "my-customers" && (
           <div className="bg-gradient-to-r from-[#0B192C] via-[#1E3A8A] to-[#0B192C] text-white rounded-3xl p-4 sm:p-6 shadow-xl border border-blue-900/40 relative overflow-hidden">
             <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
             
