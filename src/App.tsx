@@ -1905,7 +1905,7 @@ export default function App() {
         )}
 
         {/* Main Active Tab Component Area */}
-        <main className="flex-1 space-y-6 pb-20">
+        <main className="flex-1 space-y-6 pb-28 sm:pb-20">
           
           {/* Account Suspension Alert Banner */}
           {(effectiveCtvUser.isSuspended || (effectiveCtvUser as any).status === "suspended" || authUser?.isSuspended || authUser?.status === "suspended") && currentRole !== "admin" && (
@@ -2095,8 +2095,7 @@ export default function App() {
       {/* Mobile Navigation Bottom Dock (Ẩn khi ở Admin & Accountant Dashboard để Full Screen) */}
       {activeTab !== "admin" && activeTab !== "accountant" && (
         <nav
-          className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 border-t border-slate-200/90 z-40 backdrop-blur-xl px-1 py-1 shadow-2xl flex items-center justify-around text-[10px] text-[#0B192C] w-full max-w-full overflow-visible pb-[calc(0.375rem+env(safe-area-inset-bottom,0px))] transform-gpu translate-z-0"
-          style={{ WebkitTransform: "translate3d(0,0,0)", transform: "translate3d(0,0,0)" }}
+          className="lg:hidden fixed bottom-0 inset-x-0 bg-white/95 border-t border-slate-200/90 z-50 backdrop-blur-xl px-1 py-1 shadow-2xl flex items-center justify-around text-[10px] text-[#0B192C] w-full max-w-full overflow-visible pb-[calc(0.375rem+env(safe-area-inset-bottom,0px))]"
         >
           
           {/* 1. Trang Chủ */}
