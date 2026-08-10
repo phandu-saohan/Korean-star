@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { formatCurrencyInput, parseCurrencyInput, formatDateTimeVN } from "../utils/formatters";
 import { CTVUser, ReferralLead, ServiceItem, ServiceFeedback, Appointment, AppointmentInvoice, PayoutRequest, TeamRevenueTransfer } from "../types";
-import { fetchUserProfileByCtvCode, updateTeamLeaderInSupabase, fetchMyTransferRequestsFromSupabase, fetchLeaderTransferRequestsFromSupabase, updateTransferStatusInSupabase, addRevenueToLeaderInSupabase, deductRevenueFromCtvInSupabase } from "../lib/supabase";
+import { fetchUserProfileByCtvCode, updateTeamLeaderInSupabase, fetchMyTransferRequestsFromSupabase, fetchLeaderTransferRequestsFromSupabase, updateTransferStatusInSupabase, addRevenueToLeaderInSupabase, deductRevenueFromCtvInSupabase, getUserUid } from "../lib/supabase";
 import { 
   Wallet, 
   Crown, 
@@ -1551,6 +1551,32 @@ export const CTVHub: React.FC<CTVHubProps> = ({
 
       {activeSubTab === "overview" && (
         <>
+      {/* Account UID Banner */}
+      <div className="bg-[#0B192C] text-white p-3 sm:p-4 rounded-2xl sm:rounded-3xl flex flex-wrap items-center justify-between gap-2 shadow-md">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-400 font-bold flex items-center justify-center text-xs">
+            UID
+          </div>
+          <div>
+            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Mã UID Định Danh Độc Bản:</div>
+            <div className="font-mono font-black text-amber-400 text-xs sm:text-sm tracking-wider">{getUserUid(ctvUser)}</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-slate-300 font-medium hidden sm:inline">Mã CTV: <strong className="text-white font-mono">{ctvUser.code}</strong></span>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(getUserUid(ctvUser));
+              if (onToast) onToast("Đã sao chép Mã UID tài khoản thành công!");
+            }}
+            className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-[#0B192C] font-extrabold text-[11px] rounded-xl transition cursor-pointer shadow-xs shrink-0"
+          >
+            Sao Chép UID
+          </button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
         
         {/* Metric 1: Available Balance */}

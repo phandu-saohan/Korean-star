@@ -1055,7 +1055,9 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
       u.fullName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
       u.email.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
       u.phone.includes(userSearchTerm) ||
-      u.ctvCode.toLowerCase().includes(userSearchTerm.toLowerCase());
+      u.ctvCode.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+      getUserUid(u).toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+      (u.id && u.id.toLowerCase().includes(userSearchTerm.toLowerCase()));
 
     const matchesRole = userRoleFilter === "ALL" || u.role === userRoleFilter;
 
@@ -2181,7 +2183,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input id="tMTheoTNEmailSTHoCMCtv_2090" name="tMTheoTNEmailSTHoCMCtv_2090"
                 type="text"
-                placeholder="Tìm theo Tên, Email, SĐT hoặc Mã CTV..."
+                placeholder="Tìm theo Tên, Email, SĐT, Mã UID hoặc Mã CTV..."
                 value={userSearchTerm}
                 onChange={(e) => setUserSearchTerm(e.target.value)}
                 className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-500"
@@ -2224,7 +2226,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                   <th className="p-3">Số Điện Thoại</th>
                   <th className="p-3">Vai Trò (Role)</th>
                   <th className="p-3">Trạng Thái</th>
-                  <th className="p-3">Mã CTV & Cấp</th>
+                  <th className="p-3">Mã UID & Mã CTV</th>
                   <th className="p-3">Ngân Hàng</th>
                   <th className="p-3 text-right">Thao Tác</th>
                 </tr>
@@ -2288,7 +2290,12 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                       )}
                     </td>
                     <td className="p-3">
-                      <div className="font-mono font-bold text-amber-700 text-xs">{user.ctvCode}</div>
+                      <div className="font-mono font-black text-blue-900 text-[11px] flex items-center gap-1">
+                        <span className="bg-blue-100 text-blue-800 text-[9px] font-extrabold px-1.5 py-0.5 rounded border border-blue-200">
+                          {getUserUid(user)}
+                        </span>
+                      </div>
+                      <div className="font-mono font-bold text-amber-700 text-xs mt-0.5">{user.ctvCode}</div>
                       <div className="text-[10px] text-slate-500 font-semibold">Cấp {user.tier}</div>
                     </td>
                     <td className="p-3">

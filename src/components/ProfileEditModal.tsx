@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { AuthUserProfile } from "../lib/supabase";
+import { AuthUserProfile, getUserUid } from "../lib/supabase";
 import { CTVUser } from "../types";
 import { VIETNAM_BANKS, getBankLogo } from "../lib/banks";
 import {
@@ -332,6 +332,32 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
           {/* Form Fields Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             
+            {/* MÃ UID VÀ MÃ CTV INFO BOX */}
+            <div className="sm:col-span-2 bg-blue-50/90 border border-blue-200 p-3 rounded-2xl flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="bg-blue-600 text-white font-black text-[10px] px-2 py-0.5 rounded-md shadow-xs">
+                  MÃ UID ĐỊNH DANH
+                </span>
+                <span className="font-mono font-black text-blue-900 text-xs tracking-wider">
+                  {getUserUid(currentUser)}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-slate-500 font-bold">Mã CTV:</span>
+                <span className="font-mono font-extrabold text-slate-800">{currentUser.code}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(getUserUid(currentUser));
+                    if (onToast) onToast("Đã sao chép Mã UID tài khoản thành công!");
+                  }}
+                  className="px-2.5 py-1 bg-white border border-blue-300 hover:bg-blue-100 text-blue-800 font-extrabold text-[10px] rounded-lg transition shrink-0 cursor-pointer shadow-xs"
+                >
+                  Sao Chép UID
+                </button>
+              </div>
+            </div>
+
             {/* 1. HỌ VÀ TÊN */}
             <div>
               <label className="block text-slate-700 font-extrabold text-[11px] mb-1">

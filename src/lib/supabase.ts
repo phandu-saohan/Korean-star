@@ -43,6 +43,7 @@ export const realtimeSupabase = isRealtimeEnabled
 
 export interface AuthUserProfile {
   id: string;
+  uid?: string;
   email: string;
   fullName: string;
   phone: string;
@@ -65,6 +66,24 @@ export interface AuthUserProfile {
   status?: "active" | "suspended";
   isSuspended?: boolean;
 }
+
+/**
+ * Hàm lấy Mã UID Định Danh Độc Bản Cho Mỗi Tài Khoản
+ */
+export const getUserUid = (user: { id?: string; uid?: string; ctvCode?: string; code?: string } | null | undefined): string => {
+  if (!user) return "UID-UNKNOWN";
+  if (user.uid && user.uid.trim()) return user.uid.trim();
+  const rawId = user.id || "";
+  if (rawId.startsWith("UID-")) return rawId;
+  if (rawId.length >= 8) {
+    const clean = rawId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8).toUpperCase();
+    return `UID-${clean}`;
+  }
+  if (rawId) return `UID-${rawId.toUpperCase()}`;
+  const code = user.ctvCode || user.code || "";
+  if (code) return `UID-${code.toUpperCase()}`;
+  return "UID-88888888";
+};
 
 // 1. Sign Up (Tạo tài khoản CTV thật trên Supabase Auth & CSDL user_profiles)
 export const signUpUser = async ({
@@ -371,6 +390,7 @@ export const fetchUserProfile = async (identifier: string): Promise<AuthUserProf
 
     return {
       id: data.id,
+      uid: data.uid || getUserUid(data),
       email: data.email || "",
       fullName: data.full_name || "",
       phone: data.phone || "",
@@ -411,6 +431,7 @@ export const fetchUserProfileByCtvCode = async (ctvCode: string): Promise<AuthUs
 
     return {
       id: data.id,
+      uid: data.uid || getUserUid(data),
       email: data.email || "",
       fullName: data.full_name || "",
       phone: data.phone || "",
@@ -830,6 +851,7 @@ export const fetchAllUserProfilesFromSupabase = async (forceRefresh = false): Pr
     if (data && Array.isArray(data) && data.length > 0) {
       const mappedProfiles: AuthUserProfile[] = data.map((d: any) => ({
         id: d.id,
+        uid: d.uid || getUserUid(d),
         email: d.email || "",
         fullName: d.full_name || "",
         phone: d.phone || "",

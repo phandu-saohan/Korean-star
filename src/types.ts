@@ -49,6 +49,7 @@ export interface ServiceItem {
 
 export interface CTVUser {
   id: string;
+  uid?: string;
   name: string;
   code: string;
   avatar: string;
