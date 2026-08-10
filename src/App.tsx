@@ -1039,18 +1039,33 @@ export default function App() {
     const computedPending = depositedComm + pendingAptComm;
     const pendingBalance = computedPending > 0 ? computedPending : ctvUser.pendingBalance;
 
-    // Metric 3: DOANH SỐ TÍCH LŨY (Chỉ tính khi lịch hẹn HOÀN THÀNH hoặc hóa đơn ĐÃ THU ĐỦ)
-    const invoiceRevenue = ctvInvoices
-      .filter(i => i.paymentStatus === "Đã thu đủ (Hoàn thành)")
+    // Helper kiểm tra item có thuộc THÁNG HIỆN TẠI (Monthly Fixed Target) hay không
+    const now = new Date();
+    const curM = now.getMonth() + 1;
+    const curY = now.getFullYear();
+    const curMStrPad = curM.toString().padStart(2, "0");
+
+    const isCurrentMonthItem = (dateStr?: string) => {
+      if (!dateStr) return true;
+      const s = dateStr.trim();
+      if (s.includes(`${curMStrPad}/${curY}`) || s.includes(`${curM}/${curY}`) || s.startsWith(`${curY}-${curMStrPad}`)) {
+        return true;
+      }
+      return false;
+    };
+
+    // Metric 3: DOANH SỐ TÍNH HOA HỒNG THÁNG HIỆN TẠI (Chỉ tính giao dịch trong tháng, reset về 0 khi sang tháng mới)
+    const monthlyInvoiceRevenue = ctvInvoices
+      .filter(i => i.paymentStatus === "Đã thu đủ (Hoàn thành)" && isCurrentMonthItem(i.createdAt || i.depositPaidAt || i.remainingPaidAt))
       .reduce((sum, i) => sum + (i.totalAmount || 0), 0);
 
-    const aptRevenue = ctvAppointments
-      .filter(a => !invoiceAptIds.has(a.id) && a.status === "Hoàn thành")
+    const monthlyAptRevenue = ctvAppointments
+      .filter(a => !invoiceAptIds.has(a.id) && a.status === "Hoàn thành" && isCurrentMonthItem(a.date))
       .reduce((sum, a) => sum + 35000000, 0);
 
-    const computedRevenue = invoiceRevenue + aptRevenue;
+    const computedRevenue = monthlyInvoiceRevenue + monthlyAptRevenue;
 
-    // Doanh số chuyển tiền (chuyển đi trừ bớt, chuyển đến cộng thêm)
+    // Doanh số chuyển tiền trong tháng hiện tại
     let netTransferredRevenue = 0;
     try {
       const rawTransfers = localStorage.getItem("saohan_team_transfers");
@@ -1059,21 +1074,20 @@ export default function App() {
         const myCodeUpper = (ctvUser.code || "").trim().toUpperCase();
 
         const transferredOut = allTransfers
-          .filter((t) => (t.fromCtvCode || "").trim().toUpperCase() === myCodeUpper && t.status === "accepted")
+          .filter((t) => (t.fromCtvCode || "").trim().toUpperCase() === myCodeUpper && t.status === "accepted" && isCurrentMonthItem(t.transferredAt))
           .reduce((sum, t) => sum + (t.amount || 0), 0);
 
         const transferredIn = allTransfers
-          .filter((t) => (t.toLeaderCode || "").trim().toUpperCase() === myCodeUpper && t.status === "accepted")
+          .filter((t) => (t.toLeaderCode || "").trim().toUpperCase() === myCodeUpper && t.status === "accepted" && isCurrentMonthItem(t.transferredAt))
           .reduce((sum, t) => sum + (t.amount || 0), 0);
 
         netTransferredRevenue = transferredIn - transferredOut;
       }
     } catch (e) {}
 
-    const baseRevenue = ctvUser.totalRevenue !== undefined ? ctvUser.totalRevenue : computedRevenue;
-    const totalRevenue = Math.max(0, (computedRevenue > 0 ? computedRevenue : baseRevenue) + netTransferredRevenue);
+    const totalRevenue = Math.max(0, computedRevenue + netTransferredRevenue);
 
-    // Tính Cấp Bạc / Vàng / Bạch Kim / Kim Cương động theo doanh số tích lũy
+    // Tính Cấp Bạc / Vàng / Bạch Kim / Kim Cương động theo doanh số tính hoa hồng tháng hiện tại
     let tier = "Bạc";
     if (totalRevenue >= 500000000) {
       tier = "Kim Cương";
@@ -1082,7 +1096,7 @@ export default function App() {
     } else if (totalRevenue >= 50000000) {
       tier = "Vàng";
     } else {
-      tier = ctvUser.tier || "Kim Cương";
+      tier = ctvUser.tier || "Bạc";
     }
 
     // Metric 4: TỶ LỆ CHUYỂN ĐỔI (Số ca chốt thành công / Tổng số ca giới thiệu)

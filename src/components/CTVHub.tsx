@@ -1589,7 +1589,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
         {/* Metric 3: Total Revenue Referred */}
         <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 space-y-1 relative overflow-hidden shadow-2xs min-w-0">
           <div className="flex justify-between items-center gap-1 min-w-0">
-            <span className="text-[10px] sm:text-xs text-slate-500 uppercase font-extrabold truncate">Doanh Số Tích Lũy</span>
+            <span className="text-[10px] sm:text-xs text-slate-500 uppercase font-extrabold truncate">Doanh Số Tháng {new Date().getMonth() + 1}/{new Date().getFullYear()}</span>
             <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-slate-100 text-amber-600 border border-slate-200 flex items-center justify-center shrink-0">
               <TrendingUp className="w-3.5 h-3.5" />
             </div>
@@ -1597,8 +1597,9 @@ export const CTVHub: React.FC<CTVHubProps> = ({
           <div className="text-base sm:text-xl font-extrabold font-mono text-slate-900 truncate tracking-tight">
             {ctvUser.totalRevenue.toLocaleString("vi-VN")} <span className="text-xs font-normal">đ</span>
           </div>
-          <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">
-            Hạng {ctvUser.tier || "Kim Cương"}
+          <div className="text-[10px] sm:text-[11px] text-amber-800 font-semibold truncate flex items-center justify-between">
+            <span>Hạng {ctvUser.tier || "Bạc"}</span>
+            <span className="text-[9px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-md font-bold">Reset mỗi tháng</span>
           </div>
         </div>
 
