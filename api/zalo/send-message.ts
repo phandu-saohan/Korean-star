@@ -56,20 +56,35 @@ export default async function handler(
       return;
     }
 
-    // Zalo Bot API format: /bot{TOKEN}/sendMessage
+    // Hỗ trợ cả Zalo Official Account OpenAPI (openapi.zalo.me) và Zalo Bot API
     const cleanToken = String(botToken).replace(/^\//, "").trim();
-    const endpoint = `https://bot-api.zaloplatforms.com/bot${cleanToken}/sendMessage`;
+    const isOaAccessToken = cleanToken.length > 50 || cleanToken.includes("ey"); // JWT Access Token format
+    const endpoint = isOaAccessToken 
+      ? `https://openapi.zalo.me/v2.0/oa/message`
+      : `https://bot-api.zaloplatforms.com/bot${cleanToken}/sendMessage`;
 
-    console.log(`[Zalo sendMessage Proxy] Sending to Chat ID: ${chatId}`);
+    console.log(`[Zalo sendMessage Proxy] Sending via ${isOaAccessToken ? "Zalo OA OpenAPI" : "Zalo Bot Platform"} to Chat ID: ${chatId}`);
+
+    const headersConfig: Record<string, string> = { "Content-Type": "application/json" };
+    if (isOaAccessToken) {
+      headersConfig["access_token"] = cleanToken;
+    }
+
+    const payloadBody = isOaAccessToken
+      ? {
+          recipient: { user_id: String(chatId) },
+          message: { text: String(text) }
+        }
+      : {
+          chat_id: String(chatId),
+          text: String(text),
+          parse_mode: parseMode || "markdown",
+        };
 
     const zaloResponse = await fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: String(chatId),
-        text: String(text),
-        parse_mode: parseMode || "markdown",
-      }),
+      headers: headersConfig,
+      body: JSON.stringify(payloadBody),
     });
 
     const contentType = zaloResponse.headers.get("content-type") || "";

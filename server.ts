@@ -224,19 +224,33 @@ app.post("/api/zalo/send-message", async (req, res) => {
     }
 
     const cleanToken = String(botToken).replace(/^\//, "").replace(/^bot/i, "").trim();
-    const endpoint = `https://bot-api.zaloplatforms.com/bot${cleanToken}/sendMessage`;
+    const isOaAccessToken = cleanToken.length > 50 || cleanToken.includes("ey");
+    const endpoint = isOaAccessToken
+      ? `https://openapi.zalo.me/v2.0/oa/message`
+      : `https://bot-api.zaloplatforms.com/bot${cleanToken}/sendMessage`;
+
+    const headersConfig: Record<string, string> = { "Content-Type": "application/json" };
+    if (isOaAccessToken) {
+      headersConfig["access_token"] = cleanToken;
+    } else {
+      headersConfig["X-Bot-Api-Secret-Token"] = cleanToken;
+    }
+
+    const payloadBody = isOaAccessToken
+      ? {
+          recipient: { user_id: String(chatId) },
+          message: { text: String(text) }
+        }
+      : {
+          chat_id: String(chatId),
+          text: String(text),
+          parse_mode: parseMode || "markdown",
+        };
 
     const response = await fetch(endpoint, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Bot-Api-Secret-Token": cleanToken
-      },
-      body: JSON.stringify({
-        chat_id: String(chatId),
-        text: String(text),
-        parse_mode: parseMode || "markdown",
-      }),
+      headers: headersConfig,
+      body: JSON.stringify(payloadBody),
     });
 
     const contentType = response.headers.get("content-type") || "";
