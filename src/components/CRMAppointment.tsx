@@ -1230,8 +1230,8 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
 
       {/* BOOKING / EDIT MODAL (OPTIMIZED FOR MOBILE WITH STEPPER) */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full text-slate-900 shadow-2xl relative flex flex-col max-h-[92vh] overflow-hidden">
+        <div className="fixed inset-0 z-50 bg-[#0B192C]/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-fadeIn overflow-hidden">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full max-w-[calc(100vw-1rem)] text-slate-900 shadow-2xl relative flex flex-col max-h-[90vh] sm:max-h-[92vh] overflow-hidden min-w-0">
             
             {/* Modal Header */}
             <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/50">
@@ -1648,23 +1648,29 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
 
                 {/* BƯỚC 3: LỊCH KHÁM & BÁC SĨ */}
                 {bookingStep === 3 && (
-                  <div className="space-y-3.5 animate-fadeIn">
-                    <div>
+                  <div className="space-y-3.5 animate-fadeIn min-w-0 max-w-full">
+                    <div className="min-w-0 max-w-full">
                       <label className="block text-slate-800 font-extrabold text-xs mb-1">Chọn Bác Sĩ Phụ Trách (*):</label>
                       <select
                         value={form.doctorName}
                         onChange={(e) => setForm({ ...form, doctorName: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-bold focus:bg-white focus:outline-none focus:border-amber-500 text-xs cursor-pointer"
+                        className="w-full max-w-full min-w-0 bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-bold focus:bg-white focus:outline-none focus:border-amber-500 text-xs cursor-pointer truncate"
                       >
-                        <option value="Bs. CKII Nguyễn Văn Hùng">Bs. CKII Nguyễn Văn Hùng (Chuyên gia Phẫu thuật Nâng ngực & Vóc dáng)</option>
-                        <option value="Bs. CKI Trần Thị Thu">Bs. CKI Trần Thị Thu (Chuyên gia Da liễu & Trẻ hóa AI)</option>
-                        <option value="Bs. CKI Phạm Đức Anh">Bs. CKI Phạm Đức Anh (Chuyên gia Tạo hình Khuôn mặt)</option>
-                        <option value="Ths. Bs. Trần Mỹ Linh">Ths. Bs. Trần Mỹ Linh (Chuyên gia Hậu phẫu & Phục hồi)</option>
+                        <option value="Bs. CKII Nguyễn Văn Hùng">Bs. CKII Nguyễn Văn Hùng</option>
+                        <option value="Bs. CKI Trần Thị Thu">Bs. CKI Trần Thị Thu</option>
+                        <option value="Bs. CKI Phạm Đức Anh">Bs. CKI Phạm Đức Anh</option>
+                        <option value="Ths. Bs. Trần Mỹ Linh">Ths. Bs. Trần Mỹ Linh</option>
                       </select>
+                      <p className="text-[10px] text-amber-800 font-medium italic mt-1 bg-amber-50 p-2 rounded-xl border border-amber-200/80 truncate">
+                        💡 {form.doctorName === "Bs. CKII Nguyễn Văn Hùng" && "Chuyên gia Phẫu thuật Nâng ngực & Vóc dáng"}
+                        {form.doctorName === "Bs. CKI Trần Thị Thu" && "Chuyên gia Da liễu & Trẻ hóa AI"}
+                        {form.doctorName === "Bs. CKI Phạm Đức Anh" && "Chuyên gia Tạo hình Khuôn mặt"}
+                        {form.doctorName === "Ths. Bs. Trần Mỹ Linh" && "Chuyên gia Hậu phẫu & Phục hồi"}
+                      </p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0 max-w-full">
+                      <div className="min-w-0 max-w-full">
                         <label className="block text-slate-800 font-extrabold text-xs mb-1">Ngày Khám Dự Kiến (*):</label>
                         <input
                           type="date"
@@ -1674,16 +1680,16 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                             setForm({ ...form, date: e.target.value });
                             if (stepError) setStepError("");
                           }}
-                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-bold focus:bg-white focus:outline-none focus:border-amber-500 text-xs cursor-pointer"
+                          className="w-full max-w-full min-w-0 bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-bold focus:bg-white focus:outline-none focus:border-amber-500 text-xs cursor-pointer"
                         />
                       </div>
 
-                      <div>
+                      <div className="min-w-0 max-w-full">
                         <label className="block text-slate-800 font-extrabold text-xs mb-1">Khung Giờ Hẹn Khám (*):</label>
                         <select
                           value={form.time}
                           onChange={(e) => setForm({ ...form, time: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-bold focus:bg-white focus:outline-none focus:border-amber-500 text-xs cursor-pointer"
+                          className="w-full max-w-full min-w-0 bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-bold focus:bg-white focus:outline-none focus:border-amber-500 text-xs cursor-pointer truncate"
                         >
                           <option value="09:00 AM">09:00 AM (Buổi sáng)</option>
                           <option value="10:30 AM">10:30 AM (Buổi sáng)</option>
