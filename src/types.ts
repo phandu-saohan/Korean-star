@@ -67,11 +67,13 @@ export interface CTVUser {
     accountNumber: string;
     accountHolder: string;
   };
-  // Trường dành riêng cho Trưởng nhóm CTV
+  // Trường dành riêng cho Trưởng nhóm CTV & Trạng thái tài khoản
   role?: string;
   teamLeaderId?: string;    // Mã Trưởng nhóm quản lý CTV này
   teamMemberCodes?: string[]; // Danh sách Mã CTV thuộc nhóm (chỉ dành cho team_leader)
   teamName?: string;          // Tên nhóm CTV
+  status?: "active" | "suspended";
+  isSuspended?: boolean;
 }
 
 export interface TeamRevenueTransfer {

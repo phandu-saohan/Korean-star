@@ -62,6 +62,8 @@ export interface AuthUserProfile {
   idCardNumber?: string;
   facilityName?: string;
   zaloChatId?: string;
+  status?: "active" | "suspended";
+  isSuspended?: boolean;
 }
 
 // 1. Sign Up (Tạo tài khoản CTV thật trên Supabase Auth & CSDL user_profiles)
@@ -844,7 +846,9 @@ export const fetchAllUserProfilesFromSupabase = async (forceRefresh = false): Pr
         accountHolder: d.account_holder,
         idCardNumber: d.id_card_number,
         facilityName: d.facility_name,
-        zaloChatId: d.zalo_chat_id
+        zaloChatId: d.zalo_chat_id,
+        status: d.status || (d.is_suspended ? "suspended" : "active"),
+        isSuspended: Boolean(d.is_suspended || d.status === "suspended")
       }));
 
       _cachedProfiles = mappedProfiles;
@@ -925,6 +929,26 @@ export const deleteUserProfileFromSupabase = async (userId: string, ctvCode?: st
     }
   } catch (err) {
     console.warn("Supabase delete user profile warning:", err);
+  }
+  clearProfilesCache();
+};
+
+// 7.5. Toggle User Suspension in Supabase DB (status: 'suspended' | 'active')
+export const toggleUserSuspensionInSupabase = async (userId: string, isSuspended: boolean) => {
+  try {
+    const statusVal = isSuspended ? "suspended" : "active";
+    if (userId) {
+      await supabase
+        .from("user_profiles")
+        .update({
+          status: statusVal,
+          is_suspended: isSuspended,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", userId);
+    }
+  } catch (err) {
+    console.warn("Supabase toggle user suspension warning:", err);
   }
   clearProfilesCache();
 };

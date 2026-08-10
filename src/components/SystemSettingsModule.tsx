@@ -3,6 +3,7 @@ import {
   AuthUserProfile,
   supabase,
   deleteUserProfileFromSupabase,
+  toggleUserSuspensionInSupabase,
   fetchRolePermissionsFromSupabase,
   saveRolePermissionsToSupabase,
   deleteRolePermissionFromSupabase,
@@ -63,7 +64,9 @@ import {
   MessageSquare,
   Smartphone,
   Download,
-  CheckCircle2
+  CheckCircle2,
+  PauseCircle,
+  Play
 } from "lucide-react";
 
 interface SystemSettingsModuleProps {
@@ -466,6 +469,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("ALL");
+  const [userStatusFilter, setUserStatusFilter] = useState("ALL");
 
   // Add/Edit User Modal
   const [userModalOpen, setUserModalOpen] = useState(false);
@@ -862,6 +866,56 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
     }
   };
 
+  // TOGGLE SUSPEND / ACTIVATE USER ACCOUNT
+  const handleToggleUserSuspension = async (user: AuthUserProfile) => {
+    const isTargetAdmin = user.role === "admin" || (user.ctvCode && user.ctvCode.toLowerCase().includes("admin"));
+    if (isTargetAdmin) {
+      alert("Không thể tạm ngưng tài khoản Admin hệ thống!");
+      return;
+    }
+
+    const currentSuspended = Boolean(user.isSuspended || user.status === "suspended");
+    const nextSuspended = !currentSuspended;
+    const actionLabel = nextSuspended ? "TẠM NGƯNG" : "KÍCH HOẠT LẠI";
+
+    if (window.confirm(`Bạn có chắc chắn muốn ${actionLabel} hoạt động của tài khoản '${user.fullName}' (${user.ctvCode || user.email})?`)) {
+      try {
+        const targetId = user.id;
+        const targetCode = (user.ctvCode || (user as any).code || "").trim().toUpperCase();
+        const targetEmail = (user.email || "").trim().toLowerCase();
+
+        await toggleUserSuspensionInSupabase(user.id, nextSuspended);
+
+        setUserAccounts((prev) => {
+          const updated = prev.map((u) => {
+            const uId = u.id;
+            const uCode = (u.ctvCode || (u as any).code || "").trim().toUpperCase();
+            const uEmail = (u.email || "").trim().toLowerCase();
+
+            const isMatch = (targetId && uId === targetId) || (targetCode && uCode === targetCode) || (targetEmail && uEmail === targetEmail);
+
+            if (isMatch) {
+              return {
+                ...u,
+                isSuspended: nextSuspended,
+                status: nextSuspended ? "suspended" : "active"
+              };
+            }
+            return u;
+          });
+
+          localStorage.setItem("saohan_registered_users", JSON.stringify(updated));
+          localStorage.setItem("saohan_all_user_profiles", JSON.stringify(updated));
+          return updated;
+        });
+
+        onToast(`Đã ${actionLabel.toLowerCase()} tài khoản ${user.fullName} (${user.ctvCode || user.email})!`);
+      } catch (err: any) {
+        alert(`Lỗi thay đổi trạng thái tài khoản: ${err.message || err}`);
+      }
+    }
+  };
+
   // QUICK UPDATE USER ROLE IN SUPABASE
   const handleQuickChangeUserRole = async (userId: string, newRole: "ctv" | "admin" | "editor" | "accountant") => {
     try {
@@ -1003,7 +1057,14 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
       u.ctvCode.toLowerCase().includes(userSearchTerm.toLowerCase());
 
     const matchesRole = userRoleFilter === "ALL" || u.role === userRoleFilter;
-    return matchesSearch && matchesRole;
+
+    const isSuspended = Boolean(u.isSuspended || u.status === "suspended");
+    const matchesStatus =
+      userStatusFilter === "ALL" ||
+      (userStatusFilter === "active" && !isSuspended) ||
+      (userStatusFilter === "suspended" && isSuspended);
+
+    return matchesSearch && matchesRole && matchesStatus;
   });
 
   const selectedRoleObj = rolesList.find((r) => r.roleKey === selectedRoleKey) || rolesList[0];
@@ -2130,9 +2191,20 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               >
                 <option value="ALL">Tất cả vai trò</option>
                 <option value="ctv">Cộng Tác Viên (CTV)</option>
+                <option value="team_leader">Trưởng Nhóm CTV</option>
                 <option value="admin">Ban Quản Trị (Admin)</option>
                 <option value="editor">Biên Tập Viên (Editor)</option>
                 <option value="accountant">Bộ Phận Kế Toán</option>
+              </select>
+
+              <select id="userstatus_filter" name="userstatus_filter"
+                value={userStatusFilter}
+                onChange={(e) => setUserStatusFilter(e.target.value)}
+                className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none cursor-pointer w-full sm:w-auto"
+              >
+                <option value="ALL">Tất cả trạng thái</option>
+                <option value="active">🟢 Đang hoạt động</option>
+                <option value="suspended">🔴 Đã tạm ngưng</option>
               </select>
             </div>
           </div>
@@ -2145,14 +2217,17 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                   <th className="p-3">Họ Tên & Email</th>
                   <th className="p-3">Số Điện Thoại</th>
                   <th className="p-3">Vai Trò (Role)</th>
+                  <th className="p-3">Trạng Thái</th>
                   <th className="p-3">Mã CTV & Cấp</th>
                   <th className="p-3">Ngân Hàng</th>
                   <th className="p-3 text-right">Thao Tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 font-medium">
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50 transition">
+                {filteredUsers.map((user) => {
+                  const isSuspended = Boolean(user.isSuspended || user.status === "suspended");
+                  return (
+                  <tr key={user.id} className={`transition ${isSuspended ? "bg-rose-50/50 hover:bg-rose-50" : "hover:bg-slate-50"}`}>
                     <td className="p-3">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <img
@@ -2161,7 +2236,12 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                           className="w-9 h-9 rounded-full object-cover border-2 border-amber-400 shrink-0 bg-slate-200"
                         />
                         <div className="min-w-0">
-                          <div className="font-extrabold text-slate-900 truncate">{user.fullName}</div>
+                          <div className="font-extrabold text-slate-900 truncate flex items-center gap-1.5">
+                            <span>{user.fullName}</span>
+                            {isSuspended && (
+                              <span className="bg-rose-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase">Tạm ngưng</span>
+                            )}
+                          </div>
                           <div className="text-[11px] text-slate-500 font-mono truncate">{user.email}</div>
                         </div>
                       </div>
@@ -2174,6 +2254,8 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                         className={`px-2 py-1 rounded-xl text-[10px] font-extrabold uppercase focus:outline-none cursor-pointer border shadow-xs transition ${
                           user.role === "admin"
                             ? "bg-red-50 text-red-700 border-red-300 hover:bg-red-100"
+                            : user.role === "team_leader"
+                            ? "bg-indigo-50 text-indigo-700 border-indigo-300 hover:bg-indigo-100"
                             : user.role === "editor"
                             ? "bg-purple-50 text-purple-700 border-purple-300 hover:bg-purple-100"
                             : user.role === "accountant"
@@ -2182,10 +2264,22 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                         }`}
                       >
                         <option value="ctv">🔑 CTV</option>
+                        <option value="team_leader">👑 TRƯỞNG NHÓM</option>
                         <option value="admin">🔴 ADMIN</option>
                         <option value="editor">🟣 EDITOR</option>
                         <option value="accountant">🟢 KẾ TOÁN</option>
                       </select>
+                    </td>
+                    <td className="p-3">
+                      {isSuspended ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-300 shrink-0">
+                          <PauseCircle className="w-3 h-3 text-rose-600" /> Tạm Ngưng
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Hoạt Động
+                        </span>
+                      )}
                     </td>
                     <td className="p-3">
                       <div className="font-mono font-bold text-amber-700 text-xs">{user.ctvCode}</div>
@@ -2206,6 +2300,29 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        {user.role !== "admin" && (
+                          <button
+                            onClick={() => handleToggleUserSuspension(user)}
+                            className={`p-1.5 rounded-lg transition font-bold text-xs inline-flex items-center gap-1 cursor-pointer border ${
+                              isSuspended
+                                ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300"
+                                : "bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300"
+                            }`}
+                            title={isSuspended ? "Kích hoạt lại tài khoản" : "Tạm ngưng tài khoản"}
+                          >
+                            {isSuspended ? (
+                              <>
+                                <Play className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600" />
+                                <span>Kích hoạt</span>
+                              </>
+                            ) : (
+                              <>
+                                <PauseCircle className="w-3.5 h-3.5 text-amber-700" />
+                                <span>Tạm ngưng</span>
+                              </>
+                            )}
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             setEditingUser(user);
@@ -2232,7 +2349,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                         <button
                           onClick={() => handleDeleteUser(user)}
                           className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-800 transition font-bold text-xs inline-flex items-center gap-1 cursor-pointer border border-rose-200"
-                          title="Xóa tài khoản khỏi Supabase"
+                          title="Xóa tài khoản khỏi CSDL"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           <span>Xóa</span>
@@ -2240,7 +2357,8 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+                })}
               </tbody>
             </table>
           </div>

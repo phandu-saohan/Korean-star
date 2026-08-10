@@ -78,6 +78,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           totalRevenue: 128000000,
           totalCommission: 21510000
         };
+        if (authProfile.isSuspended || authProfile.status === "suspended") {
+          setErrorMsg("⛔ Tài khoản của bạn hiện đang bị TẠM NGƯNG HOẠT ĐỘNG bởi Quản trị viên. Vui lòng liên hệ Admin để được hỗ trợ!");
+          setSuccessMsg("");
+          setLoading(false);
+          return;
+        }
+
         saveRegisteredUserToLocalStorage(authProfile);
         setTimeout(() => {
           onAuthSuccess(authProfile);

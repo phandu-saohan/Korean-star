@@ -278,6 +278,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
             totalRevenue: 0,
             totalCommission: 0
           };
+          if (authProfile.isSuspended || authProfile.status === "suspended") {
+            setErrorMsg("⛔ Tài khoản của bạn hiện đang bị TẠM NGƯNG HOẠT ĐỘNG bởi Quản trị viên. Vui lòng liên hệ Admin để được hỗ trợ!");
+            setSuccessMsg("");
+            setLoading(false);
+            return;
+          }
+
           saveRegisteredUserToLocalStorage(authProfile);
           setTimeout(() => {
             onAuthSuccess(authProfile);

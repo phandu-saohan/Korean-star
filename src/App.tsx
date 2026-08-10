@@ -1907,6 +1907,21 @@ export default function App() {
         {/* Main Active Tab Component Area */}
         <main className="flex-1 space-y-6 pb-20">
           
+          {/* Account Suspension Alert Banner */}
+          {(effectiveCtvUser.isSuspended || (effectiveCtvUser as any).status === "suspended" || authUser?.isSuspended || authUser?.status === "suspended") && currentRole !== "admin" && (
+            <div className="bg-gradient-to-r from-rose-600 to-red-700 text-white p-4 rounded-2xl shadow-lg border border-rose-400 flex items-center justify-between gap-3 animate-bounce-subtle">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                  <span className="text-xl">⛔</span>
+                </div>
+                <div>
+                  <div className="font-black text-sm uppercase tracking-wide">Tài Khoản Đang Trong Trạng Thái Tạm Ngưng Hoạt Động</div>
+                  <div className="text-xs text-rose-100 font-medium">Tài khoản CTV / Nhóm trưởng của bạn đã bị Admin tạm ngưng. Vui lòng liên hệ Admin để được mở lại.</div>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {activeTab === "ctv-dashboard" && (
             <CTVHub
               currentRole={currentRole}
