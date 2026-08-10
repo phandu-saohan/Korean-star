@@ -564,8 +564,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
         { id: "team-transfers", title: "Chuyển Doanh Số", sub: "Duyệt doanh số nhóm", icon: ArrowUpRight, color: "from-amber-500 to-amber-600" }
       ]
     : [
-        { id: "send-team-transfer", title: "Chuyển Doanh Số", sub: "Gửi lên Trưởng nhóm", icon: ArrowUpRight, color: "from-amber-500 to-orange-600" },
-        { id: "ctv-transfers", title: "Lịch Sử Chuyển", sub: "Theo dõi duyệt doanh số", icon: Clock, color: "from-blue-600 to-indigo-700" }
+        { id: "ctv-transfers", title: "Chuyển Doanh Số", sub: "Theo dõi & gửi duyệt", icon: ArrowUpRight, color: "from-amber-500 to-orange-600" }
       ];
 
   const ctvModules = [...baseModules, ...teamLeaderModules];
@@ -941,7 +940,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
               <div>
                 <h2 className="font-black text-slate-900 text-base sm:text-lg flex items-center gap-2">
                   <ArrowUpRight className="w-5 h-5 text-amber-600" />
-                  Lịch Sử Chuyển Doanh Số ({myTransfers.length})
+                  Chuyển Doanh Số ({myTransfers.length})
                 </h2>
                 <p className="text-xs text-slate-500 font-medium">Theo dõi các yêu cầu chuyển doanh số bạn đã gửi tới Trưởng nhóm</p>
               </div>
