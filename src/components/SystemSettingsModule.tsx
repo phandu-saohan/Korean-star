@@ -1402,7 +1402,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
 
                 <div>
                   <label className="block text-slate-700 font-extrabold text-[11px] mb-1">
-                    Zalo OA Secret Key:
+                    Zalo OA Secret Key (*):
                   </label>
                   <input id="nhPSecretTokenBMT_1289" name="nhPSecretTokenBMT_1289"
                     type="password"
@@ -1425,51 +1425,46 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500"
                   />
                 </div>
-              </div>
 
-              {/* Tự động làm mới Token Zalo OA sau 24h */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-blue-50/70 border border-blue-200 p-4 rounded-2xl">
-                <div>
-                  <label className="block text-slate-800 font-extrabold text-[11px] mb-1">
-                    Zalo OA Refresh Token (Thời hạn 3 tháng):
-                  </label>
-                  <input id="zalo_oa_refresh_token_input" name="zalo_oa_refresh_token_input"
-                    type="password"
-                    placeholder="Nhập Refresh Token từ Zalo Developer..."
-                    value={brandConfig.zaloOaRefreshToken || ""}
-                    onChange={(e) => setBrandConfig({ ...brandConfig, zaloOaRefreshToken: e.target.value })}
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 font-mono text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500"
-                  />
-                  <p className="text-[10px] text-slate-500 font-medium mt-1">
-                    💡 Refresh Token dùng để tự động lấy lại Access Token mới sau 24h không gián đoạn dịch vụ.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-slate-800 font-extrabold text-[11px] mb-1">
-                    Zalo OA Access Token Hiện Tại (Hạn dùng 24h):
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input id="zalo_oa_access_token_input" name="zalo_oa_access_token_input"
-                      type="password"
-                      placeholder="Access Token tự động làm mới..."
-                      value={brandConfig.zaloOaAccessToken || brandConfig.zaloBotToken || ""}
-                      onChange={(e) => setBrandConfig({ ...brandConfig, zaloOaAccessToken: e.target.value, zaloBotToken: e.target.value })}
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 font-mono text-xs font-bold text-blue-900 focus:outline-none focus:border-blue-500"
-                    />
-                    <button
-                      type="button"
-                      disabled={refreshingToken}
-                      onClick={handleRefreshToken}
-                      className="px-3 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 disabled:opacity-50 text-white font-extrabold text-xs rounded-xl shadow-sm shrink-0 cursor-pointer flex items-center gap-1.5 transition"
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 ${refreshingToken ? "animate-spin" : ""}`} />
-                      <span>{refreshingToken ? "Đang lấy Token..." : "Làm Mới Token Ngay"}</span>
-                    </button>
+                <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-200/80 mt-1">
+                  <div>
+                    <label className="block text-blue-900 font-extrabold text-[11px] mb-1 flex items-center justify-between">
+                      <span>Zalo OA Access Token (Hạn dùng 24h) (*):</span>
+                      <span className="text-[10px] text-blue-600 font-bold">Gửi tin nhắn OpenAPI</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input id="zalo_oa_access_token_input" name="zalo_oa_access_token_input"
+                        type="password"
+                        placeholder="Nhập Zalo OA Access Token..."
+                        value={brandConfig.zaloOaAccessToken || brandConfig.zaloBotToken || ""}
+                        onChange={(e) => setBrandConfig({ ...brandConfig, zaloOaAccessToken: e.target.value, zaloBotToken: e.target.value })}
+                        className="w-full bg-blue-50/70 border border-blue-300 rounded-xl px-3 py-2.5 font-mono text-xs font-bold text-blue-900 focus:outline-none focus:border-blue-500"
+                      />
+                      <button
+                        type="button"
+                        disabled={refreshingToken}
+                        onClick={handleRefreshToken}
+                        className="px-3.5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 disabled:opacity-50 text-white font-extrabold text-xs rounded-xl shadow-xs shrink-0 cursor-pointer flex items-center gap-1.5 transition"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${refreshingToken ? "animate-spin" : ""}`} />
+                        <span>{refreshingToken ? "Đang lấy..." : "Làm Mới Token"}</span>
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-[10px] text-blue-700 font-bold mt-1">
-                    ⚡ Hệ thống sẽ tự động gọi API gia hạn Access Token mới trước khi hết 24h.
-                  </p>
+
+                  <div>
+                    <label className="block text-slate-800 font-extrabold text-[11px] mb-1 flex items-center justify-between">
+                      <span>Zalo OA Refresh Token (Thời hạn 3 tháng) (*):</span>
+                      <span className="text-[10px] text-slate-500 font-medium">Tự động cấp lại Access Token</span>
+                    </label>
+                    <input id="zalo_oa_refresh_token_input" name="zalo_oa_refresh_token_input"
+                      type="password"
+                      placeholder="Nhập Refresh Token từ Zalo Developer..."
+                      value={brandConfig.zaloOaRefreshToken || ""}
+                      onChange={(e) => setBrandConfig({ ...brandConfig, zaloOaRefreshToken: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
                 </div>
               </div>
 
