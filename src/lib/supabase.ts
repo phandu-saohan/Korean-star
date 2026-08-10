@@ -911,6 +911,10 @@ export const updateUserProfile = async (
   await supabase.from("user_profiles").update(payload).eq("id", userId);
 
   // Xóa cache để lượt truy vấn tiếp theo lấy trực tiếp zaloChatId mới từ Supabase
+  clearProfilesCache();
+};
+
+export const clearProfilesCache = () => {
   _lastProfilesFetchTime = 0;
   _cachedProfiles = null;
 };
