@@ -677,14 +677,14 @@ export default function App() {
             if (isAdmin || isOwner) {
               if (!prevStatus) {
                 addSystemNotification({
-                  title: "⚡ Supabase Realtime: Lịch Hẹn Mới",
+                  title: "⚡ Lịch Hẹn Mới",
                   text: `🔥 Khách hàng ${apt.customerName} vừa đặt dịch vụ "${apt.serviceName}"!`,
                   type: "lead",
                   targetCtvCode: apt.ctvCode
                 });
               } else if (prevStatus !== apt.status) {
                 addSystemNotification({
-                  title: "⚡ Supabase Realtime: Trạng Thái Lịch Hẹn",
+                  title: "⚡ Trạng Thái Lịch Hẹn",
                   text: `📅 Lịch hẹn của ${apt.customerName} đã chuyển trạng thái sang "${apt.status}".`,
                   type: apt.status === "Hoàn thành" ? "commission" : "lead",
                   targetCtvCode: apt.ctvCode
@@ -714,7 +714,7 @@ export default function App() {
             const prevStatus = knownPayoutMapRef.current.get(payout.id);
             if (!prevStatus) {
               addSystemNotification({
-                title: "⚡ Supabase Realtime: Yêu Cầu Rút Tiền",
+                title: "⚡ Yêu Cầu Rút Tiền",
                 text: `💸 Yêu cầu rút ${payout.amount.toLocaleString("vi-VN")}đ của CTV ${payout.ctvName} đã ghi nhận trên hệ thống.`,
                 type: "system"
               });
@@ -726,7 +726,7 @@ export default function App() {
                 : `🔄 Yêu cầu rút ${payout.amount.toLocaleString("vi-VN")}đ chuyển trạng thái sang "${payout.status}".`;
 
               addSystemNotification({
-                title: "⚡ Supabase Realtime: Giải Ngân Rút Tiền",
+                title: "⚡ Giải Ngân Rút Tiền",
                 text,
                 type: payout.status === "Đã duyệt" ? "commission" : "system"
               });
