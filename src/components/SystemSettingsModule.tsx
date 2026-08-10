@@ -16,6 +16,7 @@ import {
 import { CTVUser } from "../types";
 import { sendOneSignalNotification, notifySystemSettingsUpdated } from "../lib/onesignal";
 import { ZaloNotifier } from "./ZaloNotifier";
+import { ZaloStatsReportSender } from "./ZaloStatsReportSender";
 import { registerZaloWebhook } from "../services/zaloService";
 import { VIETNAM_BANKS, getBankLogo } from "../lib/banks";
 import { formatCurrencyInput, parseCurrencyInput } from "../utils/formatters";
@@ -1440,10 +1441,15 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </div>
 
               {/* Form Gửi Thử Nghiệm Qua ZaloNotifier Component */}
-              <div className="pt-2">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
                 <ZaloNotifier
                   defaultChatId={brandConfig.zaloDefaultChatId || ""}
                   defaultToken={brandConfig.zaloBotToken}
+                />
+
+                <ZaloStatsReportSender
+                  defaultChatId={brandConfig.zaloDefaultChatId || ""}
+                  onToast={onToast}
                 />
               </div>
             </div>

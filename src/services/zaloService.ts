@@ -359,5 +359,45 @@ export async function notifyZaloPostOpCheckin(checkin: { customerName?: string; 
   }
 }
 
+/**
+ * Gửi Báo Cáo Thống Kê Doanh Số & Hệ Thống Qua Zalo OA
+ */
+export async function sendZaloAdminStatsReport(statsData: {
+  periodText: string;
+  totalRevenue: number;
+  totalAppointments: number;
+  completedAppointments: number;
+  totalCommissionPaid: number;
+  totalPendingPayout: number;
+  totalUsers: number;
+  activeUsers: number;
+}, extraZaloChatId?: string): Promise<{ success: boolean; count: number; error?: string }> {
+  const msg = `📊 *BÁO CÁO THỐNG KÊ DOANH SỐ & HỆ THỐNG KOREAN STAR*\n` +
+    `🗓 Kỳ báo cáo: *${statsData.periodText}*\n\n` +
+    `💵 Tổng doanh số: *${statsData.totalRevenue.toLocaleString("vi-VN")} VNĐ*\n` +
+    `📅 Tổng lịch hẹn: *${statsData.totalAppointments} ca* (*${statsData.completedAppointments}* hoàn thành)\n` +
+    `🎉 Hoa hồng đã chi trả: *${statsData.totalCommissionPaid.toLocaleString("vi-VN")} VNĐ*\n` +
+    `⏳ Chờ giải ngân ví: *${statsData.totalPendingPayout.toLocaleString("vi-VN")} VNĐ*\n` +
+    `👥 Số CTV hoạt động: *${statsData.activeUsers}/${statsData.totalUsers} CTV*\n\n` +
+    `⚡ Báo cáo tự động từ Bệnh viện Thẩm mỹ Quốc tế Korean Star`;
+
+  const recipients = await getZaloRecipientChatIds({
+    extraChatId: extraZaloChatId,
+    notifyAdmins: true
+  });
+
+  if (recipients.length === 0) {
+    return { success: false, count: 0, error: "Chưa cấu hình Zalo OA Chat ID nhận báo cáo." };
+  }
+
+  let sentCount = 0;
+  for (const chatId of recipients) {
+    const res = await sendZaloAutoNotification(chatId, msg);
+    if (res.ok) sentCount++;
+  }
+
+  return { success: sentCount > 0, count: sentCount };
+}
+
 
 
