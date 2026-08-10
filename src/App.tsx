@@ -57,10 +57,11 @@ import {
 import {
   initOneSignal,
   setOneSignalUser,
-  notifyPayoutCompleted
+  notifyPayoutCompleted,
+  notifyAppointmentStatusChanged
 } from "./lib/onesignal";
 
-import { notifyZaloPayoutCompleted } from "./services/zaloService";
+import { notifyZaloPayoutCompleted, notifyZaloAppointmentStatusChanged } from "./services/zaloService";
 
 import { 
   Home,
@@ -1460,6 +1461,20 @@ export default function App() {
     const targetApt = updatedAppointments.find((a) => a.id === id);
     if (targetApt) {
       saveAppointmentToSupabase(targetApt);
+
+      // 1. Gửi thông báo OneSignal Push về đúng CTV tạo lịch hẹn
+      notifyAppointmentStatusChanged(targetApt, newStatus);
+
+      // 2. Gửi thông báo Zalo Official Account (OA) về CTV
+      notifyZaloAppointmentStatusChanged(targetApt, newStatus);
+
+      // 3. Lưu thông báo vào biểu tượng Chuông Header cho CTV
+      addSystemNotification({
+        title: "⚡ Trạng Thái Lịch Hẹn Cập Nhật",
+        text: `📅 Lịch hẹn khách hàng ${targetApt.customerName} (${targetApt.serviceName}) đã chuyển sang "${newStatus}".`,
+        type: newStatus === "Hoàn thành" ? "commission" : "lead",
+        targetCtvCode: targetApt.ctvCode
+      });
 
       // Tự động cộng hoa hồng & số dư khả dụng cho CTV khi lịch hẹn hoàn thành
       if (newStatus === "Hoàn thành") {
