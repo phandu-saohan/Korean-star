@@ -221,7 +221,7 @@ export const PostOpCare: React.FC = () => {
                   <span className="text-slate-300">Mức độ đau rát (1 - 10):</span>
                   <span className="text-amber-400 font-bold font-mono">{painLevel} / 10</span>
                 </div>
-                <input
+                <input id="painlevel_224" name="painlevel_224"
                   type="range"
                   min="1"
                   max="10"
@@ -235,7 +235,7 @@ export const PostOpCare: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-300 font-medium mb-1">Nhiệt độ cơ thể (°C):</label>
-                  <input
+                  <input id="temperature_238" name="temperature_238"
                     type="number"
                     step="0.1"
                     value={temperature}
@@ -246,7 +246,7 @@ export const PostOpCare: React.FC = () => {
 
                 <div>
                   <label className="block text-slate-300 font-medium mb-1">Mức độ sưng:</label>
-                  <select
+                  <select id="swellinglevel_249" name="swellinglevel_249"
                     value={swellingLevel}
                     onChange={(e) => setSwellingLevel(e.target.value as any)}
                     className="w-full bg-[#13253E] border border-slate-700 rounded-xl p-2.5 text-white"
@@ -288,7 +288,7 @@ export const PostOpCare: React.FC = () => {
               {/* Photo Upload */}
               <div>
                 <label className="block text-slate-300 font-medium mb-1">Tải ảnh vết thương (để Bác sĩ kiểm tra):</label>
-                <input
+                <input id="file_291" name="file_291"
                   type="file"
                   accept="image/*"
                   onChange={handlePhotoUpload}

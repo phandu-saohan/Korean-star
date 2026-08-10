@@ -319,7 +319,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <label className="block text-slate-700 font-bold mb-1">Họ & Tên Đầy Đủ (*):</label>
                   <div className="relative">
                     <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                    <input
+                    <input id="vDNguyNVNA_322" name="vDNguyNVNA_322"
                       type="text"
                       required
                       placeholder="Ví dụ: Nguyễn Văn A"
@@ -334,7 +334,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <label className="block text-slate-700 font-bold mb-1">Số Điện Thoại (*):</label>
                   <div className="relative">
                     <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                    <input
+                    <input id="field_0912345678_337" name="field_0912345678_337"
                       type="text"
                       required
                       placeholder="0912345678"
@@ -352,7 +352,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <label className="block text-slate-700 font-bold mb-1">Địa Chỉ Email Supabase (*):</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="userKoreanstarVn_355" name="userKoreanstarVn_355"
                   type="email"
                   required
                   placeholder="user@koreanstar.vn"
@@ -368,7 +368,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <label className="block text-slate-700 font-bold mb-1">Mật Khẩu Tài Khoản (*):</label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  <input
+                  <input id="input_371" name="input_371"
                     type={showPassword ? "text" : "password"}
                     required
                     placeholder="••••••••"

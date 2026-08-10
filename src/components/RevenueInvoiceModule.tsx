@@ -453,7 +453,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
           {/* Search Box */}
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
+            <input id="tMTheoMHANTNSTKhChHNgMCtvDChV_456" name="tMTheoMHANTNSTKhChHNgMCtvDChV_456"
               type="text"
               placeholder="Tìm theo Mã hóa đơn, Tên/SĐT khách hàng, Mã CTV, Dịch vụ..."
               value={searchTerm}
@@ -820,7 +820,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
                   Số Tiền Đặt Cọc (VNĐ):
                 </label>
-                <input
+                <input id="field_1000000_823" name="field_1000000_823"
                   type="text"
                   required
                   placeholder="1.000.000"
@@ -952,7 +952,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                       </div>
                     ) : (
                       <label className="border border-dashed border-blue-700 hover:border-amber-400 bg-blue-900/40 rounded-lg p-2.5 text-center cursor-pointer block transition">
-                        <input
+                        <input id="file_955" name="file_955"
                           type="file"
                           accept="image/*"
                           className="hidden"
@@ -1177,7 +1177,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                       </div>
                     ) : (
                       <label className="border border-dashed border-blue-700 hover:border-amber-400 bg-blue-900/40 rounded-lg p-2.5 text-center cursor-pointer block transition">
-                        <input
+                        <input id="file_1180" name="file_1180"
                           type="file"
                           accept="image/*"
                           className="hidden"
@@ -1384,7 +1384,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                 <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
                   Chọn Lịch Hẹn Đã Xác Nhận Trong CRM:
                 </label>
-                <select
+                <select id="selectedappointmentid_1387" name="selectedappointmentid_1387"
                   value={selectedAppointmentId}
                   onChange={(e) => handleSelectAppointmentForCreate(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-2xl p-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500"
@@ -1407,7 +1407,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                   <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
                     Họ và Tên Khách Hàng:
                   </label>
-                  <input
+                  <input id="vdNguyNThHNg_1410" name="vdNguyNThHNg_1410"
                     type="text"
                     required
                     placeholder="VD: Nguyễn Thị Hồng"
@@ -1420,7 +1420,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                   <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
                     Số Điện Thoại Khách Hàng:
                   </label>
-                  <input
+                  <input id="vd0988123456_1423" name="vd0988123456_1423"
                     type="text"
                     required
                     placeholder="VD: 0988 123 456"
@@ -1436,7 +1436,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                 <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
                   Tên Dịch Vụ Phẫu Thuật / Thẩm Mỹ:
                 </label>
-                <input
+                <input id="vdNNgNgCErgonomixNNgCPChuyNSU_1439" name="vdNNgNgCErgonomixNNgCPChuyNSU_1439"
                   type="text"
                   required
                   placeholder="VD: Nâng Ngực Ergonomix Nâng Cấp Chuyên Sâu"
@@ -1452,7 +1452,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                   <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
                     Tổng Chi Phí (VNĐ):
                   </label>
-                  <input
+                  <input id="field_15000000_1455" name="field_15000000_1455"
                     type="text"
                     required
                     placeholder="15.000.000"
@@ -1465,7 +1465,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                   <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
                     Tiền Cọc Nhận Ngay (VNĐ):
                   </label>
-                  <input
+                  <input id="field_0_1468" name="field_0_1468"
                     type="text"
                     placeholder="0"
                     value={formatCurrencyInput(customDepositAmount)}
@@ -1477,7 +1477,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                   <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
                     Hoa Hồng CTV (%):
                   </label>
-                  <input
+                  <input id="customcommissionrate_1480" name="customcommissionrate_1480"
                     type="number"
                     min={0}
                     max={50}
@@ -1494,7 +1494,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                   <label className="block text-[10px] font-extrabold text-amber-900 uppercase mb-1">
                     Mã CTV Giới Thiệu:
                   </label>
-                  <input
+                  <input id="vdCtv8888_1497" name="vdCtv8888_1497"
                     type="text"
                     placeholder="VD: CTV8888"
                     value={customCtvCode}
@@ -1506,7 +1506,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                   <label className="block text-[10px] font-extrabold text-amber-900 uppercase mb-1">
                     Tên CTV Giới Thiệu:
                   </label>
-                  <input
+                  <input id="vdNguyNVNA_1509" name="vdNguyNVNA_1509"
                     type="text"
                     placeholder="VD: Nguyễn Văn A"
                     value={customCtvName}
@@ -1521,7 +1521,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                 <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
                   Hình Thức Thanh Toán Thu Tiền:
                 </label>
-                <select
+                <select id="custompaymentmethod_1524" name="custompaymentmethod_1524"
                   value={customPaymentMethod}
                   onChange={(e) => setCustomPaymentMethod(e.target.value as any)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-2xl p-2.5 text-xs font-bold text-slate-800"
@@ -1570,7 +1570,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                     </div>
                   ) : (
                     <label className="border border-dashed border-blue-300 hover:border-blue-500 bg-white rounded-xl p-2.5 text-center cursor-pointer block transition">
-                      <input
+                      <input id="file_1573" name="file_1573"
                         type="file"
                         accept="image/*"
                         className="hidden"
@@ -1590,7 +1590,7 @@ export const RevenueInvoiceModule: React.FC<RevenueInvoiceModuleProps> = ({
                 <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
                   Ghi Chú Hóa Đơn:
                 </label>
-                <input
+                <input id="ghiChDChVPhUThuTPhNgKhM_1593" name="ghiChDChVPhUThuTPhNgKhM_1593"
                   type="text"
                   placeholder="Ghi chú dịch vụ phẫu thuật, phòng khám..."
                   value={customNotes}

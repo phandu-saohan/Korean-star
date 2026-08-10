@@ -142,7 +142,7 @@ export const SkinAnalysisModal: React.FC<SkinAnalysisModalProps> = ({ onBookAppo
               {/* Upload Overlay Button */}
               <label className="absolute bottom-3 right-3 bg-[#0B192C]/90 border border-amber-500/30 text-amber-400 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition flex items-center gap-1.5 shadow-md">
                 <Upload className="w-3.5 h-3.5" /> Tải Ảnh Mới
-                <input
+                <input id="file_145" name="file_145"
                   type="file"
                   accept="image/*"
                   onChange={handleFileUpload}
@@ -178,7 +178,7 @@ export const SkinAnalysisModal: React.FC<SkinAnalysisModalProps> = ({ onBookAppo
             <div className="space-y-3 pt-2">
               <div>
                 <label className="block text-xs text-slate-700 font-semibold mb-1">Loại da khách hàng tự nhận biết:</label>
-                <select
+                <select id="skintype_181" name="skintype_181"
                   value={skinTypeInput}
                   onChange={(e) => setSkinTypeInput(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-medium"
@@ -193,7 +193,7 @@ export const SkinAnalysisModal: React.FC<SkinAnalysisModalProps> = ({ onBookAppo
 
               <div>
                 <label className="block text-xs text-slate-700 font-semibold mb-1">Ghi chú vấn đề da cần tư vấn thêm:</label>
-                <textarea
+                <textarea id="skinnotes_196" name="skinnotes_196"
                   rows={2}
                   value={skinNotes}
                   onChange={(e) => setSkinNotes(e.target.value)}

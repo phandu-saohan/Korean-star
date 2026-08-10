@@ -173,7 +173,7 @@ export const EditorDashboard: React.FC<EditorDashboardProps> = ({
                 <p className="text-xs text-slate-600 font-medium mt-0.5">Biên tập nội dung mô tả, cập nhật giá niêm yết và hoa hồng CTV</p>
               </div>
 
-              <input
+              <input id="tMTNDChV_176" name="tMTNDChV_176"
                 type="text"
                 placeholder="Tìm tên dịch vụ..."
                 value={searchTerm}

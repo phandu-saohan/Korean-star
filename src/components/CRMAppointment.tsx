@@ -578,7 +578,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
           {/* Keyword Search Input Bar */}
           <div className="md:col-span-6 relative">
             <Search className="w-4 h-4 text-amber-600 absolute left-3.5 top-3.5" />
-            <input
+            <input id="input_581" name="input_581"
               type="text"
               placeholder="Tìm theo tên khách hàng, số điện thoại, tên dịch vụ hoặc bác sĩ..."
               value={searchTerm}
@@ -597,7 +597,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
 
           {/* Appointment Type Dropdown Filter */}
           <div className="md:col-span-3 relative">
-            <select
+            <select id="type_600" name="type_600"
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
               className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-3.5 py-2.5 text-xs font-extrabold text-slate-900 focus:outline-none focus:border-amber-500 shadow-xs cursor-pointer"
@@ -610,7 +610,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
 
           {/* Status Dropdown */}
           <div className="md:col-span-3 relative">
-            <select
+            <select id="status_613" name="status_613"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-3.5 py-2.5 text-xs font-extrabold text-slate-900 focus:outline-none focus:border-amber-500 shadow-xs cursor-pointer"
@@ -724,7 +724,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                         {/* 4. TRẠNG THÁI CRM (Admin được đổi, CTV chỉ được xem) */}
                         <td className="py-4 px-4 text-center whitespace-nowrap">
                           {isUserAdmin ? (
-                            <select
+                            <select id="status_727" name="status_727"
                               value={apt.status}
                               onChange={(e) => handleStatusChange(apt, e.target.value as any)}
                               className="bg-white border border-amber-300 rounded-xl px-2.5 py-1.5 text-xs font-black text-amber-900 focus:outline-none focus:border-amber-500 shadow-2xs cursor-pointer"
@@ -946,7 +946,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
 
                         <div className="flex items-center gap-1">
                           {isUserAdmin ? (
-                            <select
+                            <select id="status_949" name="status_949"
                               value={apt.status}
                               onChange={(e) => handleStatusChange(apt, e.target.value as any)}
                               className="bg-white border border-amber-300 rounded-xl px-2 py-1 text-xs font-black text-amber-900"
@@ -983,7 +983,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                 {/* Dropdown chọn số dòng / trang */}
                 <div className="flex items-center gap-1 ml-2">
                   <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">Số dòng:</span>
-                  <select
+                  <select id="itemsperpage_986" name="itemsperpage_986"
                     value={itemsPerPage}
                     onChange={(e) => setItemsPerPage(Number(e.target.value))}
                     className="bg-slate-50 border border-slate-300 rounded-xl px-2 py-1 text-xs font-black text-slate-800 focus:outline-none focus:border-amber-500 cursor-pointer"
@@ -1369,7 +1369,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
 
                         <div className="relative">
                           <Search className="w-4 h-4 text-emerald-600 absolute left-3 top-3" />
-                          <input
+                          <input id="gTNHoCSTBNhNhNKhM_1372" name="gTNHoCSTBNhNhNKhM_1372"
                             type="text"
                             placeholder="Gõ tên hoặc SĐT bệnh nhân đã khám..."
                             value={patientSearchTerm}
@@ -1444,7 +1444,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                     <div className="space-y-3">
                       <div>
                         <label className="block text-slate-800 font-extrabold text-xs mb-1">Họ & Tên Khách Hàng (*):</label>
-                        <input
+                        <input id="vDNguyNThanhVN_1447" name="vDNguyNThanhVN_1447"
                           type="text"
                           required
                           placeholder="Ví dụ: Nguyễn Thanh Vân..."
@@ -1459,7 +1459,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
 
                       <div>
                         <label className="block text-slate-800 font-extrabold text-xs mb-1">Số Điện Thoại Khách Hàng (*):</label>
-                        <input
+                        <input id="vD0912345678_1462" name="vD0912345678_1462"
                           type="tel"
                           required
                           placeholder="Ví dụ: 0912345678"
@@ -1491,7 +1491,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
 
                       <div className="relative">
                         <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                        <input
+                        <input id="input_1494" name="input_1494"
                           type="text"
                           placeholder="Tìm nhanh dịch vụ trong bảng giá (tên, danh mục, giá)..."
                           value={serviceSearchInput}
@@ -1632,7 +1632,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                         <label className="block text-slate-700 font-bold mb-1 text-[11px]">
                           Tên Dịch Vụ Niêm Yết Tổng Hợp (*):
                         </label>
-                        <input
+                        <input id="servicename_1635" name="servicename_1635"
                           type="text"
                           value={form.serviceName}
                           onChange={(e) => {
@@ -1651,7 +1651,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                   <div className="space-y-3.5 animate-fadeIn min-w-0 max-w-full">
                     <div className="min-w-0 max-w-full">
                       <label className="block text-slate-800 font-extrabold text-xs mb-1">Chọn Bác Sĩ Phụ Trách (*):</label>
-                      <select
+                      <select id="doctorname_1654" name="doctorname_1654"
                         value={form.doctorName}
                         onChange={(e) => setForm({ ...form, doctorName: e.target.value })}
                         className="w-full max-w-full min-w-0 bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-bold focus:bg-white focus:outline-none focus:border-amber-500 text-xs cursor-pointer truncate"
@@ -1672,7 +1672,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0 max-w-full">
                       <div className="min-w-0 max-w-full">
                         <label className="block text-slate-800 font-extrabold text-xs mb-1">Ngày Khám Dự Kiến (*):</label>
-                        <input
+                        <input id="date_1675" name="date_1675"
                           type="date"
                           required
                           value={form.date}
@@ -1686,7 +1686,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
 
                       <div className="min-w-0 max-w-full">
                         <label className="block text-slate-800 font-extrabold text-xs mb-1">Khung Giờ Hẹn Khám (*):</label>
-                        <select
+                        <select id="time_1689" name="time_1689"
                           value={form.time}
                           onChange={(e) => setForm({ ...form, time: e.target.value })}
                           className="w-full max-w-full min-w-0 bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-bold focus:bg-white focus:outline-none focus:border-amber-500 text-xs cursor-pointer truncate"
@@ -1702,7 +1702,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                     <div>
                       <label className="block text-slate-800 font-extrabold text-xs mb-1">Trạng Thái CRM (*):</label>
                       {isUserAdmin ? (
-                        <select
+                        <select id="status_1705" name="status_1705"
                           value={form.status}
                           onChange={(e) => setForm({ ...form, status: e.target.value as any })}
                           className="w-full bg-slate-50 border border-amber-300 rounded-xl p-3 text-amber-900 font-extrabold focus:bg-white focus:outline-none focus:border-amber-500 text-xs shadow-xs cursor-pointer"
@@ -1752,7 +1752,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
                             <Upload className="w-7 h-7 text-amber-500" />
                             <span className="text-xs font-extrabold text-slate-800">Bấm để tải từ máy ảnh hoặc thư viện</span>
                             <span className="text-[10px] text-slate-400">Hỗ trợ định dạng ảnh và video dung lượng cao</span>
-                            <input
+                            <input id="file_1755" name="file_1755"
                               type="file"
                               accept="image/*,video/*"
                               onChange={handleFileUpload}
@@ -1765,7 +1765,7 @@ export const CRMAppointment: React.FC<CRMAppointmentProps> = ({
 
                     <div>
                       <label className="block text-slate-800 font-extrabold text-xs mb-1">Ghi Chú Yêu Cầu Từ Khách Hàng:</label>
-                      <textarea
+                      <textarea id="notes_1768" name="notes_1768"
                         rows={2}
                         value={form.notes}
                         onChange={(e) => setForm({ ...form, notes: e.target.value })}

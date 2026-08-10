@@ -264,6 +264,10 @@ export default function App() {
     showToast(`🎉 Đã cộng +${amount.toLocaleString("vi-VN")} VNĐ hoa hồng vào ví CTV ${ctvCode}!`);
   };
 
+  const handleSubTabChange = useCallback((subTab: string) => {
+    setCtvHubSubTab(subTab);
+  }, []);
+
   const handleDeleteLead = (leadId: string) => {
     setLeads((prev) => {
       const updated = prev.filter((l) => l.id !== leadId);
@@ -1922,7 +1926,7 @@ export default function App() {
               onClearAllLeads={handleClearAllLeads}
               onOpenTeamTransferModal={() => setTeamTransferModalOpen(true)}
               subTab={ctvHubSubTab}
-              onSubTabChange={(subTab) => setCtvHubSubTab(subTab)}
+              onSubTabChange={handleSubTabChange}
             />
           )}
 

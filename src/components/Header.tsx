@@ -522,7 +522,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <label className="block text-slate-700 font-bold mb-1">Email Tài Khoản (*):</label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  <input
+                  <input id="userKoreanstarVn_525" name="userKoreanstarVn_525"
                     type="email"
                     required
                     placeholder="user@koreanstar.vn"

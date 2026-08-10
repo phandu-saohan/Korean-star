@@ -1091,7 +1091,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </label>
               <div className="relative">
                 <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="hospitalname_1094" name="hospitalname_1094"
                   type="text"
                   required
                   value={brandConfig.hospitalName}
@@ -1108,7 +1108,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </label>
               <div className="relative">
                 <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="hotline_1111" name="hotline_1111"
                   type="text"
                   required
                   value={brandConfig.hotline}
@@ -1125,7 +1125,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </label>
               <div className="relative">
                 <Sparkles className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="tagline_1128" name="tagline_1128"
                   type="text"
                   value={brandConfig.tagline}
                   onChange={(e) => setBrandConfig({ ...brandConfig, tagline: e.target.value })}
@@ -1141,7 +1141,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </label>
               <div className="relative">
                 <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="address_1144" name="address_1144"
                   type="text"
                   value={brandConfig.address}
                   onChange={(e) => setBrandConfig({ ...brandConfig, address: e.target.value })}
@@ -1157,7 +1157,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </label>
               <div className="relative">
                 <Sliders className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="basecommissionrate_1160" name="basecommissionrate_1160"
                   type="number"
                   min={1}
                   max={50}
@@ -1175,7 +1175,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </label>
               <div className="relative">
                 <DollarSign className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="field_50000000_1178" name="field_50000000_1178"
                   type="text"
                   placeholder="50.000.000"
                   value={formatCurrencyInput(brandConfig.autoPayoutThreshold)}
@@ -1197,7 +1197,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                   </p>
                 </div>
                 <label className="flex items-center gap-2 cursor-pointer font-bold text-xs bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 shrink-0">
-                  <input
+                  <input id="checkbox_1200" name="checkbox_1200"
                     type="checkbox"
                     checked={brandConfig.oneSignalEnabled !== false}
                     onChange={(e) => setBrandConfig({ ...brandConfig, oneSignalEnabled: e.target.checked })}
@@ -1212,7 +1212,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                   <label className="block text-slate-700 font-extrabold text-[11px] mb-1">
                     OneSignal App ID (*):
                   </label>
-                  <input
+                  <input id="input_1215" name="input_1215"
                     type="text"
                     placeholder="b8a9101f-0e12-4f01-b345-onesignal-demo"
                     value={brandConfig.oneSignalAppId || ""}
@@ -1225,7 +1225,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                   <label className="block text-slate-700 font-extrabold text-[11px] mb-1">
                     OneSignal REST API Key (Tùy chọn):
                   </label>
-                  <input
+                  <input id="osV2AppXxxxxxxxxxxxxxxxxx_1228" name="osV2AppXxxxxxxxxxxxxxxxxx_1228"
                     type="password"
                     placeholder="os_v2_app_xxxxxxxxxxxxxxxxxx"
                     value={brandConfig.oneSignalApiKey || ""}
@@ -1273,7 +1273,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                   <label className="block text-slate-700 font-extrabold text-[11px] mb-1">
                     Zalo Bot Token (*):
                   </label>
-                  <input
+                  <input id="input_1276" name="input_1276"
                     type="password"
                     placeholder="Nhập Zalo Bot Token từ Zalo Bot Platform..."
                     value={brandConfig.zaloBotToken || ""}
@@ -1286,7 +1286,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                   <label className="block text-slate-700 font-extrabold text-[11px] mb-1">
                     Webhook Secret Token:
                   </label>
-                  <input
+                  <input id="nhPSecretTokenBMT_1289" name="nhPSecretTokenBMT_1289"
                     type="text"
                     placeholder="Nhập Secret Token bí mật..."
                     value={brandConfig.zaloWebhookSecret || ""}
@@ -1299,7 +1299,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                   <label className="block text-slate-700 font-extrabold text-[11px] mb-1">
                     Chat ID Mặc Định:
                   </label>
-                  <input
+                  <input id="vD123456789_1302" name="vD123456789_1302"
                     type="text"
                     placeholder="Ví dụ: 123456789"
                     value={brandConfig.zaloDefaultChatId || ""}
@@ -1320,7 +1320,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <input
+                  <input id="app_1323" name="app_1323"
                     type="text"
                     readOnly
                     value={`${typeof window !== 'undefined' ? window.location.origin : 'https://korean-star.vercel.app'}/api/zalo/webhook${brandConfig.zaloBotToken ? `?token=${encodeURIComponent(brandConfig.zaloBotToken)}` : ''}`}
@@ -1484,7 +1484,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                     </label>
                     <div className="relative">
                       <Globe className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                      <input
+                      <input id="httpsExampleComLogoPng_1487" name="httpsExampleComLogoPng_1487"
                         type="text"
                         placeholder="https://example.com/logo.png"
                         value={brandConfig.pwaLogoUrl || ""}
@@ -1528,7 +1528,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </label>
               <div className="relative">
                 <Smartphone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="input_1531" name="input_1531"
                   type="text"
                   required
                   value={brandConfig.pwaAppName || "KOREAN STAR - Hệ Thống CTV & Thẩm Mỹ"}
@@ -1545,7 +1545,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </label>
               <div className="relative">
                 <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="pwashortnameKoreanStar_1548" name="pwashortnameKoreanStar_1548"
                   type="text"
                   required
                   value={brandConfig.pwaShortName || "KOREAN STAR"}
@@ -1561,13 +1561,13 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                 Mã Màu Chủ Đạo PWA (Theme Color Hex):
               </label>
               <div className="flex items-center gap-2">
-                <input
+                <input id="pwathemecolorF59e0b_1564" name="pwathemecolorF59e0b_1564"
                   type="color"
                   value={brandConfig.pwaThemeColor || "#F59E0B"}
                   onChange={(e) => setBrandConfig({ ...brandConfig, pwaThemeColor: e.target.value })}
                   className="w-10 h-10 rounded-xl border border-slate-300 cursor-pointer p-0.5"
                 />
-                <input
+                <input id="pwathemecolorF59e0b_1570" name="pwathemecolorF59e0b_1570"
                   type="text"
                   value={brandConfig.pwaThemeColor || "#F59E0B"}
                   onChange={(e) => setBrandConfig({ ...brandConfig, pwaThemeColor: e.target.value })}
@@ -1582,13 +1582,13 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                 Mã Màu Nền Màn Hình Chờ (Splash Screen Background):
               </label>
               <div className="flex items-center gap-2">
-                <input
+                <input id="pwabgcolor0b192c_1585" name="pwabgcolor0b192c_1585"
                   type="color"
                   value={brandConfig.pwaBgColor || "#0B192C"}
                   onChange={(e) => setBrandConfig({ ...brandConfig, pwaBgColor: e.target.value })}
                   className="w-10 h-10 rounded-xl border border-slate-300 cursor-pointer p-0.5"
                 />
-                <input
+                <input id="pwabgcolor0b192c_1591" name="pwabgcolor0b192c_1591"
                   type="text"
                   value={brandConfig.pwaBgColor || "#0B192C"}
                   onChange={(e) => setBrandConfig({ ...brandConfig, pwaBgColor: e.target.value })}
@@ -1602,7 +1602,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               <label className="block text-slate-700 font-extrabold text-xs mb-1">
                 Mô Tả Ứng Dụng PWA (App Description):
               </label>
-              <textarea
+              <textarea id="textarea_1605" name="textarea_1605"
                 rows={2}
                 value={brandConfig.pwaDescription || "Hệ thống quản lý Cộng tác viên & Đặt lịch dịch vụ thẩm mỹ KOREAN STAR 24/7"}
                 onChange={(e) => setBrandConfig({ ...brandConfig, pwaDescription: e.target.value })}
@@ -1622,7 +1622,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </div>
 
               <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                <input
+                <input id="checkbox_1625" name="checkbox_1625"
                   type="checkbox"
                   checked={brandConfig.pwaEnableInstallPrompt !== false}
                   onChange={(e) => setBrandConfig({ ...brandConfig, pwaEnableInstallPrompt: e.target.checked })}
@@ -1703,7 +1703,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </label>
               <div className="relative">
                 <Percent className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="basecommissionrate_1706" name="basecommissionrate_1706"
                   type="number"
                   min="0"
                   max="100"
@@ -1722,7 +1722,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </label>
               <div className="relative">
                 <CreditCard className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="autopayoutthreshold_1725" name="autopayoutthreshold_1725"
                   type="text"
                   required
                   value={formatCurrencyInput(brandConfig.autoPayoutThreshold)}
@@ -1739,7 +1739,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </label>
               <div className="relative">
                 <DollarSign className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="minpayoutamount100000_1742" name="minpayoutamount100000_1742"
                   type="text"
                   required
                   value={formatCurrencyInput(brandConfig.minPayoutAmount || 100000)}
@@ -1756,7 +1756,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </label>
               <div className="relative">
                 <DollarSign className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="maxsinglepayout100000000_1759" name="maxsinglepayout100000000_1759"
                   type="text"
                   required
                   value={formatCurrencyInput(brandConfig.maxSinglePayout || 100000000)}
@@ -1773,7 +1773,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </label>
               <div className="relative">
                 <FileBadge className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="payoutrefprefixKsPay_1776" name="payoutrefprefixKsPay_1776"
                   type="text"
                   required
                   value={brandConfig.payoutRefPrefix || "KS-PAY-"}
@@ -1790,7 +1790,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </label>
               <div className="relative">
                 <Globe className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="systemcurrencyVn_1793" name="systemcurrencyVn_1793"
                   type="text"
                   required
                   value={brandConfig.systemCurrency || "VNĐ"}
@@ -2087,7 +2087,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200 text-xs">
             <div className="relative flex-1 w-full">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-              <input
+              <input id="tMTheoTNEmailSTHoCMCtv_2090" name="tMTheoTNEmailSTHoCMCtv_2090"
                 type="text"
                 placeholder="Tìm theo Tên, Email, SĐT hoặc Mã CTV..."
                 value={userSearchTerm}
@@ -2098,7 +2098,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-              <select
+              <select id="userrole_2101" name="userrole_2101"
                 value={userRoleFilter}
                 onChange={(e) => setUserRoleFilter(e.target.value)}
                 className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none cursor-pointer w-full sm:w-auto"
@@ -2143,7 +2143,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                     </td>
                     <td className="p-3 font-mono font-bold text-slate-900">{user.phone}</td>
                     <td className="p-3">
-                      <select
+                      <select id="role_2146" name="role_2146"
                         value={user.role}
                         onChange={(e) => handleQuickChangeUserRole(user.id, e.target.value as any)}
                         className={`px-2 py-1 rounded-xl text-[10px] font-extrabold uppercase focus:outline-none cursor-pointer border shadow-xs transition ${
@@ -2455,7 +2455,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                 {/* Full Name */}
                 <div>
                   <label className="block font-extrabold text-slate-700 mb-1">Họ Và Tên (*):</label>
-                  <input
+                  <input id="fullname_2458" name="fullname_2458"
                     type="text"
                     required
                     value={userFormData.fullName}
@@ -2467,7 +2467,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                 {/* Role */}
                 <div>
                   <label className="block font-extrabold text-slate-700 mb-1">Vai Trò (Role) (*):</label>
-                  <select
+                  <select id="role_2470" name="role_2470"
                     value={userFormData.role}
                     onChange={(e) => setUserFormData({ ...userFormData, role: e.target.value as any })}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold text-slate-900 focus:outline-none focus:border-amber-500 cursor-pointer"
@@ -2483,7 +2483,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                 {/* Email */}
                 <div>
                   <label className="block font-extrabold text-slate-700 mb-1">Email Đăng Nhập (*):</label>
-                  <input
+                  <input id="email_2486" name="email_2486"
                     type="email"
                     required
                     disabled={!!editingUser}
@@ -2499,7 +2499,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                     {editingUser ? "Mật Khẩu Mới (Đổi mật khẩu):" : "Mật Khẩu Đăng Nhập (*):"}
                   </label>
                   <div className="relative">
-                    <input
+                    <input id="password_2502" name="password_2502"
                       type={showUserPassword ? "text" : "password"}
                       required={!editingUser}
                       placeholder={editingUser ? "•••••••• (Giữ nguyên mật khẩu cũ)" : "Nhập mật khẩu (tối thiểu 6 ký tự)..."}
@@ -2521,7 +2521,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                 {/* Phone */}
                 <div>
                   <label className="block font-extrabold text-slate-700 mb-1">Số Điện Thoại (*):</label>
-                  <input
+                  <input id="phone_2524" name="phone_2524"
                     type="text"
                     required
                     value={userFormData.phone}
@@ -2533,7 +2533,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                 {/* Tier */}
                 <div>
                   <label className="block font-extrabold text-slate-700 mb-1">Cấp Độ Tier (*):</label>
-                  <select
+                  <select id="tier_2536" name="tier_2536"
                     value={userFormData.tier}
                     onChange={(e) => setUserFormData({ ...userFormData, tier: e.target.value as any })}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold text-slate-900 focus:outline-none focus:border-amber-500 cursor-pointer"
@@ -2548,7 +2548,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                 {/* STK Ngân Hàng */}
                 <div>
                   <label className="block font-extrabold text-slate-700 mb-1">Số Tài Khoản Ngân Hàng (*):</label>
-                  <input
+                  <input id="accountnumber_2551" name="accountnumber_2551"
                     type="text"
                     required
                     value={userFormData.accountNumber}
@@ -2582,7 +2582,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-extrabold text-slate-700 mb-1">Số CCCD (12 số) (*):</label>
-                  <input
+                  <input id="idcardnumber_2585" name="idcardnumber_2585"
                     type="text"
                     required
                     value={userFormData.idCardNumber}
@@ -2593,7 +2593,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
 
                 <div>
                   <label className="block font-extrabold text-slate-700 mb-1">Cơ Sở Hoạt Động (Nếu có):</label>
-                  <input
+                  <input id="facilityname_2596" name="facilityname_2596"
                     type="text"
                     value={userFormData.facilityName}
                     onChange={(e) => setUserFormData({ ...userFormData, facilityName: e.target.value })}
@@ -2643,7 +2643,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
             <form onSubmit={handleCreateCustomRole} className="space-y-3 text-xs">
               <div>
                 <label className="block font-extrabold text-slate-700 mb-1">Tên Vai Trò (*):</label>
-                <input
+                <input id="vDBCSTrNgKhoaTVNViNSpa_2646" name="vDBCSTrNgKhoaTVNViNSpa_2646"
                   type="text"
                   required
                   placeholder="Ví dụ: Bác Sĩ Trưởng Khoa, Tư Vấn Viên Spa..."
@@ -2659,7 +2659,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
 
               <div>
                 <label className="block font-extrabold text-slate-700 mb-1">Mã Định Danh (Role Key) (*):</label>
-                <input
+                <input id="doctorLeadSpaConsultant_2662" name="doctorLeadSpaConsultant_2662"
                   type="text"
                   required
                   placeholder="doctor_lead, spa_consultant..."
@@ -2671,7 +2671,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
 
               <div>
                 <label className="block font-extrabold text-slate-700 mb-1">Mô Tả Vai Trò:</label>
-                <textarea
+                <textarea id="mTNgNGNChCNNgCAVaiTrNY_2674" name="mTNgNGNChCNNgCAVaiTrNY_2674"
                   rows={2}
                   placeholder="Mô tả ngắn gọn chức năng của vai trò này..."
                   value={newRoleData.description}
@@ -2719,7 +2719,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </button>
             </div>
 
-            <input
+            <input id="tMTNNgNHNgMbVcbAcb_2722" name="tMTNNgNHNgMbVcbAcb_2722"
               type="text"
               placeholder="Tìm tên ngân hàng (MB, VCB, ACB...)"
               value={userBankSearch}
@@ -2789,7 +2789,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               
               <div>
                 <label className="block text-slate-700 font-extrabold mb-1">1. Tên Cấp Bậc (*):</label>
-                <input
+                <input id="vDBCVNgBChKimKimCNg_2792" name="vDBCVNgBChKimKimCNg_2792"
                   type="text"
                   required
                   placeholder="Ví dụ: Bạc, Vàng, Bạch Kim, Kim Cương..."
@@ -2802,7 +2802,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">2. Doanh số tối thiểu (VNĐ) (*):</label>
-                  <input
+                  <input id="field_0_2805" name="field_0_2805"
                     type="text"
                     required
                     placeholder="0"
@@ -2814,7 +2814,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
 
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">3. Doanh số tối đa (VNĐ):</label>
-                  <input
+                  <input id="field_50000000_2817" name="field_50000000_2817"
                     type="text"
                     disabled={tierFormData.isUnlimited}
                     placeholder="50.000.000"
@@ -2823,7 +2823,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 disabled:opacity-50"
                   />
                   <label className="flex items-center gap-1.5 mt-1 cursor-pointer text-slate-600 font-bold text-[11px]">
-                    <input
+                    <input id="checkbox_2826" name="checkbox_2826"
                       type="checkbox"
                       checked={tierFormData.isUnlimited}
                       onChange={(e) => setTierFormData({ ...tierFormData, isUnlimited: e.target.checked })}
@@ -2839,7 +2839,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                   <label className="block text-slate-700 font-extrabold mb-1">4. Mức Hoa Hồng (%):</label>
                   <div className="relative">
                     <Percent className="w-4 h-4 text-amber-500 absolute left-3 top-3" />
-                    <input
+                    <input id="commissionrate_2842" name="commissionrate_2842"
                       type="number"
                       required
                       min={0}
@@ -2854,7 +2854,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
 
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">5. Hệ số thưởng (x):</label>
-                  <input
+                  <input id="bonusmultiplier_2857" name="bonusmultiplier_2857"
                     type="number"
                     required
                     min={1}
@@ -2869,7 +2869,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
 
               <div>
                 <label className="block text-slate-700 font-extrabold mb-1">6. Đặc quyền dành cho Cấp Bậc này (Mỗi dòng 1 đặc quyền):</label>
-                <textarea
+                <textarea id="mICQuyNViTTrN1DNg_2872" name="mICQuyNViTTrN1DNg_2872"
                   rows={3}
                   placeholder="Mỗi đặc quyền viết trên 1 dòng..."
                   value={tierFormData.benefitsText}
@@ -2880,7 +2880,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
 
               <div>
                 <label className="block text-slate-700 font-extrabold mb-1">7. Mô tả ngắn cấp bậc:</label>
-                <input
+                <input id="mTTMTTCPBC_2883" name="mTTMTTCPBC_2883"
                   type="text"
                   placeholder="Mô tả tóm tắt cấp bậc..."
                   value={tierFormData.description}

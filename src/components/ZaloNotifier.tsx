@@ -59,7 +59,7 @@ export const ZaloNotifier: React.FC<ZaloNotifierProps> = ({ defaultChatId = '', 
           <label className="block text-slate-700 font-extrabold mb-1">
             Chat ID Người Nhận (*):
           </label>
-          <input
+          <input id="chatid_62" name="chatid_62"
             type="text"
             value={chatId}
             onChange={(e) => setChatId(e.target.value)}
@@ -76,7 +76,7 @@ export const ZaloNotifier: React.FC<ZaloNotifierProps> = ({ defaultChatId = '', 
           <label className="block text-slate-700 font-extrabold mb-1">
             Định Dạng Nội Dung Tin Nhắn:
           </label>
-          <select
+          <select id="parsemode_79" name="parsemode_79"
             value={parseMode}
             onChange={(e) => setParseMode(e.target.value as 'markdown' | 'html')}
             className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-900 focus:outline-none focus:border-blue-500 cursor-pointer"
@@ -90,7 +90,7 @@ export const ZaloNotifier: React.FC<ZaloNotifierProps> = ({ defaultChatId = '', 
           <label className="block text-slate-700 font-extrabold mb-1">
             Nội Dung Tin Nhắn (*):
           </label>
-          <textarea
+          <textarea id="message_93" name="message_93"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Nhập nội dung tin nhắn gửi qua Zalo Bot..."

@@ -517,7 +517,7 @@ export const Implant3DViewer: React.FC<Implant3DViewerProps> = ({ onBookAppointm
               </div>
             </div>
 
-            <input
+            <input id="volumecc_520" name="volumecc_520"
               type="range"
               min="200"
               max="550"
@@ -555,7 +555,7 @@ export const Implant3DViewer: React.FC<Implant3DViewerProps> = ({ onBookAppointm
                     {compareVolumeCc} CC
                   </span>
                 </div>
-                <input
+                <input id="comparevolumecc_558" name="comparevolumecc_558"
                   type="range"
                   min="200"
                   max="550"
@@ -614,7 +614,7 @@ export const Implant3DViewer: React.FC<Implant3DViewerProps> = ({ onBookAppointm
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Hình Dáng (Shape):
                 </label>
-                <select
+                <select id="shape_617" name="shape_617"
                   value={config.shape}
                   onChange={(e) => setConfig({ ...config, shape: e.target.value as any })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-amber-500 font-medium"
@@ -629,7 +629,7 @@ export const Implant3DViewer: React.FC<Implant3DViewerProps> = ({ onBookAppointm
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Chất Gel (Gel Type):
                 </label>
-                <select
+                <select id="geltype_632" name="geltype_632"
                   value={config.gelType}
                   onChange={(e) => setConfig({ ...config, gelType: e.target.value as any })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-amber-500 font-medium"
@@ -677,7 +677,7 @@ export const Implant3DViewer: React.FC<Implant3DViewerProps> = ({ onBookAppointm
             <div className="grid grid-cols-2 gap-2.5 text-xs">
               <div>
                 <label className="text-slate-700 text-[11px] font-bold block mb-1">Chiều cao (cm):</label>
-                <input
+                <input id="height_680" name="height_680"
                   type="number"
                   value={userBody.height}
                   onChange={(e) => setUserBody({ ...userBody, height: Number(e.target.value) })}
@@ -687,7 +687,7 @@ export const Implant3DViewer: React.FC<Implant3DViewerProps> = ({ onBookAppointm
 
               <div>
                 <label className="text-slate-700 text-[11px] font-bold block mb-1">Cân nặng (kg):</label>
-                <input
+                <input id="weight_690" name="weight_690"
                   type="number"
                   value={userBody.weight}
                   onChange={(e) => setUserBody({ ...userBody, weight: Number(e.target.value) })}
@@ -697,7 +697,7 @@ export const Implant3DViewer: React.FC<Implant3DViewerProps> = ({ onBookAppointm
 
               <div>
                 <label className="text-slate-700 text-[11px] font-bold block mb-1">Vòng 1 (cm):</label>
-                <input
+                <input id="currentbust_700" name="currentbust_700"
                   type="number"
                   value={userBody.currentBust}
                   onChange={(e) => setUserBody({ ...userBody, currentBust: Number(e.target.value) })}
@@ -707,7 +707,7 @@ export const Implant3DViewer: React.FC<Implant3DViewerProps> = ({ onBookAppointm
 
               <div>
                 <label className="text-slate-700 text-[11px] font-bold block mb-1">Phong cách thích:</label>
-                <select
+                <select id="desiredlook_710" name="desiredlook_710"
                   value={userBody.desiredLook}
                   onChange={(e) => setUserBody({ ...userBody, desiredLook: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-900 font-semibold"

@@ -201,7 +201,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
             {/* Category Dropdown Filter */}
             <div className="relative w-full sm:w-52">
               <Filter className="w-3.5 h-3.5 text-amber-600 absolute left-3 top-3 pointer-events-none" />
-              <select
+              <select id="selectedcategory_204" name="selectedcategory_204"
                 value={selectedCategory}
                 onChange={(e) => {
                   setSelectedCategory(e.target.value);
@@ -221,7 +221,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
             {/* Search Input */}
             <div className="relative w-full sm:w-56">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
-              <input
+              <input id="tMTNDChVThMM_224" name="tMTNDChVThMM_224"
                 type="text"
                 placeholder="Tìm tên dịch vụ thẩm mỹ..."
                 value={searchTerm}
@@ -472,7 +472,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
             <form onSubmit={handleSubmitForm} className="space-y-4 text-xs font-medium">
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Tên Dịch Vụ Thẩm Mỹ:</label>
-                <input
+                <input id="name_475" name="name_475"
                   type="text"
                   required
                   value={formData.name || ""}
@@ -485,7 +485,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Chuyên Khoa:</label>
-                  <select
+                  <select id="categoryPhauThuat_488" name="categoryPhauThuat_488"
                     value={formData.category || "phau-thuat"}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-500"
@@ -499,7 +499,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
 
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">% Hoa Hồng CTV:</label>
-                  <input
+                  <input id="commissionrate15_502" name="commissionrate15_502"
                     type="number"
                     required
                     value={formData.commissionRate || 15}
@@ -512,7 +512,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Giá Ưu Đãi (VNĐ):</label>
-                  <input
+                  <input id="price0_515" name="price0_515"
                     type="text"
                     required
                     value={formatCurrencyInput(formData.price || 0)}
@@ -524,7 +524,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
 
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Giá Gốc Niêm Yết (VNĐ):</label>
-                  <input
+                  <input id="originalprice0_527" name="originalprice0_527"
                     type="text"
                     value={formatCurrencyInput(formData.originalPrice || 0)}
                     onChange={(e) => setFormData({ ...formData, originalPrice: parseCurrencyInput(e.target.value) })}
@@ -536,7 +536,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
 
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Mô Tả Dịch Vụ:</label>
-                <textarea
+                <textarea id="description_539" name="description_539"
                   rows={3}
                   value={formData.description || ""}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -554,7 +554,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
                     <Upload className="w-5 h-5 text-amber-600 mb-1" />
                     <span className="text-xs font-bold text-slate-800">Chọn file ảnh từ thiết bị</span>
                     <span className="text-[10px] text-slate-500 font-medium">JPG, PNG, WEBP, GIF</span>
-                    <input
+                    <input id="file_557" name="file_557"
                       type="file"
                       accept="image/*"
                       onChange={(e) => {
@@ -596,7 +596,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
                   {(formData.features || []).map((feat, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <input
+                      <input id="feat_599" name="feat_599"
                         type="text"
                         value={feat}
                         onChange={(e) => {

@@ -536,7 +536,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                     <label className="block text-slate-700 font-extrabold mb-1">Email hoặc Số điện thoại (*):</label>
                     <div className="relative">
                       <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-                      <input
+                      <input id="adminKoreanstarVnHoCST_539" name="adminKoreanstarVnHoCST_539"
                         type="text"
                         required
                         placeholder="admin@koreanstar.vn hoặc SĐT..."
@@ -551,7 +551,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                     <label className="block text-slate-700 font-extrabold mb-1">Mật Khẩu (*):</label>
                     <div className="relative">
                       <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-                      <input
+                      <input id="input_554" name="input_554"
                         type={showPassword ? "text" : "password"}
                         required
                         placeholder="••••••••"
@@ -571,7 +571,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
                   <div className="flex items-center justify-between text-xs pt-0.5">
                     <label className="flex items-center gap-2 cursor-pointer text-slate-600 font-medium">
-                      <input
+                      <input id="checkbox_574" name="checkbox_574"
                         type="checkbox"
                         checked={rememberMe}
                         onChange={(e) => setRememberMe(e.target.checked)}
@@ -699,7 +699,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                             <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-[#0B192C] font-extrabold text-xs cursor-pointer transition shadow-xs">
                               <Upload className="w-3.5 h-3.5" />
                               <span>{avatarPreview ? "Đổi ảnh khác" : "Tải ảnh & Cắt 1:1"}</span>
-                              <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+                              <input id="file_702" name="file_702" type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
                             </label>
                             <p className="text-[10px] text-slate-500 mt-1 font-medium">Tải ảnh đại diện rõ mặt để xác thực CTV</p>
                           </div>
@@ -708,7 +708,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
                       <div>
                         <label className="block text-slate-700 font-extrabold text-[11px] mb-1">2. Họ Và Tên đầy đủ (*):</label>
-                        <input
+                        <input id="vDNguyNVNA_711" name="vDNguyNVNA_711"
                           type="text"
                           required
                           placeholder="Ví dụ: Nguyễn Văn A"
@@ -720,7 +720,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
                       <div>
                         <label className="block text-slate-700 font-extrabold text-[11px] mb-1">3. Số CCCD / CMND (*):</label>
-                        <input
+                        <input id="nhP12SCNCCCNgDN_723" name="nhP12SCNCCCNgDN_723"
                           type="text"
                           required
                           placeholder="Nhập 12 số căn cước công dân"
@@ -732,7 +732,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
                       <div>
                         <label className="block text-slate-700 font-extrabold text-[11px] mb-1">4. Cơ sở / Spa / TMV (Tùy chọn):</label>
-                        <input
+                        <input id="tNSpaHoCThMMViNCABN_735" name="tNSpaHoCThMMViNCABN_735"
                           type="text"
                           placeholder="Tên Spa hoặc Thẩm Mỹ Viện của bạn"
                           value={facilityName}
@@ -777,7 +777,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
                       <div>
                         <label className="block text-slate-700 font-extrabold text-[11px] mb-1">5. Email Đăng Nhập (*):</label>
-                        <input
+                        <input id="nguyenvanaGmailCom_780" name="nguyenvanaGmailCom_780"
                           type="email"
                           required
                           placeholder="nguyenvana@gmail.com"
@@ -789,7 +789,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
                       <div>
                         <label className="block text-slate-700 font-extrabold text-[11px] mb-1">6. Số Điện Thoại (*):</label>
-                        <input
+                        <input id="field_0912345678_792" name="field_0912345678_792"
                           type="text"
                           required
                           placeholder="0912345678"
@@ -802,7 +802,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                       <div>
                         <label className="block text-slate-700 font-extrabold text-[11px] mb-1">7. Mật Khẩu Tài Khoản (*):</label>
                         <div className="relative">
-                          <input
+                          <input id="thiTLPMTKhUT6KT_805" name="thiTLPMTKhUT6KT_805"
                             type={showPassword ? "text" : "password"}
                             required
                             placeholder="Thiết lập mật khẩu từ 6 ký tự..."
@@ -822,7 +822,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
                       <div>
                         <label className="block text-slate-700 font-extrabold text-[11px] mb-1">Vai trò khởi tạo:</label>
-                        <select
+                        <select id="signuprole_825" name="signuprole_825"
                           value={signupRole}
                           onChange={(e) => setSignupRole(e.target.value)}
                           className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-900 focus:outline-none focus:border-amber-500 text-xs cursor-pointer"
@@ -892,7 +892,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
                       <div>
                         <label className="block text-slate-700 font-extrabold text-[11px] mb-1">9. Số Tài Khoản Ngân Hàng (*):</label>
-                        <input
+                        <input id="nhPSTIKhoNNhNHoaHNg_895" name="nhPSTIKhoNNhNHoaHNg_895"
                           type="text"
                           required
                           placeholder="Nhập số tài khoản nhận hoa hồng..."
@@ -958,7 +958,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                     <label className="block text-slate-700 font-bold mb-1">Email hoặc Số điện thoại (*):</label>
                     <div className="relative">
                       <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-                      <input
+                      <input id="emailHoCSTKhIPhC_961" name="emailHoCSTKhIPhC_961"
                         type="text"
                         required
                         placeholder="Email hoặc SĐT khôi phục..."
@@ -1083,7 +1083,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
             {/* Search Input */}
             <div className="relative shrink-0">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-              <input
+              <input id="tMTNNgNHNgVietcombankMbTcbVcb_1086" name="tMTNNgNHNgVietcombankMbTcbVcb_1086"
                 type="text"
                 placeholder="Tìm tên ngân hàng (Vietcombank, MB, TCB, VCB...)"
                 value={bankSearchQuery}
@@ -1222,7 +1222,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                 {/* Zoom Slider */}
                 <div className="flex items-center gap-3">
                   <ZoomOut className="w-4 h-4 text-slate-500 shrink-0" />
-                  <input
+                  <input id="zoom_1225" name="zoom_1225"
                     type="range"
                     min="1"
                     max="4"

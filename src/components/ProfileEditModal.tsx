@@ -339,7 +339,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               </label>
               <div className="relative">
                 <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="nguyNVNA_342" name="nguyNVNA_342"
                   type="text"
                   required
                   placeholder="Nguyễn Văn A"
@@ -357,7 +357,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="email_360" name="email_360"
                   type="email"
                   readOnly
                   disabled
@@ -374,7 +374,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               </label>
               <div className="relative">
                 <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="field_0912345678_377" name="field_0912345678_377"
                   type="text"
                   required
                   placeholder="0912345678"
@@ -392,7 +392,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               </label>
               <div className="relative">
                 <CreditCard className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="stkNhNHoaHNg_395" name="stkNhNHoaHNg_395"
                   type="text"
                   required
                   placeholder="STK nhận hoa hồng"
@@ -432,7 +432,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               </label>
               <div className="relative">
                 <FileBadge className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
+                <input id="nhP12SCNCCCNgDN_435" name="nhP12SCNCCCNgDN_435"
                   type="text"
                   required
                   placeholder="Nhập 12 số Căn cước công dân"
@@ -451,7 +451,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
             </label>
             <div className="relative">
               <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
+              <input id="tNSpaClinicTmvCABNKhNgBTBuC_454" name="tNSpaClinicTmvCABNKhNgBTBuC_454"
                 type="text"
                 placeholder="Tên Spa / Clinic / TMV của bạn (Không bắt buộc)"
                 value={facilityName}
@@ -472,7 +472,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               </span>
             </label>
             <div className="relative">
-              <input
+              <input id="input_475" name="input_475"
                 type="text"
                 placeholder="Ví dụ: 123456789 (Nhập ID cuộc trò chuyện Zalo Bot)"
                 value={zaloChatId}
@@ -536,7 +536,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
             {/* Search Input */}
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
+              <input id="tMTNNgNHNgMbVcbAcbVpb_539" name="tMTNNgNHNgMbVcbAcbVpb_539"
                 type="text"
                 placeholder="Tìm tên ngân hàng (MB, VCB, ACB, VPB...)"
                 value={bankSearchQuery}
@@ -634,7 +634,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                 </span>
                 <span className="font-mono font-bold text-amber-600">{Math.round(zoom * 100)}%</span>
               </div>
-              <input
+              <input id="zoom_637" name="zoom_637"
                 type="range"
                 min={1}
                 max={4}

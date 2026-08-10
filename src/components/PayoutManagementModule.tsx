@@ -276,7 +276,7 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
           <div className="md:col-span-8 relative">
             <Search className="w-4 h-4 text-amber-600 absolute left-3.5 top-3.5" />
-            <input
+            <input id="input_279" name="input_279"
               type="text"
               placeholder="Tìm theo Tên CTV, Mã CTV, Ngân hàng, Số tài khoản hoặc Mã giao dịch..."
               value={searchTerm}
@@ -286,7 +286,7 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
           </div>
 
           <div className="md:col-span-4">
-            <select
+            <select id="status_289" name="status_289"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-3.5 py-2.5 text-xs font-extrabold text-slate-900 focus:outline-none focus:border-amber-500 cursor-pointer"
@@ -883,7 +883,7 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
             <form onSubmit={handleAccountantCompleteTx} className="space-y-3.5 text-xs font-medium">
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Mã Giao Dịch Ngân Hàng VietQR (*):</label>
-                <input
+                <input id="vDFt262139044812_886" name="vDFt262139044812_886"
                   type="text"
                   required
                   placeholder="Ví dụ: FT262139044812..."
@@ -896,7 +896,7 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Upload Hình Ảnh Chuyển Khoản / Biên Lai (*):</label>
                 <div className="space-y-2">
-                  <input
+                  <input id="file_899" name="file_899"
                     type="file"
                     accept="image/*"
                     onChange={(e) => {
@@ -953,7 +953,7 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
 
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Ghi Chú Chứng Từ Giao Dịch:</label>
-                <textarea
+                <textarea id="nhPGhiChGiaoDChGiINgNTNg_956" name="nhPGhiChGiaoDChGiINgNTNg_956"
                   rows={2}
                   placeholder="Nhập ghi chú giao dịch giải ngân tự động..."
                   value={txNotesInput}
@@ -1002,7 +1002,7 @@ export const PayoutManagementModule: React.FC<PayoutManagementModuleProps> = ({
             <form onSubmit={handleRejectSubmit} className="space-y-3.5 text-xs font-medium">
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Lý Do Từ Chối (*):</label>
-                <textarea
+                <textarea id="textarea_1005" name="textarea_1005"
                   rows={3}
                   required
                   placeholder="Nhập lý do từ chối (ví dụ: Số tài khoản ngân hàng không chính chủ)..."

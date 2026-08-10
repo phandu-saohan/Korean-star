@@ -484,7 +484,7 @@ export const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({
                 {/* Lọc theo Mã / Tên CTV */}
                 <div className="relative">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
+                  <input id="mCtvTNCtvDChV_487" name="mCtvTNCtvDChV_487"
                     type="text"
                     placeholder="Mã CTV, Tên CTV, Dịch vụ..."
                     value={transferCtvCodeFilter}
@@ -505,7 +505,7 @@ export const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({
                 <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
                   <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
                   <span className="text-[11px] font-bold text-slate-600 shrink-0">Tháng:</span>
-                  <select
+                  <select id="transfermonth_508" name="transfermonth_508"
                     value={transferMonthFilter}
                     onChange={(e) => setTransferMonthFilter(e.target.value)}
                     className="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
@@ -521,7 +521,7 @@ export const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({
                 <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
                   <Calendar className="w-4 h-4 text-blue-600 shrink-0" />
                   <span className="text-[11px] font-bold text-slate-600 shrink-0">Năm:</span>
-                  <select
+                  <select id="transferyear_524" name="transferyear_524"
                     value={transferYearFilter}
                     onChange={(e) => setTransferYearFilter(e.target.value)}
                     className="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
@@ -683,7 +683,7 @@ export const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({
             <div className="space-y-3 text-xs font-medium">
               <div>
                 <label className="block text-slate-700 font-extrabold mb-1">Mã CTV cần thêm vào nhóm (*):</label>
-                <input
+                <input id="vdSaohanNguyenvana0912_686" name="vdSaohanNguyenvana0912_686"
                   type="text"
                   placeholder="VD: SAOHAN-NGUYENVANA0912"
                   value={memberCodeInput}
@@ -852,7 +852,7 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
             <div>
               <label className="block font-extrabold mb-1 text-slate-700">Mã Trưởng nhóm nhận doanh số (*):</label>
               <div className="relative">
-                <input
+                <input id="vdSaohanTruongnhom16789_855" name="vdSaohanTruongnhom16789_855"
                   type="text"
                   placeholder="VD: SAOHAN-TRUONGNHOM16789"
                   value={targetLeaderCode}
@@ -884,7 +884,7 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
             {/* Nhập Doanh Số Chuyển (Phần Ngàn) */}
             <div>
               <label className="block font-extrabold mb-1 text-slate-700">Doanh số chuyển (đ) (*):</label>
-              <input
+              <input id="vd10000000_887" name="vd10000000_887"
                 type="text"
                 placeholder="VD: 10.000.000"
                 value={formatCurrencyInput(amount)}
@@ -898,7 +898,7 @@ export const SendTransferModal: React.FC<SendTransferProps> = ({ ctvUser, onClos
 
             <div>
               <label className="block font-extrabold mb-1 text-slate-700">Ghi chú (tùy chọn):</label>
-              <textarea
+              <textarea id="thMGhiChGITrNgNhM_901" name="thMGhiChGITrNgNhM_901"
                 rows={2}
                 placeholder="Thêm ghi chú gửi Trưởng nhóm..."
                 value={note}

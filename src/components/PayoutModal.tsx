@@ -117,7 +117,7 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
 
             <div>
               <label className="block text-slate-700 font-semibold mb-1">Số Tiền Muốn Rút (VNĐ):</label>
-              <input
+              <input id="formatcurrencyAmount_120" name="formatcurrencyAmount_120"
                 type="text"
                 value={formatCurrencyInput(amount)}
                 onChange={(e) => setAmount(parseCurrencyInput(e.target.value))}
@@ -128,7 +128,7 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
 
             <div>
               <label className="block text-slate-700 font-semibold mb-1">Ngân Hàng Thụ Hưởng:</label>
-              <select
+              <select id="bankname_131" name="bankname_131"
                 value={bankName}
                 onChange={(e) => setBankName(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-bold focus:outline-none focus:border-amber-500"
@@ -154,7 +154,7 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
 
             <div>
               <label className="block text-slate-700 font-semibold mb-1">Số Tài Khoản Ngân Hàng:</label>
-              <input
+              <input id="nhPSTIKhoN_157" name="nhPSTIKhoN_157"
                 type="text"
                 required
                 placeholder="Nhập số tài khoản..."
@@ -166,7 +166,7 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
 
             <div>
               <label className="block text-slate-700 font-semibold mb-1">Tên Chủ Tài Khoản (Viết Hoa Không Dấu):</label>
-              <input
+              <input id="vdNguyenVanA_169" name="vdNguyenVanA_169"
                 type="text"
                 required
                 placeholder="VD: NGUYEN VAN A"

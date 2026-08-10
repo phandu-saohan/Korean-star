@@ -580,7 +580,7 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
         {/* Real-time Keyword Search Input Bar */}
         <div className="relative">
           <Search className="w-4 h-4 text-amber-600 absolute left-3.5 top-3.5" />
-          <input
+          <input id="input_583" name="input_583"
             type="text"
             placeholder="Tìm kiếm theo tên khách hàng, tên dịch vụ, bác sĩ phụ trách hoặc nhận xét..."
             value={searchTerm}
@@ -609,7 +609,7 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
           <div className="space-y-1">
             <label className="block text-[11px] font-extrabold text-slate-600">1. Chọn Chuyên Khoa Thẩm Mỹ:</label>
             <div className="relative">
-              <select
+              <select id="selectedcategory_612" name="selectedcategory_612"
                 value={selectedCategory}
                 onChange={(e) => handleCategoryChange(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-3.5 pr-8 py-2.5 text-xs font-extrabold text-slate-900 focus:outline-none focus:border-amber-500 appearance-none shadow-xs cursor-pointer hover:border-amber-400 transition"
@@ -628,7 +628,7 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
           <div className="space-y-1">
             <label className="block text-[11px] font-extrabold text-slate-600">2. Chọn Dịch Vụ Cụ Thể:</label>
             <div className="relative">
-              <select
+              <select id="selectedserviceid_631" name="selectedserviceid_631"
                 value={selectedServiceId}
                 onChange={(e) => {
                   setSelectedServiceId(e.target.value);
@@ -745,7 +745,7 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
                 {/* Search Input */}
                 <div className="relative">
                   <Search className="w-3.5 h-3.5 text-amber-600 absolute left-3 top-3 pointer-events-none" />
-                  <input
+                  <input id="tMKiMTNDChV_748" name="tMKiMTNDChV_748"
                     type="text"
                     placeholder="Tìm kiếm tên dịch vụ..."
                     value={serviceSearch}
@@ -830,7 +830,7 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Tên Khách Hàng:</label>
-                  <input
+                  <input id="customername_833" name="customername_833"
                     type="text"
                     required
                     value={fbFormData.customerName || ""}
@@ -842,7 +842,7 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
 
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Tuổi & Địa Chỉ:</label>
-                  <input
+                  <input id="customerage_845" name="customerage_845"
                     type="text"
                     value={fbFormData.customerAge || ""}
                     onChange={(e) => setFbFormData({ ...fbFormData, customerAge: e.target.value })}
@@ -855,7 +855,7 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Bác Sĩ Phụ Trách:</label>
-                  <input
+                  <input id="doctorname_858" name="doctorname_858"
                     type="text"
                     value={fbFormData.doctorName || ""}
                     onChange={(e) => setFbFormData({ ...fbFormData, doctorName: e.target.value })}
@@ -866,7 +866,7 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
 
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Đánh Giá (1 - 5 Sao):</label>
-                  <select
+                  <select id="rating5_869" name="rating5_869"
                     value={fbFormData.rating || 5}
                     onChange={(e) => setFbFormData({ ...fbFormData, rating: Number(e.target.value) })}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-amber-700 font-bold focus:outline-none focus:border-amber-500"
@@ -887,7 +887,7 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
                       Bắt buộc
                     </span>
                   </label>
-                  <input
+                  <input id="recoverydays_890" name="recoverydays_890"
                     type="text"
                     required
                     value={fbFormData.recoveryDays || ""}
@@ -916,7 +916,7 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
 
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Gói Phẫu Thuật / Kỹ Thuật:</label>
-                  <input
+                  <input id="treatmentdetails_919" name="treatmentdetails_919"
                     type="text"
                     value={fbFormData.treatmentDetails || ""}
                     onChange={(e) => setFbFormData({ ...fbFormData, treatmentDetails: e.target.value })}
@@ -968,7 +968,7 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
                     </span>
                     <span className="text-[10px] text-slate-500 mt-0.5 font-medium">Hỗ trợ JPG, PNG, WEBP — Chọn cùng lúc hoặc từng ảnh</span>
 
-                    <input
+                    <input id="file_971" name="file_971"
                       type="file"
                       multiple
                       accept="image/*"
@@ -1000,7 +1000,7 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
 
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Cảm Nhận Thực Tế Từ Khách Hàng (Testimonial):</label>
-                <textarea
+                <textarea id="reviewtext_1003" name="reviewtext_1003"
                   rows={2}
                   value={fbFormData.reviewText || ""}
                   onChange={(e) => setFbFormData({ ...fbFormData, reviewText: e.target.value })}

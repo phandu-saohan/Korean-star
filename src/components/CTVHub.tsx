@@ -190,9 +190,10 @@ export const CTVHub: React.FC<CTVHubProps> = ({
     }
   }, [subTab]);
 
-  useEffect(() => {
-    onSubTabChange?.(activeSubTab);
-  }, [activeSubTab, onSubTabChange]);
+  const handleSubTabChange = (newSubTab: "overview" | "services" | "feedbacks" | "team-members" | "team-transfers" | "ctv-transfers" | "my-customers") => {
+    setActiveSubTab(newSubTab);
+    onSubTabChange?.(newSubTab);
+  };
   const [customCode, setCustomCode] = useState(ctvUser.code);
   const [customerDiscount, setCustomerDiscount] = useState("10");
   const [copiedLink, setCopiedLink] = useState(false);
@@ -690,7 +691,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
           <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setActiveSubTab("overview")}
+                onClick={() => handleSubTabChange("overview")}
                 className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
                 title="Quay lại Dashboard"
               >
@@ -744,7 +745,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
           {teamMembers.length > 0 && (
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
+              <input id="tMThNhViNTheoTNSTHoCMCtv_747" name="tMThNhViNTheoTNSTHoCMCtv_747"
                 type="text"
                 placeholder="Tìm thành viên theo Tên, SĐT hoặc Mã CTV..."
                 value={memberSearch}
@@ -878,7 +879,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
             <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-3 shadow-sm">
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setActiveSubTab("overview")}
+                  onClick={() => handleSubTabChange("overview")}
                   className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
                   title="Quay lại Dashboard"
                 >
@@ -900,7 +901,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                 {/* Lọc theo Mã / Tên CTV */}
                 <div className="relative">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
+                  <input id="mCtvTNCtvDChV_903" name="mCtvTNCtvDChV_903"
                     type="text"
                     placeholder="Mã CTV, Tên CTV, Dịch vụ..."
                     value={transferCtvCodeFilter}
@@ -921,7 +922,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                 <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
                   <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
                   <span className="text-[11px] font-bold text-slate-600 shrink-0">Tháng:</span>
-                  <select
+                  <select id="transfermonth_924" name="transfermonth_924"
                     value={transferMonthFilter}
                     onChange={(e) => setTransferMonthFilter(e.target.value)}
                     className="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
@@ -937,7 +938,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                 <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
                   <Calendar className="w-4 h-4 text-blue-600 shrink-0" />
                   <span className="text-[11px] font-bold text-slate-600 shrink-0">Năm:</span>
-                  <select
+                  <select id="transferyear_940" name="transferyear_940"
                     value={transferYearFilter}
                     onChange={(e) => setTransferYearFilter(e.target.value)}
                     className="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
@@ -1109,7 +1110,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
             <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setActiveSubTab("overview")}
+                  onClick={() => handleSubTabChange("overview")}
                   className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
                   title="Quay lại Dashboard"
                 >
@@ -1161,7 +1162,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                 {/* Lọc theo Mã/Tên Trưởng Nhóm hoặc Dịch Vụ */}
                 <div className="relative">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
+                  <input id="mTnTNTnDChV_1164" name="mTnTNTnDChV_1164"
                     type="text"
                     placeholder="Mã TN, Tên TN, Dịch vụ..."
                     value={transferCtvCodeFilter}
@@ -1182,7 +1183,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                 <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
                   <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
                   <span className="text-[11px] font-bold text-slate-600 shrink-0">Tháng:</span>
-                  <select
+                  <select id="transfermonth_1185" name="transfermonth_1185"
                     value={transferMonthFilter}
                     onChange={(e) => setTransferMonthFilter(e.target.value)}
                     className="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
@@ -1198,7 +1199,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                 <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
                   <Calendar className="w-4 h-4 text-blue-600 shrink-0" />
                   <span className="text-[11px] font-bold text-slate-600 shrink-0">Năm:</span>
-                  <select
+                  <select id="transferyear_1201" name="transferyear_1201"
                     value={transferYearFilter}
                     onChange={(e) => setTransferYearFilter(e.target.value)}
                     className="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
@@ -1325,7 +1326,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
             <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setActiveSubTab("overview")}
+                  onClick={() => handleSubTabChange("overview")}
                   className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
                   title="Quay lại Dashboard"
                 >
@@ -1382,7 +1383,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                 <div className="relative sm:col-span-2">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
+                  <input id="tMTNKhChHNgSINThoIDChV_1385" name="tMTNKhChHNgSINThoIDChV_1385"
                     type="text"
                     placeholder="Tìm tên khách hàng, số điện thoại, dịch vụ..."
                     value={customerSearchTerm}
@@ -1401,7 +1402,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
 
                 <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
                   <span className="text-[11px] font-bold text-slate-600 shrink-0">Trạng thái:</span>
-                  <select
+                  <select id="customerstatus_1404" name="customerstatus_1404"
                     value={customerStatusFilter}
                     onChange={(e) => setCustomerStatusFilter(e.target.value)}
                     className="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
@@ -1420,7 +1421,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                 <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
                   <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
                   <span className="text-[11px] font-bold text-slate-600 shrink-0">Tháng:</span>
-                  <select
+                  <select id="customermonth_1423" name="customermonth_1423"
                     value={customerMonthFilter}
                     onChange={(e) => setCustomerMonthFilter(e.target.value)}
                     className="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
@@ -1646,23 +1647,23 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                 key={mod.id}
                 onClick={() => {
                   if (mod.id === "my-customers") {
-                    setActiveSubTab("my-customers");
+                    handleSubTabChange("my-customers");
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   } else if (mod.id === "team-members") {
-                    setActiveSubTab("team-members");
+                    handleSubTabChange("team-members");
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   } else if (mod.id === "team-transfers") {
-                    setActiveSubTab("team-transfers");
+                    handleSubTabChange("team-transfers");
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   } else if (mod.id === "ctv-transfers") {
-                    setActiveSubTab("ctv-transfers");
+                    handleSubTabChange("ctv-transfers");
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   } else if (mod.id === "send-team-transfer") {
                     if (onOpenTeamTransferModal) onOpenTeamTransferModal();
                   } else if (mod.id === "service-catalog") {
-                    setActiveSubTab("services");
+                    handleSubTabChange("services");
                   } else if (mod.id === "before-after") {
-                    setActiveSubTab("feedbacks");
+                    handleSubTabChange("feedbacks");
                   } else if (onSelectTab) {
                     onSelectTab(mod.id);
                   }
@@ -1694,7 +1695,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex-1 sm:flex-initial">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-              <input
+              <input id="tMKhChHoCDChV_1697" name="tMKhChHoCDChV_1697"
                 type="text"
                 placeholder="Tìm khách hoặc dịch vụ..."
                 value={searchTerm}
@@ -1706,7 +1707,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
               />
             </div>
 
-            <select
+            <select id="status_1709" name="status_1709"
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);
@@ -1870,7 +1871,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
             <div className="space-y-3 text-xs font-medium">
               <div>
                 <label className="block text-slate-700 font-extrabold mb-1">Mã CTV cần thêm vào nhóm (*):</label>
-                <input
+                <input id="vdSaohanNguyenvana0912_1873" name="vdSaohanNguyenvana0912_1873"
                   type="text"
                   placeholder="VD: SAOHAN-NGUYENVANA0912"
                   value={memberCodeInput}
@@ -1881,7 +1882,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
 
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Họ và Tên CTV:</label>
-                <input
+                <input id="tNgNgBNUCTIKhoN_1884" name="tNgNgBNUCTIKhoN_1884"
                   type="text"
                   placeholder="Tự động đồng bộ nếu đã có tài khoản"
                   value={memberNameInput}
@@ -1892,7 +1893,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
 
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Số Điện Thoại:</label>
-                <input
+                <input id="vd0912345678_1895" name="vd0912345678_1895"
                   type="text"
                   placeholder="VD: 0912345678"
                   value={memberPhoneInput}
@@ -1903,7 +1904,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
 
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Link Ảnh Đại Diện (Avatar URL):</label>
-                <input
+                <input id="httpsTrNgNUDNgNhTNg_1906" name="httpsTrNgNUDNgNhTNg_1906"
                   type="text"
                   placeholder="https://... (để trống nếu dùng ảnh tự động)"
                   value={memberAvatarInput}
@@ -1956,7 +1957,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
             <div className="space-y-3 text-xs font-medium">
               <div>
                 <label className="block text-slate-700 font-extrabold mb-1">Mã CTV (Bảo lưu):</label>
-                <input
+                <input id="ctvcode_1959" name="ctvcode_1959"
                   type="text"
                   disabled
                   value={editingMember.ctvCode}
@@ -1966,7 +1967,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
 
               <div>
                 <label className="block text-slate-700 font-extrabold mb-1">Họ và Tên CTV:</label>
-                <input
+                <input id="nhPHVTN_1969" name="nhPHVTN_1969"
                   type="text"
                   placeholder="Nhập Họ và Tên..."
                   value={editName}
@@ -1977,7 +1978,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
 
               <div>
                 <label className="block text-slate-700 font-extrabold mb-1">Số Điện Thoại:</label>
-                <input
+                <input id="nhPSINThoI_1980" name="nhPSINThoI_1980"
                   type="text"
                   placeholder="Nhập Số điện thoại..."
                   value={editPhone}
@@ -1988,7 +1989,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
 
               <div>
                 <label className="block text-slate-700 font-extrabold mb-1">Link Ảnh Đại Diện (Avatar URL):</label>
-                <input
+                <input id="https_1991" name="https_1991"
                   type="text"
                   placeholder="https://..."
                   value={editAvatar}
