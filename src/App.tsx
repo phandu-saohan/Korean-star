@@ -582,7 +582,7 @@ export default function App() {
     type?: "commission" | "lead" | "system" | "promo" | "postop";
     targetCtvCode?: string;
   }) => {
-    const currentCode = (effectiveCtvUser?.code || authUser?.ctvCode || "").trim().toUpperCase();
+    const currentCode = (ctvUser?.code || authUser?.ctvCode || "").trim().toUpperCase();
     const targetCode = (notif.targetCtvCode || "").trim().toUpperCase();
     const isAdmin = currentRole === "admin";
 
@@ -606,7 +606,7 @@ export default function App() {
       safeSetLocalStorage("saohan_notifications", JSON.stringify(updated));
       return updated;
     });
-  }, [effectiveCtvUser, authUser, currentRole]);
+  }, [ctvUser, authUser, currentRole]);
 
   // Đăng ký nhận Event thông báo Realtime OneSignal để bật Toast & lưu vào biểu tượng Chuông trên Header
   useEffect(() => {
@@ -616,7 +616,7 @@ export default function App() {
       const text = detail.message || detail.body || detail.text || "";
       const targetUserId = detail.targetUserId || detail.data?.targetUserId || detail.data?.targetCtvCode || detail.data?.ctvCode;
 
-      const currentCode = (effectiveCtvUser?.code || authUser?.ctvCode || "").trim().toUpperCase();
+      const currentCode = (ctvUser?.code || authUser?.ctvCode || "").trim().toUpperCase();
       const currentId = (authUser?.id || "").trim().toUpperCase();
       const isAdmin = currentRole === "admin";
 
@@ -647,7 +647,7 @@ export default function App() {
 
     window.addEventListener("onesignal-notification-toast", handleOsToast);
     return () => window.removeEventListener("onesignal-notification-toast", handleOsToast);
-  }, [effectiveCtvUser, authUser, currentRole, addSystemNotification]);
+  }, [ctvUser, authUser, currentRole, addSystemNotification]);
 
   // Đồng bộ số đếm Badge trên Icon ứng dụng PWA (Android Chrome & iOS 16.4+ Add-to-Home-Screen)
   useEffect(() => {
@@ -665,7 +665,7 @@ export default function App() {
       const remote = await fetchAppointmentsFromSupabase();
       if (remote !== null) {
         if (knownAptMapRef.current.size > 0) {
-          const currentCode = (effectiveCtvUser?.code || authUser?.ctvCode || "").trim().toUpperCase();
+          const currentCode = (ctvUser?.code || authUser?.ctvCode || "").trim().toUpperCase();
           const isAdmin = currentRole === "admin";
 
           remote.forEach((apt) => {
@@ -702,7 +702,7 @@ export default function App() {
         safeSetLocalStorage("saohan_appointments", JSON.stringify(remote));
       }
     } catch (_) {}
-  }, [effectiveCtvUser, authUser, currentRole, addSystemNotification]);
+  }, [ctvUser, authUser, currentRole, addSystemNotification]);
 
   // Đồng bộ Yêu Cầu Rút Tiền từ Supabase DB & Bắn thông báo Chuông khi có Lệnh mới / Duyệt giải ngân
   const syncPayoutsWithNotification = useCallback(async () => {
