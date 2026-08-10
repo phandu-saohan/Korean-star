@@ -819,18 +819,43 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
     setUserModalOpen(false);
   };
 
-  // DELETE USER FROM SUPABASE
+  // DELETE USER FROM SUPABASE & LOCAL STORAGE
   const handleDeleteUser = async (user: AuthUserProfile) => {
-    if (user.role === "admin" && userAccounts.filter((u) => u.role === "admin").length <= 1) {
+    const isTargetAdmin = user.role === "admin" || (user.ctvCode && user.ctvCode.toLowerCase().includes("admin"));
+    const adminCount = userAccounts.filter((u) => u.role === "admin" || (u.ctvCode && u.ctvCode.toLowerCase().includes("admin"))).length;
+    
+    if (isTargetAdmin && adminCount <= 1) {
       alert("Không thể xóa tài khoản Admin duy nhất trong hệ thống!");
       return;
     }
 
-    if (window.confirm(`Bạn có chắc chắn muốn xóa tài khoản '${user.fullName}' (${user.email}) khỏi Supabase?`)) {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản '${user.fullName}' (${user.email || user.ctvCode}) khỏi hệ thống?`)) {
       try {
-        await deleteUserProfileFromSupabase(user.id);
-        setUserAccounts((prev) => prev.filter((u) => u.id !== user.id));
-        onToast(`Đã xóa tài khoản ${user.fullName} khỏi CSDL Supabase!`);
+        const targetId = user.id;
+        const targetCode = (user.ctvCode || (user as any).code || "").trim().toUpperCase();
+        const targetEmail = (user.email || "").trim().toLowerCase();
+
+        await deleteUserProfileFromSupabase(targetId, targetCode, targetEmail);
+
+        setUserAccounts((prev) => {
+          const updated = prev.filter((u) => {
+            const uId = u.id;
+            const uCode = (u.ctvCode || (u as any).code || "").trim().toUpperCase();
+            const uEmail = (u.email || "").trim().toLowerCase();
+
+            if (targetId && uId === targetId) return false;
+            if (targetCode && uCode === targetCode) return false;
+            if (targetEmail && uEmail === targetEmail) return false;
+            return true;
+          });
+
+          // Sync immediately to saohan_registered_users & saohan_all_user_profiles
+          localStorage.setItem("saohan_registered_users", JSON.stringify(updated));
+          localStorage.setItem("saohan_all_user_profiles", JSON.stringify(updated));
+          return updated;
+        });
+
+        onToast(`Đã xóa tài khoản ${user.fullName} (${user.ctvCode || user.email}) thành công!`);
       } catch (err: any) {
         alert(`Lỗi xóa tài khoản: ${err.message || err}`);
       }

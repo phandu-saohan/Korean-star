@@ -912,8 +912,21 @@ export const updateUserProfile = async (
 };
 
 // 7. Delete User Profile from Supabase DB (user_profiles)
-export const deleteUserProfileFromSupabase = async (userId: string) => {
-  await supabase.from("user_profiles").delete().eq("id", userId);
+export const deleteUserProfileFromSupabase = async (userId: string, ctvCode?: string, email?: string) => {
+  try {
+    if (userId) {
+      await supabase.from("user_profiles").delete().eq("id", userId);
+    }
+    if (ctvCode) {
+      await supabase.from("user_profiles").delete().eq("ctv_code", ctvCode);
+    }
+    if (email) {
+      await supabase.from("user_profiles").delete().eq("email", email);
+    }
+  } catch (err) {
+    console.warn("Supabase delete user profile warning:", err);
+  }
+  clearProfilesCache();
 };
 
 // 8. Fetch Role Permissions Matrix from Supabase DB
