@@ -610,13 +610,34 @@ Hãy tư vấn chọn size túi ngực (cc), độ nhô (profile) và hình dán
   }
 });
 
-// API: Zalo Bot Webhook Endpoint (Tự động nhận sự kiện nhắn tin & Phản hồi Chat ID)
-app.get("/api/zalo/webhook", (req, res) => {
-  const challenge = req.query.challenge || req.query["hub.challenge"];
+// API: Zalo Official Account (OA) Webhook Endpoint (Phục vụ Zalo Platform Webhook Verification)
+app.options(["/api/zalo-oa/webhook", "/api/zalo/webhook"], (req, res) => {
+  return res.status(200).json({ ok: true, status: 200, message: "OK" });
+});
+
+app.get(["/api/zalo-oa/webhook", "/api/zalo/webhook"], (req, res) => {
+  const challenge = req.query.challenge || req.query["hub.challenge"] || req.query.hub_challenge;
   if (challenge) {
-    return res.send(String(challenge));
+    return res.status(200).send(String(challenge));
   }
-  return res.json({ ok: true, status: "Zalo Bot Webhook Endpoint Active" });
+  return res.status(200).json({ ok: true, status: 200, message: "Zalo Official Account (OA) Webhook Active" });
+});
+
+app.post("/api/zalo-oa/webhook", async (req, res) => {
+  try {
+    const body = req.body || {};
+    console.log("[Zalo OA Webhook Received Event]:", JSON.stringify(body));
+
+    const challenge = body.challenge || body.hub_challenge || body.token;
+    if (challenge) {
+      console.log("[Zalo OA Webhook Challenge]:", challenge);
+    }
+
+    return res.status(200).json({ ok: true, status: 200, message: "OK", event: body.event_name || "webhook_received" });
+  } catch (err: any) {
+    console.error("[Zalo OA Webhook Error]:", err);
+    return res.status(200).json({ ok: true, status: 200, message: "OK" });
+  }
 });
 
 app.post("/api/zalo/webhook", async (req, res) => {
