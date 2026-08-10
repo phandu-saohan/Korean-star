@@ -122,6 +122,9 @@ export interface Appointment {
   ctvPhone?: string;
   customerMedia?: string;
   customerMediaType?: "image" | "video";
+  isCommissionWithdrawn?: boolean;
+  withdrawnAt?: string;
+  payoutRequestId?: string;
 }
 
 export interface SkinAnalysisResult {
@@ -240,6 +243,9 @@ export interface PayoutRequest {
   approvedByAdminAt?: string;
   completedAt?: string;
   rejectedReason?: string;
+  selectedAppointmentIds?: string[];
+  selectedInvoiceIds?: string[];
+  deductedRevenueAmount?: number;
   logs?: PayoutAuditLog[];
 }
 
@@ -264,4 +270,7 @@ export interface AppointmentInvoice {
   createdAt: string;
   notes?: string;
   transferProofImage?: string;
+  isCommissionWithdrawn?: boolean;
+  withdrawnAt?: string;
+  payoutRequestId?: string;
 }

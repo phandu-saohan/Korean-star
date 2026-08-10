@@ -1054,13 +1054,13 @@ export default function App() {
       return false;
     };
 
-    // Metric 3: DOANH SỐ TÍNH HOA HỒNG THÁNG HIỆN TẠI (Chỉ tính giao dịch trong tháng, reset về 0 khi sang tháng mới)
+    // Metric 3: DOANH SỐ TÍNH HOA HỒNG THÁNG HIỆN TẠI (Chỉ tính giao dịch trong tháng CHƯA RÚT HOA HỒNG, reset về 0 khi sang tháng mới & tự động trừ khi rút hoa hồng)
     const monthlyInvoiceRevenue = ctvInvoices
-      .filter(i => i.paymentStatus === "Đã thu đủ (Hoàn thành)" && isCurrentMonthItem(i.createdAt || i.depositPaidAt || i.remainingPaidAt))
+      .filter(i => i.paymentStatus === "Đã thu đủ (Hoàn thành)" && !i.isCommissionWithdrawn && isCurrentMonthItem(i.createdAt || i.depositPaidAt || i.remainingPaidAt))
       .reduce((sum, i) => sum + (i.totalAmount || 0), 0);
 
     const monthlyAptRevenue = ctvAppointments
-      .filter(a => !invoiceAptIds.has(a.id) && a.status === "Hoàn thành" && isCurrentMonthItem(a.date))
+      .filter(a => !invoiceAptIds.has(a.id) && a.status === "Hoàn thành" && !a.isCommissionWithdrawn && isCurrentMonthItem(a.date))
       .reduce((sum, a) => sum + 35000000, 0);
 
     const computedRevenue = monthlyInvoiceRevenue + monthlyAptRevenue;
@@ -1516,8 +1516,12 @@ export default function App() {
 
     showToast(`Đã duyệt đơn và cộng ${lead.commission.toLocaleString("vi-VN")}đ hoa hồng vào tài khoản CTV!`);
   };
-  // Helper: Execute payout
-  const handleConfirmPayout = (amount: number, bankDetails?: { bankName: string; accountNumber: string; accountHolder: string }) => {
+  // Helper: Execute payout with selected completed appointment items
+  const handleConfirmPayout = (
+    amount: number,
+    bankDetails?: { bankName: string; accountNumber: string; accountHolder: string },
+    selectedItems?: { selectedAptIds: string[]; selectedInvoiceIds: string[]; deductedRevenue: number }
+  ) => {
     const nowStr = formatDateTimeVN(new Date().toISOString().replace("T", " ").slice(0, 16));
     const reqId = `req-[#PAY-${Math.floor(100 + Math.random() * 900)}]`;
     const finalBankName = bankDetails?.bankName || ctvUser.bankAccount?.bankName || (ctvUser as any).bankName || "MBBank (Ngân Hàng Quân Đội)";
@@ -1534,6 +1538,9 @@ export default function App() {
       accountHolder: finalAccHolder,
       requestedAt: nowStr,
       status: "Chờ kế toán kiểm tra",
+      selectedAppointmentIds: selectedItems?.selectedAptIds,
+      selectedInvoiceIds: selectedItems?.selectedInvoiceIds,
+      deductedRevenueAmount: selectedItems?.deductedRevenue,
       logs: [
         {
           id: `log-${Date.now()}`,
@@ -1541,12 +1548,32 @@ export default function App() {
           timestamp: nowStr,
           actorRole: "ctv",
           actorName: ctvUser.name,
-          action: "Khởi tạo yêu cầu rút ví hoa hồng",
+          action: "Khởi tạo yêu cầu rút ví hoa hồng theo lịch hẹn",
           newStatus: "Chờ kế toán kiểm tra",
-          notes: `CTV tạo lệnh rút ${amount.toLocaleString("vi-VN")}đ về ${finalBankName} (${finalAccNo} - ${finalAccHolder})`
+          notes: `CTV tạo lệnh rút ${amount.toLocaleString("vi-VN")}đ từ ${selectedItems?.selectedAptIds?.length || 0} ca hoàn thành (Trừ ${selectedItems?.deductedRevenue?.toLocaleString("vi-VN") || 0}đ doanh số tháng)`
         }
       ]
     };
+
+    // Đánh dấu các lịch hẹn đã rút hoa hồng để tự động trừ khỏi Doanh số tháng
+    if (selectedItems?.selectedAptIds && selectedItems.selectedAptIds.length > 0) {
+      const aptSet = new Set(selectedItems.selectedAptIds);
+      setAppointments((prev) => {
+        const updated = prev.map((a) => aptSet.has(a.id) ? { ...a, isCommissionWithdrawn: true, withdrawnAt: nowStr, payoutRequestId: reqId } : a);
+        safeSetLocalStorage("saohan_appointments", JSON.stringify(updated));
+        return updated;
+      });
+    }
+
+    // Đánh dấu các hóa đơn đã rút hoa hồng để tự động trừ khỏi Doanh số tháng
+    if (selectedItems?.selectedInvoiceIds && selectedItems.selectedInvoiceIds.length > 0) {
+      const invSet = new Set(selectedItems.selectedInvoiceIds);
+      setInvoices((prev) => {
+        const updated = prev.map((i) => invSet.has(i.id) ? { ...i, isCommissionWithdrawn: true, withdrawnAt: nowStr, payoutRequestId: reqId } : i);
+        safeSetLocalStorage("saohan_invoices", JSON.stringify(updated));
+        return updated;
+      });
+    }
 
     setPayoutRequests((prev) => [newReq, ...prev]);
     savePayoutRequestToSupabase(newReq);
@@ -1555,7 +1582,7 @@ export default function App() {
       availableBalance: Math.max(0, prev.availableBalance - amount),
       pendingBalance: prev.pendingBalance + amount
     }));
-    showToast(`Đã gửi lệnh rút tiền ${reqId} về ${finalBankName} (${finalAccNo}) thành công!`);
+    showToast(`Đã gửi lệnh rút ${amount.toLocaleString("vi-VN")}đ (Trừ ${(selectedItems?.deductedRevenue || 0).toLocaleString("vi-VN")}đ doanh số tháng) thành công!`);
   };
 
   // Navigate to Before-After gallery filtered by service
@@ -2218,6 +2245,8 @@ export default function App() {
         {payoutModalOpen && (
           <PayoutModal
             ctvUser={effectiveCtvUser}
+            appointments={appointments}
+            invoices={invoices}
             onClose={() => setPayoutModalOpen(false)}
             onConfirmPayout={handleConfirmPayout}
           />
@@ -2505,6 +2534,8 @@ export default function App() {
         {payoutModalOpen && (
           <PayoutModal
             ctvUser={effectiveCtvUser}
+            appointments={appointments}
+            invoices={invoices}
             onClose={() => setPayoutModalOpen(false)}
             onConfirmPayout={handleConfirmPayout}
           />
