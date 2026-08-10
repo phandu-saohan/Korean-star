@@ -1344,51 +1344,51 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               </div>
             </div>
 
-            {/* CẤU HÌNH GỬI TIN NHẮN ZALO BOT API */}
+            {/* CẤU HÌNH GỬI TIN NHẮN ZALO OFFICIAL ACCOUNT (OA) OPEN API */}
             <div className="md:col-span-2 pt-4 border-t border-slate-100 space-y-4">
               <div>
                 <h4 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-blue-600" /> Tích Hợp Zalo Bot Platform (`sendMessage` API)
+                  <MessageSquare className="w-4 h-4 text-blue-600" /> Tích Hợp Zalo Official Account (OA) API (`openapi.zalo.me`)
                 </h4>
                 <p className="text-[11px] text-slate-500 font-medium">
-                  Cấu hình Bot Token từ Zalo Bot Platform (bot.zapps.me) để hệ thống gửi tin nhắn Zalo tự động.
+                  Cấu hình Zalo Official Account (OA) App ID, Secret Key, Access Token & Refresh Token (developers.zalo.me) để gửi thông báo CSKH và báo cáo tự động.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-slate-700 font-extrabold text-[11px] mb-1">
-                    Zalo Bot Token (*):
+                    Zalo OA App ID (*):
                   </label>
                   <input id="input_1276" name="input_1276"
-                    type="password"
-                    placeholder="Nhập Zalo Bot Token từ Zalo Bot Platform..."
-                    value={brandConfig.zaloBotToken || ""}
-                    onChange={(e) => setBrandConfig({ ...brandConfig, zaloBotToken: e.target.value })}
+                    type="text"
+                    placeholder="Ví dụ: 38291048291048"
+                    value={brandConfig.zaloOaAppId || brandConfig.zaloBotToken || ""}
+                    onChange={(e) => setBrandConfig({ ...brandConfig, zaloOaAppId: e.target.value, zaloBotToken: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-slate-700 font-extrabold text-[11px] mb-1">
-                    Webhook Secret Token:
+                    Zalo OA Secret Key:
                   </label>
                   <input id="nhPSecretTokenBMT_1289" name="nhPSecretTokenBMT_1289"
-                    type="text"
-                    placeholder="Nhập Secret Token bí mật..."
-                    value={brandConfig.zaloWebhookSecret || ""}
-                    onChange={(e) => setBrandConfig({ ...brandConfig, zaloWebhookSecret: e.target.value })}
+                    type="password"
+                    placeholder="Nhập Zalo OA Secret Key..."
+                    value={brandConfig.zaloOaSecretKey || brandConfig.zaloWebhookSecret || ""}
+                    onChange={(e) => setBrandConfig({ ...brandConfig, zaloOaSecretKey: e.target.value, zaloWebhookSecret: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-slate-700 font-extrabold text-[11px] mb-1">
-                    Chat ID Mặc Định:
+                    Zalo OA ID / SĐT Admin Nhận Báo Cáo:
                   </label>
                   <input id="vD123456789_1302" name="vD123456789_1302"
                     type="text"
-                    placeholder="Ví dụ: 123456789"
+                    placeholder="Ví dụ: 0901888999 hoặc OA Chat ID"
                     value={brandConfig.zaloDefaultChatId || ""}
                     onChange={(e) => setBrandConfig({ ...brandConfig, zaloDefaultChatId: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500"
@@ -1400,25 +1400,25 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
               <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-extrabold text-slate-800 flex items-center gap-1.5">
-                    <Globe className="w-4 h-4 text-blue-600" /> Webhook URL Tự Động Phản Hồi Chat ID (/id):
+                    <Globe className="w-4 h-4 text-blue-600" /> Webhook URL Tiếp Nhận Sự Kiện Zalo Official Account (OA):
                   </span>
                   <span className="bg-blue-100 text-blue-800 font-bold text-[10px] px-2 py-0.5 rounded-md">
-                    POST Webhook
+                    POST Zalo OA Webhook
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <input id="app_1323" name="app_1323"
                     type="text"
                     readOnly
-                    value={`${typeof window !== 'undefined' ? window.location.origin : 'https://korean-star.vercel.app'}/api/zalo/webhook${brandConfig.zaloBotToken ? `?token=${encodeURIComponent(brandConfig.zaloBotToken)}` : ''}`}
+                    value={`${typeof window !== 'undefined' ? window.location.origin : 'https://korean-star.vercel.app'}/api/zalo-oa/webhook`}
                     className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 font-mono text-xs text-blue-900 font-bold cursor-pointer select-all"
                   />
                   <button
                     type="button"
                     onClick={() => {
-                      const url = `${window.location.origin}/api/zalo/webhook${brandConfig.zaloBotToken ? `?token=${encodeURIComponent(brandConfig.zaloBotToken)}` : ''}`;
+                      const url = `${window.location.origin}/api/zalo-oa/webhook`;
                       navigator.clipboard.writeText(url);
-                      onToast("Đã sao chép Webhook URL Zalo thành công!");
+                      onToast("Đã sao chép Webhook URL Zalo Official Account (OA) thành công!");
                     }}
                     className="px-3 py-2 bg-slate-700 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow-xs shrink-0 cursor-pointer"
                   >
@@ -1432,11 +1432,11 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                     className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-extrabold text-xs rounded-xl shadow-md shrink-0 cursor-pointer flex items-center gap-1.5 transition"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    {activatingWebhook ? "Đang kích hoạt..." : "Kích Hoạt Webhook Qua API"}
+                    {activatingWebhook ? "Đang kết nối..." : "Kích Hoạt Zalo OA Webhook"}
                   </button>
                 </div>
                 <p className="text-[11px] text-slate-500 font-medium">
-                  💡 Bấm <b>"Kích Hoạt Webhook Qua API"</b> để hệ thống tự động gọi API `setWebhook` tới Zalo Bot Platform! Bạn không cần cài đặt thủ công.
+                  💡 Bấm <b>"Kích Hoạt Zalo OA Webhook"</b> để đăng ký Webhook tự động gửi nhận tin nhắn Zalo Official Account (OA).
                 </p>
               </div>
 
@@ -1461,7 +1461,7 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                 className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 font-black text-[#0B192C] text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer"
               >
                 <Save className="w-4 h-4" />
-                <span>Lưu Cấu Hình Thương Hiệu, OneSignal & Zalo Bot</span>
+                <span>Lưu Cấu Hình Thương Hiệu, OneSignal & Zalo OA</span>
               </button>
             </div>
 

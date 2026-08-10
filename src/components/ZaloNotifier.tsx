@@ -42,33 +42,33 @@ export const ZaloNotifier: React.FC<ZaloNotifierProps> = ({ defaultChatId = '', 
           </div>
           <div>
             <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-              Gửi Thông Báo Zalo Bot Platform
+              Gửi Thông Báo Zalo Official Account (OA)
             </h3>
             <p className="text-xs text-slate-500 font-medium">
-              Gửi tin nhắn Zalo trực tiếp qua API Zalo Bot Cá Nhân (`sendMessage`)
+              Gửi tin nhắn thông báo chăm sóc khách hàng & CTV từ Zalo Official Account (OA)
             </p>
           </div>
         </div>
         <span className="bg-blue-50 text-blue-700 font-extrabold text-[10px] px-2.5 py-1 rounded-full border border-blue-200">
-          API BOT ACTIVE
+          ZALO OA ACTIVE
         </span>
       </div>
 
       <div className="space-y-4 text-xs">
         <div>
           <label className="block text-slate-700 font-extrabold mb-1">
-            Chat ID Người Nhận (*):
+            Chat ID / SĐT Nhận Tin (*):
           </label>
           <input id="chatid_62" name="chatid_62"
             type="text"
             value={chatId}
             onChange={(e) => setChatId(e.target.value)}
-            placeholder="Ví dụ: 123456789"
+            placeholder="Ví dụ: 0901888999 hoặc OA Chat ID"
             required
             className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-blue-500"
           />
           <span className="text-[10px] text-slate-400 font-medium mt-1 block">
-            ID cuộc trò chuyện cá nhân hoặc group Zalo bot đã kết nối
+            ID cuộc trò chuyện hoặc số điện thoại Zalo người nhận thông báo
           </span>
         </div>
 
@@ -93,7 +93,7 @@ export const ZaloNotifier: React.FC<ZaloNotifierProps> = ({ defaultChatId = '', 
           <textarea id="message_93" name="message_93"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Nhập nội dung tin nhắn gửi qua Zalo Bot..."
+            placeholder="Nhập nội dung tin nhắn gửi từ Zalo Official Account (OA)..."
             rows={4}
             required
             className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 font-medium text-slate-900 focus:outline-none focus:border-blue-500 text-xs"
@@ -107,7 +107,7 @@ export const ZaloNotifier: React.FC<ZaloNotifierProps> = ({ defaultChatId = '', 
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 px-4 rounded-xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
         >
           <Send className="w-4 h-4" />
-          <span>{loading ? 'Đang gửi tin nhắn Zalo...' : 'Gửi Qua Zalo Bot Ngay'}</span>
+          <span>{loading ? 'Đang gửi tin nhắn Zalo OA...' : 'Gửi Qua Zalo OA Ngay'}</span>
         </button>
       </div>
 
@@ -121,7 +121,7 @@ export const ZaloNotifier: React.FC<ZaloNotifierProps> = ({ defaultChatId = '', 
       {error && (
         <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-bold flex items-center gap-2 animate-fadeIn">
           <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-          <span>Lỗi Zalo Bot: {error}</span>
+          <span>Lỗi Zalo OA: {error}</span>
         </div>
       )}
     </div>
