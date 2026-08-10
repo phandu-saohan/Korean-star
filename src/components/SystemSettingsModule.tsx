@@ -17,7 +17,7 @@ import { CTVUser } from "../types";
 import { sendOneSignalNotification, notifySystemSettingsUpdated } from "../lib/onesignal";
 import { ZaloNotifier } from "./ZaloNotifier";
 import { ZaloStatsReportSender } from "./ZaloStatsReportSender";
-import { registerZaloWebhook } from "../services/zaloService";
+import { registerZaloWebhook, refreshZaloOaAccessToken } from "../services/zaloService";
 import { VIETNAM_BANKS, getBankLogo } from "../lib/banks";
 import { formatCurrencyInput, parseCurrencyInput } from "../utils/formatters";
 import {
@@ -635,6 +635,35 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
         errMsg += `\n\n🔍 Debug:\n• Token (10 ký tự đầu): ${debugInfo.token_preview}\n• HTTP Status: ${(res as any).httpStatus || "N/A"}\n• Webhook URL: ${debugInfo.webhookUrl}`;
       }
       alert(`❌ Lỗi kích hoạt Webhook Zalo Bot API:\n\n${errMsg}`);
+    }
+  };
+
+  const [refreshingToken, setRefreshingToken] = useState(false);
+
+  const handleRefreshToken = async () => {
+    const appId = brandConfig.zaloOaAppId || brandConfig.zaloBotToken;
+    const secretKey = brandConfig.zaloOaSecretKey || brandConfig.zaloWebhookSecret;
+    const refreshToken = brandConfig.zaloOaRefreshToken;
+
+    if (!appId || !secretKey || !refreshToken) {
+      alert("Vui lòng nhập Zalo OA App ID, Secret Key và Refresh Token trước khi thực hiện làm mới Access Token!");
+      return;
+    }
+
+    setRefreshingToken(true);
+    const res = await refreshZaloOaAccessToken({ appId, secretKey, refreshToken });
+    setRefreshingToken(false);
+
+    if (res.ok && res.accessToken) {
+      setBrandConfig((prev) => ({
+        ...prev,
+        zaloOaAccessToken: res.accessToken,
+        zaloBotToken: res.accessToken,
+        zaloOaRefreshToken: res.refreshToken || prev.zaloOaRefreshToken
+      }));
+      onToast("🎉 Đã lấy lại Access Token Zalo OA mới từ Refresh Token thành công (Có hiệu lực 24h)!");
+    } else {
+      alert(`❌ Lỗi cấp lại Access Token Zalo OA:\n\n${res.description || "Không thể cấp lại token. Kiểm tra lại Refresh Token!"}`);
     }
   };
 
@@ -1395,6 +1424,52 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                     onChange={(e) => setBrandConfig({ ...brandConfig, zaloDefaultChatId: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500"
                   />
+                </div>
+              </div>
+
+              {/* Tự động làm mới Token Zalo OA sau 24h */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-blue-50/70 border border-blue-200 p-4 rounded-2xl">
+                <div>
+                  <label className="block text-slate-800 font-extrabold text-[11px] mb-1">
+                    Zalo OA Refresh Token (Thời hạn 3 tháng):
+                  </label>
+                  <input id="zalo_oa_refresh_token_input" name="zalo_oa_refresh_token_input"
+                    type="password"
+                    placeholder="Nhập Refresh Token từ Zalo Developer..."
+                    value={brandConfig.zaloOaRefreshToken || ""}
+                    onChange={(e) => setBrandConfig({ ...brandConfig, zaloOaRefreshToken: e.target.value })}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 font-mono text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500"
+                  />
+                  <p className="text-[10px] text-slate-500 font-medium mt-1">
+                    💡 Refresh Token dùng để tự động lấy lại Access Token mới sau 24h không gián đoạn dịch vụ.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-slate-800 font-extrabold text-[11px] mb-1">
+                    Zalo OA Access Token Hiện Tại (Hạn dùng 24h):
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input id="zalo_oa_access_token_input" name="zalo_oa_access_token_input"
+                      type="password"
+                      placeholder="Access Token tự động làm mới..."
+                      value={brandConfig.zaloOaAccessToken || brandConfig.zaloBotToken || ""}
+                      onChange={(e) => setBrandConfig({ ...brandConfig, zaloOaAccessToken: e.target.value, zaloBotToken: e.target.value })}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 font-mono text-xs font-bold text-blue-900 focus:outline-none focus:border-blue-500"
+                    />
+                    <button
+                      type="button"
+                      disabled={refreshingToken}
+                      onClick={handleRefreshToken}
+                      className="px-3 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 disabled:opacity-50 text-white font-extrabold text-xs rounded-xl shadow-sm shrink-0 cursor-pointer flex items-center gap-1.5 transition"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${refreshingToken ? "animate-spin" : ""}`} />
+                      <span>{refreshingToken ? "Đang lấy Token..." : "Làm Mới Token Ngay"}</span>
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-blue-700 font-bold mt-1">
+                    ⚡ Hệ thống sẽ tự động gọi API gia hạn Access Token mới trước khi hết 24h.
+                  </p>
                 </div>
               </div>
 

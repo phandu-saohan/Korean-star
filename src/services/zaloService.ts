@@ -94,6 +94,91 @@ export async function sendZaloMessage(
 }
 
 /**
+ * Tự động gọi API lấy Access Token mới từ Refresh Token sau 24h (Zalo OA OAuth v4)
+ */
+export async function refreshZaloOaAccessToken(credentials?: {
+  appId?: string;
+  secretKey?: string;
+  refreshToken?: string;
+}): Promise<{ ok: boolean; accessToken?: string; refreshToken?: string; description?: string }> {
+  let appId = credentials?.appId || "";
+  let secretKey = credentials?.secretKey || "";
+  let refreshToken = credentials?.refreshToken || "";
+
+  // 1. Lấy từ LocalStorage saohan_cms_settings
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("saohan_cms_settings");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (!appId) appId = parsed.zaloOaAppId || parsed.zaloBotToken || "";
+        if (!secretKey) secretKey = parsed.zaloOaSecretKey || parsed.zaloWebhookSecret || "";
+        if (!refreshToken) refreshToken = parsed.zaloOaRefreshToken || "";
+      } catch (e) {}
+    }
+  }
+
+  // 2. Lấy từ Supabase CSDL nếu chưa có
+  if (!appId || !secretKey || !refreshToken) {
+    try {
+      const cms = await fetchCmsSettingsFromSupabase();
+      if (cms) {
+        if (!appId) appId = cms.zaloOaAppId || cms.zaloBotToken || "";
+        if (!secretKey) secretKey = cms.zaloOaSecretKey || cms.zaloWebhookSecret || "";
+        if (!refreshToken) refreshToken = cms.zaloOaRefreshToken || "";
+      }
+    } catch (e) {}
+  }
+
+  if (!appId || !secretKey || !refreshToken) {
+    return {
+      ok: false,
+      description: "Thiếu Zalo OA App ID, Secret Key hoặc Refresh Token để cấp lại Access Token!"
+    };
+  }
+
+  try {
+    const response = await fetch("/api/zalo/refresh-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ appId, secretKey, refreshToken })
+    });
+
+    const data = await response.json();
+    if (data.ok && data.accessToken) {
+      const expiresAt = Date.now() + (data.expiresIn || 86400) * 1000;
+
+      // Cập nhật LocalStorage
+      try {
+        const saved = localStorage.getItem("saohan_cms_settings");
+        const obj = saved ? JSON.parse(saved) : {};
+        obj.zaloOaAccessToken = data.accessToken;
+        obj.zaloBotToken = data.accessToken; // fallback compatible
+        if (data.refreshToken) obj.zaloOaRefreshToken = data.refreshToken;
+        obj.zaloOaTokenExpiresAt = expiresAt;
+        localStorage.setItem("saohan_cms_settings", JSON.stringify(obj));
+      } catch (e) {}
+
+      return {
+        ok: true,
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken || refreshToken
+      };
+    } else {
+      return {
+        ok: false,
+        description: data.description || "Lỗi lấy Access Token từ Refresh Token Zalo OA"
+      };
+    }
+  } catch (err: any) {
+    return {
+      ok: false,
+      description: err.message || "Lỗi kết nối khi gọi làm mới Access Token Zalo OA"
+    };
+  }
+}
+
+/**
  * Đăng ký Webhook URL thông qua proxy server (tránh lỗi CORS khi gọi trực tiếp từ trình duyệt)
  */
 export async function registerZaloWebhook(

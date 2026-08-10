@@ -270,6 +270,52 @@ app.post("/api/zalo/send-message", async (req, res) => {
   }
 });
 
+// API: Proxy Zalo OA Refresh Access Token từ Refresh Token sau 24h
+app.post("/api/zalo/refresh-token", async (req, res) => {
+  try {
+    const { appId, secretKey, refreshToken } = req.body;
+
+    if (!appId || !secretKey || !refreshToken) {
+      return res.status(400).json({ ok: false, description: "Thiếu appId, secretKey hoặc refreshToken Zalo OA" });
+    }
+
+    const params = new URLSearchParams();
+    params.append("refresh_token", String(refreshToken).trim());
+    params.append("app_id", String(appId).trim());
+    params.append("grant_type", "refresh_token");
+
+    const response = await fetch("https://oauth.zaloapp.com/v4/oa/access_token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "secret_key": String(secretKey).trim(),
+      },
+      body: params.toString(),
+    });
+
+    const data = await response.json();
+    if (data.access_token) {
+      return res.json({
+        ok: true,
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token || refreshToken,
+        expiresIn: data.expires_in || 86400,
+      });
+    } else {
+      return res.status(400).json({
+        ok: false,
+        description: data.error_name || data.message || "Không thể làm mới Access Token từ Refresh Token Zalo OA"
+      });
+    }
+  } catch (err: any) {
+    console.error("[Zalo Refresh Token Proxy Error]:", err);
+    return res.status(500).json({
+      ok: false,
+      description: err.message || "Lỗi server khi làm mới Access Token Zalo OA",
+    });
+  }
+});
+
 // API: Proxy Zalo Bot setWebhook (tránh lỗi CORS khi gọi từ trình duyệt)
 app.post("/api/zalo/set-webhook", async (req, res) => {
   try {
