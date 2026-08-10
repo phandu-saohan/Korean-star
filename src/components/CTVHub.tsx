@@ -71,6 +71,7 @@ interface CTVHubProps {
   onDeleteLead?: (leadId: string) => void;
   onClearAllLeads?: () => void;
   onOpenTeamTransferModal?: () => void;
+  subTab?: string;
   onSubTabChange?: (subTab: string) => void;
 }
 
@@ -171,6 +172,7 @@ export const CTVHub: React.FC<CTVHubProps> = ({
   onDeleteLead,
   onClearAllLeads,
   onOpenTeamTransferModal,
+  subTab,
   onSubTabChange
 }) => {
   const PERFORMANCE_DATA = ctvUser.totalRevenue > 0 || ctvUser.successfulReferrals > 0
@@ -178,7 +180,15 @@ export const CTVHub: React.FC<CTVHubProps> = ({
         { month: "Hiện tại", revenue: ctvUser.totalRevenue, commission: ctvUser.totalCommission, referrals: ctvUser.successfulReferrals }
       ]
     : [];
-  const [activeSubTab, setActiveSubTab] = useState<"overview" | "services" | "feedbacks" | "team-members" | "team-transfers" | "ctv-transfers" | "my-customers">("overview");
+  const [activeSubTab, setActiveSubTab] = useState<"overview" | "services" | "feedbacks" | "team-members" | "team-transfers" | "ctv-transfers" | "my-customers">(
+    (subTab as any) || "overview"
+  );
+
+  useEffect(() => {
+    if (subTab && subTab !== activeSubTab) {
+      setActiveSubTab(subTab as any);
+    }
+  }, [subTab]);
 
   useEffect(() => {
     onSubTabChange?.(activeSubTab);

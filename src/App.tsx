@@ -1594,7 +1594,13 @@ export default function App() {
           notifications={notifications}
           onOpenPayout={() => setPayoutModalOpen(true)}
           activeTab={activeTab}
-          onTabChange={(tab) => setActiveTab(tab)}
+          onTabChange={(tab) => {
+            setActiveTab(tab);
+            if (tab === "ctv-dashboard") {
+              setCtvHubSubTab("overview");
+            }
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
           onOpenAuthModal={() => setAuthModalOpen(true)}
           onOpenProfileModal={() => setProfileModalOpen(true)}
           authUser={authUser}
@@ -1895,6 +1901,7 @@ export default function App() {
               onDeleteLead={handleDeleteLead}
               onClearAllLeads={handleClearAllLeads}
               onOpenTeamTransferModal={() => setTeamTransferModalOpen(true)}
+              subTab={ctvHubSubTab}
               onSubTabChange={(subTab) => setCtvHubSubTab(subTab)}
             />
           )}
@@ -2055,9 +2062,15 @@ export default function App() {
           
           {/* 1. Trang Chủ */}
           <button
-            onClick={() => { setActiveTab("ctv-dashboard"); setMobileMenuOpen(false); setAccountDrawerOpen(false); }}
+            onClick={() => {
+              setActiveTab("ctv-dashboard");
+              setCtvHubSubTab("overview");
+              setMobileMenuOpen(false);
+              setAccountDrawerOpen(false);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
             className={`flex-1 min-w-0 flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition ${
-              activeTab === "ctv-dashboard" ? "text-[#0B192C] font-black scale-105" : "text-[#0B192C]/80 hover:text-[#0B192C] font-bold"
+              activeTab === "ctv-dashboard" && ctvHubSubTab === "overview" ? "text-[#0B192C] font-black scale-105" : "text-[#0B192C]/80 hover:text-[#0B192C] font-bold"
             }`}
           >
             <Home className="w-5 h-5 shrink-0 text-[#0B192C]" />
