@@ -370,7 +370,7 @@ export const sendOneSignalNotification = async (params: SendPushNotificationPara
  * Event 1.1: Notify New Appointment Created
  */
 export const notifyAppointmentCreated = (appointment: any) => {
-  const ctvId = appointment.ctvId || appointment.userId || appointment.ctvCode || appointment.ctv_code;
+  const ctvId = appointment.ctvCode || appointment.ctv_code || appointment.ctvId || appointment.userId;
   const ctvName = appointment.ctvName || "Cộng tác viên";
   const typeText = appointment.appointmentType || "Lịch hẹn";
   const service = appointment.serviceName || "Dịch vụ Thẩm mỹ";
@@ -379,8 +379,8 @@ export const notifyAppointmentCreated = (appointment: any) => {
     title: `📅 ${typeText} Mới: ${appointment.customerName}`,
     message: `Khách hàng đặt ${service} vào ${appointment.date || appointment.appointmentDate || "hôm nay"}. CTV: ${ctvName}.`,
     targetUserId: ctvId,
-    targetRoles: ["admin", "accountant"],
-    data: { appointmentId: appointment.id, type: "NEW_APPOINTMENT" }
+    targetRoles: ["admin"],
+    data: { appointmentId: appointment.id, type: "NEW_APPOINTMENT", targetCtvCode: ctvId }
   });
 };
 
@@ -388,7 +388,7 @@ export const notifyAppointmentCreated = (appointment: any) => {
  * Event 1.2: Notify Appointment Status Change
  */
 export const notifyAppointmentStatusChanged = (appointment: any, newStatus: string) => {
-  const ctvId = appointment.ctvId || appointment.userId || appointment.ctvCode || appointment.ctv_code;
+  const ctvId = appointment.ctvCode || appointment.ctv_code || appointment.ctvId || appointment.userId;
   const customerName = appointment.customerName || "Khách hàng";
   const serviceName = appointment.serviceName || appointment.service_name || "Dịch vụ Thẩm mỹ";
   const dateStr = appointment.date || appointment.appointmentDate || "hôm nay";
@@ -414,8 +414,8 @@ export const notifyAppointmentStatusChanged = (appointment: any, newStatus: stri
     title: `${statusEmoji} Lịch Hẹn [${newStatus.toUpperCase()}]: ${customerName}`,
     message: `Khách hàng ${customerName} (${serviceName}) ${statusDetail}.`,
     targetUserId: ctvId,
-    targetRoles: ["admin", "accountant"],
-    data: { appointmentId: appointment.id, newStatus, type: "APPOINTMENT_STATUS" }
+    targetRoles: ["admin"],
+    data: { appointmentId: appointment.id, newStatus, type: "APPOINTMENT_STATUS", targetCtvCode: ctvId }
   });
 };
 
@@ -423,7 +423,7 @@ export const notifyAppointmentStatusChanged = (appointment: any, newStatus: stri
  * Event 1.3: Notify Appointment Deleted
  */
 export const notifyAppointmentDeleted = (appointment: any) => {
-  const ctvId = appointment.ctvId || appointment.userId || appointment.ctvCode || appointment.ctv_code;
+  const ctvId = appointment.ctvCode || appointment.ctv_code || appointment.ctvId || appointment.userId;
   const customerName = appointment.customerName || "Khách hàng";
   const serviceName = appointment.serviceName || "Dịch vụ Thẩm mỹ";
 
@@ -431,8 +431,8 @@ export const notifyAppointmentDeleted = (appointment: any) => {
     title: `🗑️ Lịch Hẹn Đã Xóa: ${customerName}`,
     message: `Lịch hẹn dịch vụ ${serviceName} của khách hàng ${customerName} đã được xóa khỏi hệ thống.`,
     targetUserId: ctvId,
-    targetRoles: ["admin", "accountant"],
-    data: { appointmentId: appointment.id, type: "APPOINTMENT_DELETED" }
+    targetRoles: ["admin"],
+    data: { appointmentId: appointment.id, type: "APPOINTMENT_DELETED", targetCtvCode: ctvId }
   });
 };
 

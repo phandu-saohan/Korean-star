@@ -576,18 +576,29 @@ export default function App() {
   }, [authUser]);
 
   // Helper: Thêm thông báo mới vào biểu tượng Chuông Header & lưu localStorage
-  const addSystemNotification = (notif: {
+  const addSystemNotification = useCallback((notif: {
     title?: string;
     text: string;
     type?: "commission" | "lead" | "system" | "promo" | "postop";
+    targetCtvCode?: string;
   }) => {
+    const currentCode = (effectiveCtvUser?.code || authUser?.ctvCode || "").trim().toUpperCase();
+    const targetCode = (notif.targetCtvCode || "").trim().toUpperCase();
+    const isAdmin = currentRole === "admin";
+
+    // Chuẩn hóa lọc thông báo: Nếu có targetCtvCode và user hiện tại không phải Admin & không trùng Mã CTV -> Bỏ qua
+    if (targetCode && !isAdmin && currentCode !== targetCode) {
+      return;
+    }
+
     const newNotif: RealtimeNotification = {
       id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       title: notif.title || (notif.type === "commission" ? "Hoa Hồng & Ví" : notif.type === "lead" ? "Lịch Hẹn & Khách Hàng" : "Thông Báo Hệ Thống"),
       text: notif.text,
       time: "Vừa xong",
       type: notif.type || "system",
-      isRead: false
+      isRead: false,
+      targetCtvCode: notif.targetCtvCode
     };
 
     setNotifications((prev) => {
@@ -595,7 +606,7 @@ export default function App() {
       safeSetLocalStorage("saohan_notifications", JSON.stringify(updated));
       return updated;
     });
-  };
+  }, [effectiveCtvUser, authUser, currentRole]);
 
   // Đăng ký nhận Event thông báo Realtime OneSignal để bật Toast & lưu vào biểu tượng Chuông trên Header
   useEffect(() => {
@@ -603,6 +614,18 @@ export default function App() {
       const detail = e.detail || {};
       const title = detail.title || detail.heading || "Thông Báo KOREAN STAR";
       const text = detail.message || detail.body || detail.text || "";
+      const targetUserId = detail.targetUserId || detail.data?.targetUserId || detail.data?.targetCtvCode || detail.data?.ctvCode;
+
+      const currentCode = (effectiveCtvUser?.code || authUser?.ctvCode || "").trim().toUpperCase();
+      const currentId = (authUser?.id || "").trim().toUpperCase();
+      const isAdmin = currentRole === "admin";
+
+      if (targetUserId && !isAdmin) {
+        const cleanTarget = targetUserId.trim().toUpperCase();
+        if (cleanTarget !== currentCode && cleanTarget !== currentId) {
+          return; // Bỏ qua thông báo dành cho CTV khác
+        }
+      }
 
       if (title || text) {
         showToast(`${title}: ${text}`);
@@ -616,14 +639,15 @@ export default function App() {
         addSystemNotification({
           title,
           text,
-          type: notifType
+          type: notifType,
+          targetCtvCode: targetUserId
         });
       }
     };
 
     window.addEventListener("onesignal-notification-toast", handleOsToast);
     return () => window.removeEventListener("onesignal-notification-toast", handleOsToast);
-  }, []);
+  }, [effectiveCtvUser, authUser, currentRole, addSystemNotification]);
 
   // Đồng bộ số đếm Badge trên Icon ứng dụng PWA (Android Chrome & iOS 16.4+ Add-to-Home-Screen)
   useEffect(() => {
@@ -635,26 +659,37 @@ export default function App() {
   const knownAptMapRef = useRef<Map<string, string>>(new Map());
   const knownPayoutMapRef = useRef<Map<string, string>>(new Map());
 
-  // Đồng bộ Lịch Hẹn CRM từ Supabase DB & Bắn thông báo Chuông khi có Lịch mới / Trạng thái đổi
+  // Đồng bộ Lịch Hẹn CRM từ Supabase DB & Bắn thông báo Chuông khi có Lịch mới / Trạng thái đổi (Chỉ về đúng CTV tạo lịch)
   const syncAppointmentsWithNotification = useCallback(async () => {
     try {
       const remote = await fetchAppointmentsFromSupabase();
       if (remote !== null) {
         if (knownAptMapRef.current.size > 0) {
+          const currentCode = (effectiveCtvUser?.code || authUser?.ctvCode || "").trim().toUpperCase();
+          const isAdmin = currentRole === "admin";
+
           remote.forEach((apt) => {
             const prevStatus = knownAptMapRef.current.get(apt.id);
-            if (!prevStatus) {
-              addSystemNotification({
-                title: "⚡ Supabase Realtime: Lịch Hẹn Mới",
-                text: `🔥 Khách hàng ${apt.customerName} vừa đặt dịch vụ "${apt.serviceName}"!`,
-                type: "lead"
-              });
-            } else if (prevStatus !== apt.status) {
-              addSystemNotification({
-                title: "⚡ Supabase Realtime: Trạng Thái Lịch Hẹn",
-                text: `📅 Lịch hẹn của ${apt.customerName} đã chuyển trạng thái sang "${apt.status}".`,
-                type: apt.status === "Hoàn thành" ? "commission" : "lead"
-              });
+            const aptCtvCode = (apt.ctvCode || "").trim().toUpperCase();
+            const isOwner = Boolean(currentCode && aptCtvCode && currentCode === aptCtvCode);
+
+            // Chỉ bắn thông báo nếu là Admin HOẶC chính CTV tạo ra lịch hẹn này
+            if (isAdmin || isOwner) {
+              if (!prevStatus) {
+                addSystemNotification({
+                  title: "⚡ Supabase Realtime: Lịch Hẹn Mới",
+                  text: `🔥 Khách hàng ${apt.customerName} vừa đặt dịch vụ "${apt.serviceName}"!`,
+                  type: "lead",
+                  targetCtvCode: apt.ctvCode
+                });
+              } else if (prevStatus !== apt.status) {
+                addSystemNotification({
+                  title: "⚡ Supabase Realtime: Trạng Thái Lịch Hẹn",
+                  text: `📅 Lịch hẹn của ${apt.customerName} đã chuyển trạng thái sang "${apt.status}".`,
+                  type: apt.status === "Hoàn thành" ? "commission" : "lead",
+                  targetCtvCode: apt.ctvCode
+                });
+              }
             }
           });
         }
@@ -667,7 +702,7 @@ export default function App() {
         safeSetLocalStorage("saohan_appointments", JSON.stringify(remote));
       }
     } catch (_) {}
-  }, []);
+  }, [effectiveCtvUser, authUser, currentRole, addSystemNotification]);
 
   // Đồng bộ Yêu Cầu Rút Tiền từ Supabase DB & Bắn thông báo Chuông khi có Lệnh mới / Duyệt giải ngân
   const syncPayoutsWithNotification = useCallback(async () => {

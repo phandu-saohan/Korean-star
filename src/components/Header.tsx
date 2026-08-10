@@ -184,7 +184,18 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Notification Bell Dropdown */}
             {(() => {
-              const unreadNotificationsCount = notifications.filter((n) => n.isRead !== true).length;
+              const currentCode = (ctvUser?.code || authUser?.ctvCode || "").trim().toUpperCase();
+              const currentId = (authUser?.id || "").trim().toUpperCase();
+              const isAdmin = currentRole === "admin";
+
+              const visibleNotifications = notifications.filter((n) => {
+                if (isAdmin) return true;
+                if (!n.targetCtvCode) return true;
+                const targetCode = n.targetCtvCode.trim().toUpperCase();
+                return targetCode === currentCode || targetCode === currentId;
+              });
+
+              const unreadNotificationsCount = visibleNotifications.filter((n) => n.isRead !== true).length;
               return (
                 <div className="relative" ref={notifRef}>
                   <button
@@ -239,7 +250,7 @@ export const Header: React.FC<HeaderProps> = ({
                   )}
 
                   {/* Actions Header bar */}
-                  {notifications.length > 0 && (
+                  {visibleNotifications.length > 0 && (
                     <div className="flex items-center justify-between px-1 text-[11px] text-slate-500 font-semibold border-b border-slate-100 pb-2">
                       <button
                         type="button"
@@ -267,8 +278,8 @@ export const Header: React.FC<HeaderProps> = ({
 
                   {/* Notifications Scrollable List */}
                   <div className="max-h-72 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                    {notifications.length > 0 ? (
-                      notifications.map((n) => {
+                    {visibleNotifications.length > 0 ? (
+                      visibleNotifications.map((n) => {
                         const isUnread = n.isRead === false || n.isRead === undefined;
                         return (
                           <div

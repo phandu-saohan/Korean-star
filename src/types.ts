@@ -199,6 +199,7 @@ export interface RealtimeNotification {
   text: string;
   type: "commission" | "lead" | "postop" | "promo" | "system";
   isRead?: boolean;
+  targetCtvCode?: string;
 }
 
 export type PayoutStatus = 
