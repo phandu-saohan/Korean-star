@@ -16,6 +16,7 @@ import {
   CheckCircle2, 
   Search, 
   Filter, 
+  Calendar,
   Percent,
   Sparkles,
   ChevronLeft,
@@ -120,6 +121,37 @@ function getTransferRequests(leaderCode: string): TeamRevenueTransfer[] {
 
 function saveTransferRequests(transfers: TeamRevenueTransfer[]) {
   localStorage.setItem("saohan_team_transfers", JSON.stringify(transfers));
+}
+
+function parseTransferDate(dateStr: string): { month: number; year: number } | null {
+  if (!dateStr) return null;
+
+  // Handles DD/MM/YYYY or DD/MM/YYYY, HH:mm:ss format
+  const dmyMatch = dateStr.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (dmyMatch) {
+    const month = parseInt(dmyMatch[2], 10);
+    const year = parseInt(dmyMatch[3], 10);
+    if (month >= 1 && month <= 12 && year > 2000) {
+      return { month, year };
+    }
+  }
+
+  // Handles YYYY-MM-DD format
+  const ymdMatch = dateStr.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (ymdMatch) {
+    const year = parseInt(ymdMatch[1], 10);
+    const month = parseInt(ymdMatch[2], 10);
+    if (month >= 1 && month <= 12 && year > 2000) {
+      return { month, year };
+    }
+  }
+
+  const parsedDate = new Date(dateStr);
+  if (!isNaN(parsedDate.getTime())) {
+    return { month: parsedDate.getMonth() + 1, year: parsedDate.getFullYear() };
+  }
+
+  return null;
 }
 
 export const CTVHub: React.FC<CTVHubProps> = ({
@@ -272,6 +304,9 @@ export const CTVHub: React.FC<CTVHubProps> = ({
   const [memberError, setMemberError] = useState("");
   const [memberSearch, setMemberSearch] = useState("");
   const [transferStatusFilter, setTransferStatusFilter] = useState<"ALL" | "pending" | "accepted" | "rejected">("ALL");
+  const [transferMonthFilter, setTransferMonthFilter] = useState<string>("ALL");
+  const [transferYearFilter, setTransferYearFilter] = useState<string>("ALL");
+  const [transferCtvCodeFilter, setTransferCtvCodeFilter] = useState<string>("");
 
   const [editingMember, setEditingMember] = useState<any | null>(null);
   const [editName, setEditName] = useState("");
@@ -799,71 +834,171 @@ export const CTVHub: React.FC<CTVHubProps> = ({
         </div>
       )}
 
-      {/* SUBTAB: CHUYỂN DOANH SỐ (DẠNG GRID GỌN GÀNG) */}
-      {activeSubTab === "team-transfers" && (
-        <div className="space-y-4 animate-fadeIn">
-          {/* Header Bar */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-3 shadow-sm">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setActiveSubTab("overview")}
-                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
-                title="Quay lại Dashboard"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <div>
-                <h2 className="font-black text-slate-900 text-base sm:text-lg flex items-center gap-2">
-                  <ArrowUpRight className="w-5 h-5 text-amber-600" />
-                  Danh Sách Yêu Cầu Chuyển Doanh Số ({transfers.length})
-                </h2>
-                <p className="text-xs text-slate-500 font-medium">Xem & xử lý phê duyệt doanh số từ các CTV trong nhóm</p>
+      {/* SUBTAB: CHUYỂN DOANH SỐ (DẠNG GRID GỌN GÀNG VÀ BỘ LỌC) */}
+      {activeSubTab === "team-transfers" && (() => {
+        const filteredTransfers = transfers.filter((t) => {
+          if (transferStatusFilter !== "ALL" && t.status !== transferStatusFilter) return false;
+          if (transferCtvCodeFilter.trim() !== "") {
+            const q = transferCtvCodeFilter.trim().toLowerCase();
+            const fromCode = (t.fromCtvCode || "").toLowerCase();
+            const fromName = (t.fromCtvName || "").toLowerCase();
+            const serviceName = (t.serviceName || "").toLowerCase();
+            if (!fromCode.includes(q) && !fromName.includes(q) && !serviceName.includes(q)) return false;
+          }
+          if (transferMonthFilter !== "ALL" || transferYearFilter !== "ALL") {
+            const parsed = parseTransferDate(t.transferredAt);
+            if (parsed) {
+              if (transferMonthFilter !== "ALL" && parsed.month !== parseInt(transferMonthFilter, 10)) return false;
+              if (transferYearFilter !== "ALL" && parsed.year !== parseInt(transferYearFilter, 10)) return false;
+            }
+          }
+          return true;
+        });
+
+        return (
+          <div className="space-y-4 animate-fadeIn">
+            {/* Header Bar */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setActiveSubTab("overview")}
+                  className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                  title="Quay lại Dashboard"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <div>
+                  <h2 className="font-black text-slate-900 text-base sm:text-lg flex items-center gap-2">
+                    <ArrowUpRight className="w-5 h-5 text-amber-600" />
+                    Danh Sách Yêu Cầu Chuyển Doanh Số ({filteredTransfers.length}/{transfers.length})
+                  </h2>
+                  <p className="text-xs text-slate-500 font-medium">Xem & xử lý phê duyệt doanh số từ các CTV trong nhóm</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Filter Status Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-            <button
-              onClick={() => setTransferStatusFilter("ALL")}
-              className={`px-3 py-1.5 rounded-xl font-extrabold transition cursor-pointer shrink-0 ${
-                transferStatusFilter === "ALL" ? "bg-[#0B192C] text-amber-400 shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              Tất cả ({transfers.length})
-            </button>
-            <button
-              onClick={() => setTransferStatusFilter("pending")}
-              className={`px-3 py-1.5 rounded-xl font-extrabold transition cursor-pointer shrink-0 ${
-                transferStatusFilter === "pending" ? "bg-amber-500 text-slate-900 shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              ⏳ Chờ duyệt ({transfers.filter((t) => t.status === "pending").length})
-            </button>
-            <button
-              onClick={() => setTransferStatusFilter("accepted")}
-              className={`px-3 py-1.5 rounded-xl font-extrabold transition cursor-pointer shrink-0 ${
-                transferStatusFilter === "accepted" ? "bg-emerald-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              ✓ Đã chấp nhận ({transfers.filter((t) => t.status === "accepted").length})
-            </button>
-            <button
-              onClick={() => setTransferStatusFilter("rejected")}
-              className={`px-3 py-1.5 rounded-xl font-extrabold transition cursor-pointer shrink-0 ${
-                transferStatusFilter === "rejected" ? "bg-rose-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              ✗ Đã từ chối ({transfers.filter((t) => t.status === "rejected").length})
-            </button>
-          </div>
+            {/* Bộ Lọc Chi Tiết: Mã CTV, Tháng, Năm */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-3 space-y-2.5 shadow-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {/* Lọc theo Mã / Tên CTV */}
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Mã CTV, Tên CTV, Dịch vụ..."
+                    value={transferCtvCodeFilter}
+                    onChange={(e) => setTransferCtvCodeFilter(e.target.value)}
+                    className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-medium"
+                  />
+                  {transferCtvCodeFilter && (
+                    <button
+                      onClick={() => setTransferCtvCodeFilter("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
 
-          {/* GRID GỌN GÀNG THU GỌN */}
-          {transfers.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {transfers
-                .filter((t) => transferStatusFilter === "ALL" || t.status === transferStatusFilter)
-                .map((t) => (
+                {/* Lọc theo Tháng */}
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+                  <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span className="text-[11px] font-bold text-slate-600 shrink-0">Tháng:</span>
+                  <select
+                    value={transferMonthFilter}
+                    onChange={(e) => setTransferMonthFilter(e.target.value)}
+                    className="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
+                  >
+                    <option value="ALL">Tất cả tháng</option>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                      <option key={m} value={m.toString()}>Tháng {m}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Lọc theo Năm */}
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+                  <Calendar className="w-4 h-4 text-blue-600 shrink-0" />
+                  <span className="text-[11px] font-bold text-slate-600 shrink-0">Năm:</span>
+                  <select
+                    value={transferYearFilter}
+                    onChange={(e) => setTransferYearFilter(e.target.value)}
+                    className="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
+                  >
+                    <option value="ALL">Tất cả năm</option>
+                    {[2024, 2025, 2026, 2027, 2028].map((y) => (
+                      <option key={y} value={y.toString()}>Năm {y}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Hiển thị dòng reset nếu đang lọc */}
+              {(transferCtvCodeFilter || transferMonthFilter !== "ALL" || transferYearFilter !== "ALL" || transferStatusFilter !== "ALL") && (
+                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                  <span className="truncate max-w-[80%]">
+                    Đang lọc: {[
+                      transferCtvCodeFilter ? `Mã/Tên: "${transferCtvCodeFilter}"` : null,
+                      transferMonthFilter !== "ALL" ? `Tháng ${transferMonthFilter}` : null,
+                      transferYearFilter !== "ALL" ? `Năm ${transferYearFilter}` : null,
+                      transferStatusFilter !== "ALL" ? `Trạng thái: ${transferStatusFilter}` : null
+                    ].filter(Boolean).join(" • ")}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setTransferCtvCodeFilter("");
+                      setTransferMonthFilter("ALL");
+                      setTransferYearFilter("ALL");
+                      setTransferStatusFilter("ALL");
+                    }}
+                    className="text-amber-700 hover:text-amber-900 font-extrabold flex items-center gap-1 shrink-0 hover:underline cursor-pointer"
+                  >
+                    <X className="w-3 h-3" /> Xóa lọc
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Filter Status Pills */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+              <button
+                onClick={() => setTransferStatusFilter("ALL")}
+                className={`px-3 py-1.5 rounded-xl font-extrabold transition cursor-pointer shrink-0 ${
+                  transferStatusFilter === "ALL" ? "bg-[#0B192C] text-amber-400 shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                Tất cả ({transfers.length})
+              </button>
+              <button
+                onClick={() => setTransferStatusFilter("pending")}
+                className={`px-3 py-1.5 rounded-xl font-extrabold transition cursor-pointer shrink-0 ${
+                  transferStatusFilter === "pending" ? "bg-amber-500 text-slate-900 shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                ⏳ Chờ duyệt ({transfers.filter((t) => t.status === "pending").length})
+              </button>
+              <button
+                onClick={() => setTransferStatusFilter("accepted")}
+                className={`px-3 py-1.5 rounded-xl font-extrabold transition cursor-pointer shrink-0 ${
+                  transferStatusFilter === "accepted" ? "bg-emerald-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                ✓ Đã chấp nhận ({transfers.filter((t) => t.status === "accepted").length})
+              </button>
+              <button
+                onClick={() => setTransferStatusFilter("rejected")}
+                className={`px-3 py-1.5 rounded-xl font-extrabold transition cursor-pointer shrink-0 ${
+                  transferStatusFilter === "rejected" ? "bg-rose-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                ✗ Đã từ chối ({transfers.filter((t) => t.status === "rejected").length})
+              </button>
+            </div>
+
+            {/* GRID GỌN GÀNG THU GỌN */}
+            {filteredTransfers.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filteredTransfers.map((t) => (
                   <div key={t.id} className="bg-white border border-slate-200 rounded-3xl p-4 space-y-3 shadow-sm hover:border-amber-400 transition">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                       <div>
@@ -897,6 +1032,10 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                       </p>
                     )}
 
+                    <div className="flex items-center justify-between text-[10px] text-slate-400 font-medium pt-1">
+                      <span>{t.transferredAt}</span>
+                    </div>
+
                     {t.status === "pending" && (
                       <div className="flex items-center gap-2 pt-1">
                         <button
@@ -915,127 +1054,232 @@ export const CTVHub: React.FC<CTVHubProps> = ({
                     )}
                   </div>
                 ))}
-            </div>
-          ) : (
-            <div className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-2 shadow-sm">
-              <ArrowUpRight className="w-12 h-12 mx-auto text-slate-300" />
-            </div>
-          )}
-        </div>
-      )}
+              </div>
+            ) : (
+              <div className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-2 shadow-sm">
+                <ArrowUpRight className="w-12 h-12 mx-auto text-slate-300" />
+                <p className="font-bold text-slate-600 text-sm">Không tìm thấy yêu cầu chuyển doanh số nào khớp với bộ lọc</p>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* SUBTAB: LỊCH SỬ CHUYỂN DOANH SỐ CỦA CTV */}
-      {activeSubTab === "ctv-transfers" && (
-        <div className="space-y-4 animate-fadeIn">
-          {/* Header Bar */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setActiveSubTab("overview")}
-                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
-                title="Quay lại Dashboard"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <div>
-                <h2 className="font-black text-slate-900 text-base sm:text-lg flex items-center gap-2">
-                  <ArrowUpRight className="w-5 h-5 text-amber-600" />
-                  Chuyển Doanh Số ({myTransfers.length})
-                </h2>
-                <p className="text-xs text-slate-500 font-medium">Theo dõi các yêu cầu chuyển doanh số bạn đã gửi tới Trưởng nhóm</p>
-              </div>
-            </div>
+      {activeSubTab === "ctv-transfers" && (() => {
+        const filteredMyTransfers = myTransfers.filter((t) => {
+          if (transferStatusFilter !== "ALL" && t.status !== transferStatusFilter) return false;
+          if (transferCtvCodeFilter.trim() !== "") {
+            const q = transferCtvCodeFilter.trim().toLowerCase();
+            const leaderCode = (t.toLeaderCode || "").toLowerCase();
+            const leaderName = (t.toLeaderName || "").toLowerCase();
+            const serviceName = (t.serviceName || "").toLowerCase();
+            if (!leaderCode.includes(q) && !leaderName.includes(q) && !serviceName.includes(q)) return false;
+          }
+          if (transferMonthFilter !== "ALL" || transferYearFilter !== "ALL") {
+            const parsed = parseTransferDate(t.transferredAt);
+            if (parsed) {
+              if (transferMonthFilter !== "ALL" && parsed.month !== parseInt(transferMonthFilter, 10)) return false;
+              if (transferYearFilter !== "ALL" && parsed.year !== parseInt(transferYearFilter, 10)) return false;
+            }
+          }
+          return true;
+        });
 
-            <button
-              onClick={() => { if (onOpenTeamTransferModal) onOpenTeamTransferModal(); }}
-              className="bg-[#0B192C] hover:bg-slate-800 text-amber-400 font-black text-xs px-4 py-2.5 rounded-2xl flex items-center gap-1.5 transition shadow-sm w-full sm:w-auto justify-center cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              Chuyển doanh số mới
-            </button>
-          </div>
-
-          {/* Stat Summary Bar */}
-          <div className="grid grid-cols-3 gap-2.5">
-            <div className="bg-amber-50 border border-amber-200 p-3 rounded-2xl">
-              <span className="text-[10px] text-amber-700 font-extrabold uppercase block">⏳ Đang chờ duyệt</span>
-              <span className="text-base sm:text-lg font-black text-amber-900 font-mono">
-                {myTransfers.filter((t) => t.status === "pending").reduce((s, t) => s + (t.amount || 0), 0).toLocaleString("vi-VN")}đ
-              </span>
-            </div>
-            <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">
-              <span className="text-[10px] text-emerald-700 font-extrabold uppercase block">✓ Đã chấp nhận</span>
-              <span className="text-base sm:text-lg font-black text-emerald-900 font-mono">
-                {myTransfers.filter((t) => t.status === "accepted").reduce((s, t) => s + (t.amount || 0), 0).toLocaleString("vi-VN")}đ
-              </span>
-            </div>
-            <div className="bg-rose-50 border border-rose-200 p-3 rounded-2xl">
-              <span className="text-[10px] text-rose-700 font-extrabold uppercase block">✗ Đã từ chối</span>
-              <span className="text-base sm:text-lg font-black text-rose-900 font-mono">
-                {myTransfers.filter((t) => t.status === "rejected").reduce((s, t) => s + (t.amount || 0), 0).toLocaleString("vi-VN")}đ
-              </span>
-            </div>
-          </div>
-
-          {/* Grid Cards */}
-          {myTransfers.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {myTransfers.map((t) => (
-                <div key={t.id} className="bg-white border border-slate-200 rounded-3xl p-4 space-y-3 shadow-sm hover:border-amber-400 transition">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Gửi tới Trưởng nhóm:</span>
-                      <span className="font-mono font-black text-xs text-blue-700">{t.toLeaderCode}</span>
-                    </div>
-                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${
-                      t.status === "pending" ? "bg-amber-100 text-amber-900 border-amber-300 animate-pulse" :
-                      t.status === "accepted" ? "bg-emerald-100 text-emerald-900 border-emerald-300" :
-                      "bg-rose-100 text-rose-900 border-rose-300"
-                    }`}>
-                      {t.status === "pending" ? "⏳ Chờ duyệt" : t.status === "accepted" ? "✓ Chấp nhận" : "✗ Từ chối"}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-200 min-w-0">
-                      <span className="text-[10px] text-slate-400 font-bold block truncate">Nội dung</span>
-                      <span className="font-black text-slate-900 truncate block text-[11px]">{t.serviceName}</span>
-                    </div>
-                    <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-200 min-w-0">
-                      <span className="text-[10px] text-emerald-600 font-bold block truncate">Doanh số chuyển</span>
-                      <span className="font-mono font-black text-emerald-700 truncate block text-[11px]">{t.amount.toLocaleString("vi-VN")}đ</span>
-                    </div>
-                  </div>
-
-                  {t.note && (
-                    <p className="text-[11px] text-slate-600 italic bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
-                      Ghi chú: "{t.note}"
-                    </p>
-                  )}
-
-                  <div className="text-[10px] text-slate-400 text-right font-medium">
-                    {t.transferredAt}
-                  </div>
+        return (
+          <div className="space-y-4 animate-fadeIn">
+            {/* Header Bar */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setActiveSubTab("overview")}
+                  className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                  title="Quay lại Dashboard"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <div>
+                  <h2 className="font-black text-slate-900 text-base sm:text-lg flex items-center gap-2">
+                    <ArrowUpRight className="w-5 h-5 text-amber-600" />
+                    Chuyển Doanh Số ({filteredMyTransfers.length}/{myTransfers.length})
+                  </h2>
+                  <p className="text-xs text-slate-500 font-medium">Theo dõi các yêu cầu chuyển doanh số bạn đã gửi tới Trưởng nhóm</p>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-3 shadow-sm">
-              <ArrowUpRight className="w-12 h-12 mx-auto text-slate-300" />
-              <div>
-                <p className="font-bold text-slate-700">Bạn chưa gửi yêu cầu chuyển doanh số nào</p>
-                <p className="text-xs text-slate-500 mt-1">Khi bạn gửi yêu cầu chuyển doanh số cho Trưởng nhóm, trạng thái phê duyệt sẽ hiển thị tại đây.</p>
               </div>
+
               <button
                 onClick={() => { if (onOpenTeamTransferModal) onOpenTeamTransferModal(); }}
-                className="bg-[#0B192C] text-amber-400 font-black px-5 py-2.5 rounded-2xl text-xs hover:bg-slate-800 transition cursor-pointer"
+                className="bg-[#0B192C] hover:bg-slate-800 text-amber-400 font-black text-xs px-4 py-2.5 rounded-2xl flex items-center gap-1.5 transition shadow-sm w-full sm:w-auto justify-center cursor-pointer"
               >
-                + Gửi yêu cầu chuyển doanh số mới
+                <Plus className="w-4 h-4" />
+                Chuyển doanh số mới
               </button>
             </div>
-          )}
-        </div>
-      )}
+
+            {/* Stat Summary Bar */}
+            <div className="grid grid-cols-3 gap-2.5">
+              <div className="bg-amber-50 border border-amber-200 p-3 rounded-2xl">
+                <span className="text-[10px] text-amber-700 font-extrabold uppercase block">⏳ Đang chờ duyệt</span>
+                <span className="text-base sm:text-lg font-black text-amber-900 font-mono">
+                  {myTransfers.filter((t) => t.status === "pending").reduce((s, t) => s + (t.amount || 0), 0).toLocaleString("vi-VN")}đ
+                </span>
+              </div>
+              <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">
+                <span className="text-[10px] text-emerald-700 font-extrabold uppercase block">✓ Đã chấp nhận</span>
+                <span className="text-base sm:text-lg font-black text-emerald-900 font-mono">
+                  {myTransfers.filter((t) => t.status === "accepted").reduce((s, t) => s + (t.amount || 0), 0).toLocaleString("vi-VN")}đ
+                </span>
+              </div>
+              <div className="bg-rose-50 border border-rose-200 p-3 rounded-2xl">
+                <span className="text-[10px] text-rose-700 font-extrabold uppercase block">✗ Đã từ chối</span>
+                <span className="text-base sm:text-lg font-black text-rose-900 font-mono">
+                  {myTransfers.filter((t) => t.status === "rejected").reduce((s, t) => s + (t.amount || 0), 0).toLocaleString("vi-VN")}đ
+                </span>
+              </div>
+            </div>
+
+            {/* Bộ Lọc Chi Tiết: Trưởng Nhóm/Mã, Tháng, Năm */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-3 space-y-2.5 shadow-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {/* Lọc theo Mã/Tên Trưởng Nhóm hoặc Dịch Vụ */}
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Mã TN, Tên TN, Dịch vụ..."
+                    value={transferCtvCodeFilter}
+                    onChange={(e) => setTransferCtvCodeFilter(e.target.value)}
+                    className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-medium"
+                  />
+                  {transferCtvCodeFilter && (
+                    <button
+                      onClick={() => setTransferCtvCodeFilter("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Lọc theo Tháng */}
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+                  <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span className="text-[11px] font-bold text-slate-600 shrink-0">Tháng:</span>
+                  <select
+                    value={transferMonthFilter}
+                    onChange={(e) => setTransferMonthFilter(e.target.value)}
+                    className="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
+                  >
+                    <option value="ALL">Tất cả tháng</option>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                      <option key={m} value={m.toString()}>Tháng {m}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Lọc theo Năm */}
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+                  <Calendar className="w-4 h-4 text-blue-600 shrink-0" />
+                  <span className="text-[11px] font-bold text-slate-600 shrink-0">Năm:</span>
+                  <select
+                    value={transferYearFilter}
+                    onChange={(e) => setTransferYearFilter(e.target.value)}
+                    className="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
+                  >
+                    <option value="ALL">Tất cả năm</option>
+                    {[2024, 2025, 2026, 2027, 2028].map((y) => (
+                      <option key={y} value={y.toString()}>Năm {y}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Hiển thị dòng reset nếu đang lọc */}
+              {(transferCtvCodeFilter || transferMonthFilter !== "ALL" || transferYearFilter !== "ALL" || transferStatusFilter !== "ALL") && (
+                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                  <span className="truncate max-w-[80%]">
+                    Đang lọc: {[
+                      transferCtvCodeFilter ? `Tìm kiếm: "${transferCtvCodeFilter}"` : null,
+                      transferMonthFilter !== "ALL" ? `Tháng ${transferMonthFilter}` : null,
+                      transferYearFilter !== "ALL" ? `Năm ${transferYearFilter}` : null,
+                      transferStatusFilter !== "ALL" ? `Trạng thái: ${transferStatusFilter}` : null
+                    ].filter(Boolean).join(" • ")}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setTransferCtvCodeFilter("");
+                      setTransferMonthFilter("ALL");
+                      setTransferYearFilter("ALL");
+                      setTransferStatusFilter("ALL");
+                    }}
+                    className="text-amber-700 hover:text-amber-900 font-extrabold flex items-center gap-1 shrink-0 hover:underline cursor-pointer"
+                  >
+                    <X className="w-3 h-3" /> Xóa lọc
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Grid Cards */}
+            {filteredMyTransfers.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filteredMyTransfers.map((t) => (
+                  <div key={t.id} className="bg-white border border-slate-200 rounded-3xl p-4 space-y-3 shadow-sm hover:border-amber-400 transition">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block">Gửi tới Trưởng nhóm:</span>
+                        <span className="font-mono font-black text-xs text-blue-700">{t.toLeaderCode}</span>
+                      </div>
+                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${
+                        t.status === "pending" ? "bg-amber-100 text-amber-900 border-amber-300 animate-pulse" :
+                        t.status === "accepted" ? "bg-emerald-100 text-emerald-900 border-emerald-300" :
+                        "bg-rose-100 text-rose-900 border-rose-300"
+                      }`}>
+                        {t.status === "pending" ? "⏳ Chờ duyệt" : t.status === "accepted" ? "✓ Chấp nhận" : "✗ Từ chối"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-slate-50 p-2 rounded-xl border border-slate-200 min-w-0">
+                        <span className="text-[10px] text-slate-400 font-bold block truncate">Nội dung</span>
+                        <span className="font-black text-slate-900 truncate block text-[11px]">{t.serviceName}</span>
+                      </div>
+                      <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-200 min-w-0">
+                        <span className="text-[10px] text-emerald-600 font-bold block truncate">Doanh số chuyển</span>
+                        <span className="font-mono font-black text-emerald-700 truncate block text-[11px]">{t.amount.toLocaleString("vi-VN")}đ</span>
+                      </div>
+                    </div>
+
+                    {t.note && (
+                      <p className="text-[11px] text-slate-600 italic bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
+                        Ghi chú: "{t.note}"
+                      </p>
+                    )}
+
+                    <div className="text-[10px] text-slate-400 text-right font-medium">
+                      {t.transferredAt}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-3 shadow-sm">
+                <ArrowUpRight className="w-12 h-12 mx-auto text-slate-300" />
+                <div>
+                  <p className="font-bold text-slate-700">Không tìm thấy yêu cầu chuyển doanh số nào khớp với bộ lọc</p>
+                  <p className="text-xs text-slate-500 mt-1">Vui lòng thử thay đổi điều kiện lọc (tháng, năm, mã CTV) hoặc gửi yêu cầu chuyển mới.</p>
+                </div>
+                <button
+                  onClick={() => { if (onOpenTeamTransferModal) onOpenTeamTransferModal(); }}
+                  className="bg-[#0B192C] text-amber-400 font-black px-5 py-2.5 rounded-2xl text-xs hover:bg-slate-800 transition cursor-pointer"
+                >
+                  + Gửi yêu cầu chuyển doanh số mới
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {activeSubTab === "overview" && (
         <>
