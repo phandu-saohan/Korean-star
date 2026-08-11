@@ -528,7 +528,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
             <div className="flex items-center gap-2">
               <input id="input_zalo_chat_id_ctv" name="input_zalo_chat_id_ctv"
                 type="text"
-                placeholder="Ví dụ: 7540234525828588815 (Zalo User ID)"
+                placeholder="Ví dụ: 2715919749071666693 (Zalo User ID)"
                 value={zaloChatId}
                 onChange={(e) => setZaloChatId(e.target.value)}
                 className="w-full bg-white border border-blue-300 rounded-xl px-3 py-2.5 font-mono font-bold text-blue-900 focus:outline-none focus:border-blue-500 text-xs shadow-xs"
@@ -548,7 +548,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                 💡 Bấm <b>"Quan Tâm Zalo OA"</b> để kích hoạt tự động cập nhật Zalo UID và nhận thông báo Lịch hẹn & Hoa hồng.
               </p>
               <a
-                href="https://zalo.me/7540234525828588815"
+                href="https://zalo.me/2715919749071666693"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-extrabold text-[11px] rounded-lg shadow-xs flex items-center gap-1 cursor-pointer transition shrink-0"

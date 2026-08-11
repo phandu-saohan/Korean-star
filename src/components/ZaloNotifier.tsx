@@ -81,10 +81,10 @@ export const ZaloNotifier: React.FC<ZaloNotifierProps> = ({ defaultChatId = '', 
               )}
               <button
                 type="button"
-                onClick={() => setChatId('2512523625412515')}
+                onClick={() => setChatId('2715919749071666693')}
                 className="text-[10px] text-slate-600 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded-md font-bold transition cursor-pointer"
               >
-                Sample UID
+                Sample OA ID
               </button>
             </div>
           </div>
@@ -93,7 +93,7 @@ export const ZaloNotifier: React.FC<ZaloNotifierProps> = ({ defaultChatId = '', 
             type="text"
             value={chatId}
             onChange={(e) => setChatId(e.target.value)}
-            placeholder="Ví dụ: 2512523625412515 hoặc Zalo Chat ID"
+            placeholder="Ví dụ: 2715919749071666693 hoặc Zalo Chat ID"
             required
             className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-mono font-bold text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition"
           />
