@@ -18,7 +18,7 @@ import { CTVUser } from "../types";
 import { sendOneSignalNotification, notifySystemSettingsUpdated } from "../lib/onesignal";
 import { ZaloNotifier } from "./ZaloNotifier";
 import { ZaloStatsReportSender } from "./ZaloStatsReportSender";
-import { registerZaloWebhook, refreshZaloOaAccessToken } from "../services/zaloService";
+import { registerZaloWebhook, refreshZaloOaAccessToken, testZaloOaConnection } from "../services/zaloService";
 import { VIETNAM_BANKS, getBankLogo } from "../lib/banks";
 import { formatCurrencyInput, parseCurrencyInput } from "../utils/formatters";
 import {
@@ -58,6 +58,7 @@ import {
   FileText,
   Stethoscope,
   QrCode,
+  Zap,
   UserCheck,
   Award,
   TrendingUp,
@@ -665,6 +666,38 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
       onToast("🎉 Đã lấy lại Access Token Zalo OA mới từ Refresh Token thành công (Có hiệu lực 24h)!");
     } else {
       alert(`❌ Lỗi cấp lại Access Token Zalo OA:\n\n${res.description || "Không thể cấp lại token. Kiểm tra lại Refresh Token!"}`);
+    }
+  };
+
+  const [testingZaloConnection, setTestingZaloConnection] = useState(false);
+  const [zaloConnectionResult, setZaloConnectionResult] = useState<{ ok: boolean; message: string; oaInfo?: any } | null>(null);
+
+  const handleTestZaloConnection = async () => {
+    const token = brandConfig.zaloOaAccessToken || brandConfig.zaloBotToken;
+    if (!token || !token.trim()) {
+      alert("Vui lòng nhập Zalo OA Access Token trước khi kiểm tra kết nối API!");
+      return;
+    }
+
+    setTestingZaloConnection(true);
+    setZaloConnectionResult(null);
+
+    const res = await testZaloOaConnection(token);
+    setTestingZaloConnection(false);
+
+    if (res.ok) {
+      setZaloConnectionResult({
+        ok: true,
+        message: `Kết nối Zalo OA API thành công! ${res.oaInfo?.name ? `(Tên OA: ${res.oaInfo.name})` : ""}`,
+        oaInfo: res.oaInfo
+      });
+      onToast(`🎉 ${res.description || "Kết nối Zalo Official Account (OA) API thành công!"}`);
+    } else {
+      setZaloConnectionResult({
+        ok: false,
+        message: res.description || "Kết nối Zalo OA API thất bại. Vui lòng kiểm tra lại Access Token."
+      });
+      alert(`❌ Kết nối Zalo OA API thất bại:\n\n${res.description}`);
     }
   };
 
@@ -1441,15 +1474,27 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                         onChange={(e) => setBrandConfig({ ...brandConfig, zaloOaAccessToken: e.target.value, zaloBotToken: e.target.value })}
                         className="w-full bg-blue-50/70 border border-blue-300 rounded-xl px-3 py-2.5 font-mono text-xs font-bold text-blue-900 focus:outline-none focus:border-blue-500"
                       />
-                      <button
-                        type="button"
-                        disabled={refreshingToken}
-                        onClick={handleRefreshToken}
-                        className="px-3.5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 disabled:opacity-50 text-white font-extrabold text-xs rounded-xl shadow-xs shrink-0 cursor-pointer flex items-center gap-1.5 transition"
-                      >
-                        <RefreshCw className={`w-3.5 h-3.5 ${refreshingToken ? "animate-spin" : ""}`} />
-                        <span>{refreshingToken ? "Đang lấy..." : "Làm Mới Token"}</span>
-                      </button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          disabled={testingZaloConnection}
+                          onClick={handleTestZaloConnection}
+                          className="px-3 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-extrabold text-xs rounded-xl shadow-xs shrink-0 cursor-pointer flex items-center gap-1.5 transition"
+                        >
+                          <Zap className={`w-3.5 h-3.5 ${testingZaloConnection ? "animate-spin" : ""}`} />
+                          <span>{testingZaloConnection ? "Đang Test..." : "Test Kết Nối"}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={refreshingToken}
+                          onClick={handleRefreshToken}
+                          className="px-3.5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 disabled:opacity-50 text-white font-extrabold text-xs rounded-xl shadow-xs shrink-0 cursor-pointer flex items-center gap-1.5 transition"
+                        >
+                          <RefreshCw className={`w-3.5 h-3.5 ${refreshingToken ? "animate-spin" : ""}`} />
+                          <span>{refreshingToken ? "Đang lấy..." : "Làm Mới Token"}</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -1467,6 +1512,29 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                     />
                   </div>
                 </div>
+
+                {/* Kết Quả Test Kết Nối Zalo OA Banner */}
+                {zaloConnectionResult && (
+                  <div className={`p-3 rounded-xl border text-xs font-extrabold flex items-center justify-between gap-2 animate-fadeIn ${
+                    zaloConnectionResult.ok
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                      : "bg-rose-50 border-rose-200 text-rose-800"
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      {zaloConnectionResult.ok ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <X className="w-4 h-4 text-rose-600 shrink-0" />
+                      )}
+                      <span>{zaloConnectionResult.message}</span>
+                    </div>
+                    {zaloConnectionResult.oaInfo?.oa_id && (
+                      <span className="font-mono text-[10px] bg-emerald-100 px-2 py-0.5 rounded text-emerald-900">
+                        OA ID: {zaloConnectionResult.oaInfo.oa_id}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Webhook URL Config Box */}

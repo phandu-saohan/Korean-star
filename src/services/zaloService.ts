@@ -519,5 +519,43 @@ export async function sendZaloAdminStatsReport(statsData: {
   };
 }
 
+/**
+ * Kiểm tra kết nối Zalo OA API (gọi thông tin getoa)
+ */
+export async function testZaloOaConnection(
+  accessTokenInput?: string
+): Promise<{ ok: boolean; description: string; oaInfo?: any; error_code?: number }> {
+  let token = accessTokenInput?.trim() || "";
+
+  if (!token) {
+    const { botToken } = await getZaloBotConfig();
+    token = botToken;
+  }
+
+  if (!token) {
+    return {
+      ok: false,
+      description: "Chưa nhập Zalo OA Access Token để kiểm tra kết nối API!",
+    };
+  }
+
+  try {
+    const response = await fetch("/api/zalo/test-connection", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accessToken: token }),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (err: any) {
+    return {
+      ok: false,
+      description: err.message || "Lỗi kết nối đến proxy server kiểm tra kết nối Zalo OA",
+    };
+  }
+}
+
+
 
 

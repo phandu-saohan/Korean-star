@@ -270,6 +270,55 @@ app.post("/api/zalo/send-message", async (req, res) => {
   }
 });
 
+// API: Proxy Test Kết Nối Zalo Official Account (OA) API
+app.post("/api/zalo/test-connection", async (req, res) => {
+  try {
+    const { accessToken } = req.body;
+
+    if (!accessToken || !String(accessToken).trim()) {
+      return res.status(400).json({ ok: false, description: "Thiếu Zalo OA Access Token để kiểm tra kết nối API" });
+    }
+
+    const cleanToken = String(accessToken).replace(/^\//, "").trim();
+
+    const response = await fetch("https://openapi.zalo.me/v2.0/oa/getoa", {
+      method: "GET",
+      headers: {
+        "access_token": cleanToken,
+      },
+    });
+
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await response.json();
+      if (data.error === 0) {
+        return res.json({
+          ok: true,
+          description: "Kết nối Zalo Official Account (OA) API thành công!",
+          oaInfo: data.data || {},
+          raw: data,
+        });
+      } else {
+        return res.json({
+          ok: false,
+          error_code: data.error,
+          description: data.message || `Zalo OA API lỗi (Mã ${data.error})`,
+          raw: data,
+        });
+      }
+    } else {
+      const rawText = await response.text();
+      return res.json({ ok: false, description: `Zalo API phản hồi lỗi: ${rawText.slice(0, 200)}` });
+    }
+  } catch (err: any) {
+    console.error("[Zalo Test Connection Error]:", err);
+    return res.status(500).json({
+      ok: false,
+      description: err.message || "Lỗi server khi kiểm tra kết nối Zalo OA API",
+    });
+  }
+});
+
 // API: Proxy Zalo OA Refresh Access Token từ Refresh Token sau 24h
 app.post("/api/zalo/refresh-token", async (req, res) => {
   try {
