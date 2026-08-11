@@ -1,4 +1,17 @@
 import type { IncomingMessage, ServerResponse } from "http";
+import { randomUUID } from "crypto";
+
+function generateUUID(): string {
+  try {
+    return randomUUID();
+  } catch (e) {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+}
 
 export default async function handler(
   req: IncomingMessage & { body?: any },
@@ -71,7 +84,7 @@ export default async function handler(
       try {
         // 1. Check if user exists by zalo_chat_id
         if (cleanUid) {
-          const uidRes = await fetch(`${supabaseUrl}/rest/v1/user_profiles?zalo_chat_id=eq.${cleanUid}&select=*`, {
+          const uidRes = await fetch(`${supabaseUrl}/rest/v1/user_profiles?zalo_chat_id=eq.${encodeURIComponent(cleanUid)}&select=*`, {
             headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` }
           });
           const uidData = await uidRes.json();
@@ -113,9 +126,9 @@ export default async function handler(
           isNewUser = true;
           const randomDigits = Math.floor(100000 + Math.random() * 900000);
           const ctvCode = `CTV-ZALO-${randomDigits}`;
-          const newUserId = `zalo-${cleanUid || Date.now()}`;
+          const newUserId = generateUUID();
           const finalPhone = cleanPhone || `09${Math.floor(10000000 + Math.random() * 90000000)}`;
-          const email = `zalo.${cleanUid || randomDigits}@koreanstar.vn`;
+          const email = `zalo.${randomDigits}@koreanstar.vn`;
           const fullName = name && String(name).trim() ? String(name).trim() : `CTV Zalo #${randomDigits}`;
 
           const insertRes = await fetch(`${supabaseUrl}/rest/v1/user_profiles`, {
@@ -172,14 +185,18 @@ export default async function handler(
       }
     }
 
-    // Format final AuthUserProfile object for React client
+    // Ensure profile ID is a valid UUID
+    const finalUserId = (userProfile?.id && /^[0-9a-fA-F-]{36}$/.test(userProfile.id))
+      ? userProfile.id
+      : generateUUID();
+
     const formattedProfile = {
-      id: userProfile?.id || `zalo-${cleanUid || Date.now()}`,
+      id: finalUserId,
       fullName: userProfile?.full_name || userProfile?.fullName || name || "Thành Viên Zalo",
-      email: userProfile?.email || `zalo.${cleanUid || "user"}@koreanstar.vn`,
+      email: userProfile?.email || `zalo.user@koreanstar.vn`,
       phone: userProfile?.phone || cleanPhone || "",
       role: userProfile?.role || "ctv",
-      ctvCode: userProfile?.ctv_code || userProfile?.ctvCode || `CTV-ZALO-${cleanUid.slice(-6)}`,
+      ctvCode: userProfile?.ctv_code || userProfile?.ctvCode || `CTV-ZALO-1000`,
       zaloChatId: cleanUid || userProfile?.zalo_chat_id || userProfile?.zaloChatId || "",
       avatarUrl: avatar || userProfile?.avatar_url || userProfile?.avatarUrl || "",
       tier: userProfile?.tier || "Đồng",
@@ -197,7 +214,7 @@ export default async function handler(
         userProfile: formattedProfile,
         isNewUser,
         description: isNewUser
-          ? `✨ Đã tự động tạo tài khoản CTV mới cho Zalo ID ${cleanUid}!`
+          ? `✨ Đã tự động tạo tài khoản CTV mới cho Zalo!`
           : `🎉 Đăng nhập tài khoản CTV bằng Zalo thành công!`,
       })
     );

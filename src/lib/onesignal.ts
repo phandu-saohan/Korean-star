@@ -195,7 +195,11 @@ export const setOneSignalUser = (user: AuthUserProfile) => {
   const cfg = getOneSignalConfig();
   if (!cfg.enabled || !cfg.appId || cfg.appId.includes("demo")) return;
 
-  const externalId = user.id || user.ctvCode || user.email;
+  let rawExternalId = (user.id || user.ctvCode || user.email || "").trim();
+  if (!rawExternalId) return;
+
+  // Sanitize externalId for OneSignal: max 64 chars, valid alphanumeric/hyphen/underscore
+  const externalId = rawExternalId.replace(/[^a-zA-Z0-9_\-.]/g, "_").slice(0, 64);
   if (!externalId) return;
 
   // Guard: nếu đã init cho user này trong session này → bỏ qua
