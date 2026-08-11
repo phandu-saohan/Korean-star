@@ -446,6 +446,66 @@ app.post("/api/zalo/fetch-user-profile", async (req, res) => {
   }
 });
 
+// API: Proxy Lấy Danh Sách Người Quan Tâm Zalo OA (/v2.0/oa/getfollowers)
+app.post("/api/zalo/fetch-followers", async (req, res) => {
+  try {
+    const { accessToken, offset = 0, count = 50, tagName } = req.body;
+
+    if (!accessToken || !String(accessToken).trim()) {
+      return res.status(400).json({ ok: false, description: "Thiếu Zalo OA Access Token để lấy danh sách người quan tâm" });
+    }
+
+    const cleanToken = String(accessToken).replace(/^\//, "").trim();
+
+    const queryData: any = {
+      offset: Number(offset) || 0,
+      count: Math.min(Number(count) || 50, 50),
+    };
+    if (tagName && String(tagName).trim()) {
+      queryData.tag_name = String(tagName).trim();
+    }
+
+    const getFollowersUrl = `https://openapi.zalo.me/v2.0/oa/getfollowers?data=${encodeURIComponent(
+      JSON.stringify(queryData)
+    )}`;
+
+    const zaloResponse = await fetch(getFollowersUrl, {
+      method: "GET",
+      headers: { access_token: cleanToken },
+    });
+
+    const contentType = zaloResponse.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await zaloResponse.json();
+      if (data.error === 0) {
+        return res.json({
+          ok: true,
+          description: `Lấy danh sách người quan tâm OA (${data.data?.followers?.length || 0}/${data.data?.total || 0}) thành công!`,
+          total: data.data?.total || 0,
+          followers: data.data?.followers || [],
+          raw: data,
+        });
+      } else {
+        return res.json({
+          ok: false,
+          error_code: data.error,
+          description: data.message || `Lỗi Zalo OA (Mã ${data.error})`,
+          raw: data,
+        });
+      }
+    } else {
+      const rawText = await zaloResponse.text();
+      return res.json({ ok: false, description: `Zalo API phản hồi lỗi: ${rawText.slice(0, 200)}` });
+    }
+  } catch (err: any) {
+    console.error("[Zalo Fetch Followers Error]:", err);
+    return res.status(500).json({
+      ok: false,
+      description: err.message || "Lỗi server khi lấy danh sách người quan tâm Zalo OA",
+    });
+  }
+});
+
 // API: Proxy Zalo OA Refresh Access Token từ Refresh Token sau 24h
 app.post("/api/zalo/refresh-token", async (req, res) => {
   try {

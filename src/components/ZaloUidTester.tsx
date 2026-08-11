@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { fetchZaloUserProfileByUid, linkZaloUidToCtvProfile } from "../services/zaloService";
-import { Search, UserCheck, RefreshCw, AlertCircle, CheckCircle2, Terminal, User, Phone, ShieldCheck, Sparkles, MessageSquare } from "lucide-react";
+import { fetchZaloUserProfileByUid, linkZaloUidToCtvProfile, fetchZaloOaFollowers } from "../services/zaloService";
+import { Search, UserCheck, RefreshCw, AlertCircle, CheckCircle2, Terminal, User, Phone, ShieldCheck, Sparkles, MessageSquare, Users } from "lucide-react";
 
 interface ZaloUidTesterProps {
   accessToken?: string;
@@ -15,6 +15,8 @@ export const ZaloUidTester: React.FC<ZaloUidTesterProps> = ({ accessToken, onToa
     ok: boolean;
     description: string;
     profile?: any;
+    followers?: Array<{ user_id: string }>;
+    total?: number;
     raw?: any;
   } | null>(null);
   const [showDebug, setShowDebug] = useState<boolean>(true);
@@ -35,6 +37,27 @@ export const ZaloUidTester: React.FC<ZaloUidTesterProps> = ({ accessToken, onToa
 
     if (res.ok && onToast) {
       onToast("✨ Tra cứu thông tin Zalo UID từ Zalo OA API thành công!");
+    }
+  };
+
+  const handleScanFollowers = async () => {
+    setLoading(true);
+    setResult(null);
+
+    const res = await fetchZaloOaFollowers({
+      offset: 0,
+      count: 50,
+      accessTokenInput: accessToken
+    });
+    setResult(res);
+    setLoading(false);
+
+    if (res.ok && res.followers && res.followers.length > 0) {
+      setSearchUid(res.followers[0].user_id);
+    }
+
+    if (res.ok && onToast) {
+      onToast(res.description);
     }
   };
 
@@ -144,6 +167,20 @@ export const ZaloUidTester: React.FC<ZaloUidTesterProps> = ({ accessToken, onToa
         <button
           type="button"
           disabled={loading}
+          onClick={handleScanFollowers}
+          className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl transition shadow-md flex items-center gap-2 cursor-pointer"
+        >
+          {loading ? (
+            <RefreshCw className="w-4 h-4 animate-spin" />
+          ) : (
+            <Users className="w-4 h-4" />
+          )}
+          <span>📋 Quét Danh Sách Người Quan Tâm (getfollowers)</span>
+        </button>
+
+        <button
+          type="button"
+          disabled={loading}
           onClick={handleFetchProfile}
           className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl transition shadow-md flex items-center gap-2 cursor-pointer"
         >
@@ -152,7 +189,7 @@ export const ZaloUidTester: React.FC<ZaloUidTesterProps> = ({ accessToken, onToa
           ) : (
             <Search className="w-4 h-4" />
           )}
-          <span>🔍 Tra Cứu Zalo UID Qua OpenAPI</span>
+          <span>🔍 Tra Cứu Profile UID (getprofile)</span>
         </button>
 
         <button
@@ -183,6 +220,37 @@ export const ZaloUidTester: React.FC<ZaloUidTesterProps> = ({ accessToken, onToa
             )}
             <span>{result.description}</span>
           </div>
+
+          {/* Render List of Followers if present */}
+          {result.ok && result.followers && result.followers.length > 0 && (
+            <div className="bg-white p-3 rounded-xl border border-indigo-200 shadow-xs space-y-2">
+              <div className="font-extrabold text-indigo-950 text-xs flex items-center justify-between">
+                <span>📋 Danh Sách UID Quan Tâm ({result.followers.length}/{result.total || result.followers.length}):</span>
+                <span className="text-[10px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded font-bold">
+                  Bấm UID để chọn tra cứu nhanh
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pt-1">
+                {result.followers.map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setSearchUid(item.user_id);
+                      if (onToast) onToast(`Đã chọn Zalo UID: ${item.user_id}`);
+                    }}
+                    className={`font-mono text-[11px] font-bold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
+                      searchUid === item.user_id
+                        ? "bg-blue-600 text-white border-blue-700 shadow-xs"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-blue-50 hover:text-blue-800 hover:border-blue-300"
+                    }`}
+                  >
+                    #{idx + 1}: {item.user_id}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {result.ok && result.profile && (
             <div className="bg-white p-3 rounded-xl border border-emerald-200 shadow-xs flex items-center gap-3">

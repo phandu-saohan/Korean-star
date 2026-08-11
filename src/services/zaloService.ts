@@ -654,6 +654,47 @@ export async function fetchZaloUserProfileByUid(
   }
 }
 
+/**
+ * Lấy danh sách người quan tâm Zalo OA qua API /v2.0/oa/getfollowers
+ */
+export async function fetchZaloOaFollowers(options?: {
+  offset?: number;
+  count?: number;
+  tagName?: string;
+  accessTokenInput?: string;
+}): Promise<{ ok: boolean; description: string; total?: number; followers?: Array<{ user_id: string }>; raw?: any }> {
+  let token = options?.accessTokenInput?.trim() || "";
+  if (!token) {
+    const { botToken } = await getZaloBotConfig();
+    token = botToken;
+  }
+
+  if (!token) {
+    return { ok: false, description: "Chưa cấu hình Zalo OA Access Token để quét danh sách người quan tâm!" };
+  }
+
+  try {
+    const response = await fetch("/api/zalo/fetch-followers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        accessToken: token,
+        offset: options?.offset || 0,
+        count: options?.count || 50,
+        tagName: options?.tagName || ""
+      })
+    });
+    const data = await response.json();
+    return data;
+  } catch (err: any) {
+    return {
+      ok: false,
+      description: err.message || "Lỗi kết nối khi quét danh sách người quan tâm Zalo OA!"
+    };
+  }
+}
+
+
 
 
 
