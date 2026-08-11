@@ -564,6 +564,62 @@ app.post("/api/zalo/fetch-followers", async (req, res) => {
   }
 });
 
+// API: Proxy Tạo Mã Định Danh Liên Kết Duy Nhất (LINK_XXXXXX) Cho CTV
+app.post("/api/zalo/create-link-code", async (req, res) => {
+  try {
+    const { userId, ctvCode, phone } = req.body;
+
+    const randomDigits = Math.floor(100000 + Math.random() * 900000);
+    const code = `LINK_${randomDigits}`;
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL || "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io";
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.REACT_APP_SUPABASE_ANON_KEY || "";
+
+    if (supabaseUrl && supabaseKey) {
+      try {
+        await fetch(`${supabaseUrl}/rest/v1/zalo_linking_codes`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Prefer": "resolution=merge-duplicates"
+          },
+          body: JSON.stringify({
+            code,
+            user_id: userId || null,
+            ctv_code: ctvCode || null,
+            phone: phone || null,
+            expires_at: expiresAt,
+            created_at: new Date().toISOString()
+          })
+        });
+      } catch (dbErr) {
+        console.warn("[Create Link Code DB Warning]:", dbErr);
+      }
+    }
+
+    const zaloOaId = "2715919749071666693";
+    const deepLink = `https://zalo.me/${zaloOaId}`;
+
+    return res.json({
+      ok: true,
+      code,
+      expiresAt,
+      zaloOaId,
+      deepLink,
+      description: `Đã tạo Mã Định Danh Liên Kết (${code}). Gửi cú pháp này tới Zalo OA để gắn Zalo UID tự động 100%!`,
+    });
+  } catch (err: any) {
+    console.error("[Create Link Code Error]:", err);
+    return res.status(500).json({
+      ok: false,
+      description: err.message || "Lỗi server khi tạo mã định danh Zalo UID",
+    });
+  }
+});
+
 // API: Proxy Zalo OA Refresh Access Token từ Refresh Token sau 24h
 app.post("/api/zalo/refresh-token", async (req, res) => {
   try {

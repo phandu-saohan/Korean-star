@@ -698,6 +698,31 @@ export async function fetchZaloOaFollowers(options?: {
   }
 }
 
+/**
+ * Tạo mã định danh duy nhất (LINK_XXXXXX) để liên kết Zalo OA chính xác 100%
+ */
+export async function generateZaloLinkCode(options: {
+  userId?: string;
+  ctvCode?: string;
+  phone?: string;
+}): Promise<{ ok: boolean; code?: string; expiresAt?: string; zaloOaId?: string; deepLink?: string; description: string }> {
+  try {
+    const response = await fetch("/api/zalo/create-link-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(options)
+    });
+    const data = await response.json();
+    return data;
+  } catch (err: any) {
+    return {
+      ok: false,
+      description: err.message || "Lỗi kết nối khi tạo mã định danh Zalo UID!"
+    };
+  }
+}
+
+
 
 
 

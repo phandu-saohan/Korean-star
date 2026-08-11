@@ -140,6 +140,21 @@ END $$;
 
 ALTER TABLE public.cms_settings DISABLE ROW LEVEL SECURITY;
 
+-- ----------------------------------------------------
+-- BẢNG LƯU MÃ ĐỊNH DANH LIÊN KẾT ZALO OA (zalo_linking_codes)
+-- ----------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.zalo_linking_codes (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES public.user_profiles(id) ON DELETE CASCADE,
+    ctv_code TEXT,
+    phone TEXT,
+    code TEXT UNIQUE NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '15 minutes'),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.zalo_linking_codes DISABLE ROW LEVEL SECURITY;
+
 -- Chèn dữ liệu cấu hình mặc định nếu chưa có
 INSERT INTO public.cms_settings (id, hospital_name, tagline, hotline, address, base_commission_rate, auto_payout_threshold)
 VALUES (1, 'KOREAN STAR', 'Hệ Thống Bệnh Viện Thẩm Mỹ Quốc Tế & Quản Lý CTV 24/7', '1900 8888 - 0901 888 999', 'Số 88 Phố Huế, Q. Hai Bà Trưng, Hà Nội', 15, 50000000)

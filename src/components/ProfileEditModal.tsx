@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AuthUserProfile, getUserUid } from "../lib/supabase";
-import { linkZaloUidToCtvProfile } from "../services/zaloService";
+import { linkZaloUidToCtvProfile, generateZaloLinkCode } from "../services/zaloService";
 import { CTVUser } from "../types";
 import { VIETNAM_BANKS, getBankLogo } from "../lib/banks";
 import {
@@ -91,6 +91,25 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
     if (res.ok) {
       if (onToast) onToast(res.description);
       else setSuccessMsg(res.description);
+    } else {
+      setErrorMsg(res.description);
+    }
+  };
+
+  const [generatedCode, setGeneratedCode] = useState<string>("");
+  const [generatingCode, setGeneratingCode] = useState<boolean>(false);
+
+  const handleGenerateLinkCode = async () => {
+    setGeneratingCode(true);
+    const res = await generateZaloLinkCode({
+      userId: getUserUid(currentUser),
+      ctvCode: currentUser.code,
+      phone: phone || currentUser.phone
+    });
+    setGeneratingCode(false);
+    if (res.ok && res.code) {
+      setGeneratedCode(res.code);
+      if (onToast) onToast(`✨ Đã tạo Mã Định Danh duy nhất: ${res.code}`);
     } else {
       setErrorMsg(res.description);
     }
@@ -513,7 +532,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
             </div>
           </div>
 
-          {/* 8. ZALO USER ID CÁ NHÂN & KẾT NỐI TỰ ĐỘNG */}
+          {/* 8. ZALO USER ID CÁ NHÂN & KẾT NỐI CHÍNH XÁC 100% */}
           <div className="bg-blue-50/70 p-3.5 rounded-2xl border border-blue-200 space-y-2.5">
             <div className="flex items-center justify-between">
               <label className="text-blue-950 font-extrabold text-[11px] flex items-center gap-1.5">
@@ -543,17 +562,55 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               </button>
             </div>
 
+            {/* PHƯƠNG PHÁP 1: TẠO MÃ ĐỊNH DANH DUY NHẤT (CHÍNH XÁC 100%) */}
+            <div className="bg-white p-3 rounded-xl border border-blue-200/80 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-extrabold text-blue-950 flex items-center gap-1">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  <span>Kết Nối Tự Động 100% Qua Mã Định Danh Cá Nhân:</span>
+                </span>
+                <button
+                  type="button"
+                  disabled={generatingCode}
+                  onClick={handleGenerateLinkCode}
+                  className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-extrabold text-[11px] rounded-lg transition shadow-xs cursor-pointer flex items-center gap-1 shrink-0"
+                >
+                  <span>{generatingCode ? "Đang tạo mã..." : "⚡ Tạo Mã Kết Nối"}</span>
+                </button>
+              </div>
+
+              {generatedCode ? (
+                <div className="bg-emerald-50 border border-emerald-300 p-2.5 rounded-xl space-y-1.5 animate-fadeIn">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-emerald-800 font-bold">
+                      Mã Định Danh Của Bạn:
+                    </span>
+                    <span className="font-mono font-black text-emerald-950 text-sm tracking-widest bg-white px-2.5 py-0.5 rounded border border-emerald-400">
+                      {generatedCode}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-emerald-900 font-medium">
+                    👉 Bấm <b>"Mở Zalo OA & Gửi Mã"</b> bên dưới ➔ Gửi tin nhắn <b>{generatedCode}</b> đến Zalo OA để tự động gắn Zalo UID chính xác 100%!
+                  </p>
+                </div>
+              ) : (
+                <p className="text-[10px] text-slate-500 font-medium">
+                  💡 Nhấn nút <b>"Tạo Mã Kết Nối"</b> để tạo mã ngẫu nhiên duy nhất gửi đến Zalo OA kết nối chính xác 100%.
+                </p>
+              )}
+            </div>
+
             <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-blue-200/60">
               <p className="text-[10px] text-blue-700 font-medium flex-1 min-w-[200px]">
-                💡 Bấm <b>"Quan Tâm Zalo OA"</b> để kích hoạt tự động cập nhật Zalo UID và nhận thông báo Lịch hẹn & Hoa hồng.
+                💡 Hoặc bấm <b>"Quan Tâm Zalo OA"</b> để kích hoạt kết nối tự động.
               </p>
               <a
-                href="https://zalo.me/2715919749071666693"
+                href={generatedCode ? `https://zalo.me/2715919749071666693` : `https://zalo.me/2715919749071666693`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-extrabold text-[11px] rounded-lg shadow-xs flex items-center gap-1 cursor-pointer transition shrink-0"
               >
-                <span>📲 Quan Tâm Zalo OA Ngay</span>
+                <span>📲 {generatedCode ? `Mở Zalo OA & Gửi ${generatedCode}` : "Quan Tâm Zalo OA Ngay"}</span>
               </a>
             </div>
           </div>
