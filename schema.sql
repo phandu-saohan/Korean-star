@@ -124,6 +124,18 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cms_settings' AND column_name = 'email_support') THEN
         ALTER TABLE public.cms_settings ADD COLUMN email_support TEXT DEFAULT 'cskh@koreanstar.vn';
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cms_settings' AND column_name = 'zalo_oa_app_id') THEN
+        ALTER TABLE public.cms_settings ADD COLUMN zalo_oa_app_id TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cms_settings' AND column_name = 'zalo_oa_secret_key') THEN
+        ALTER TABLE public.cms_settings ADD COLUMN zalo_oa_secret_key TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cms_settings' AND column_name = 'zalo_oa_access_token') THEN
+        ALTER TABLE public.cms_settings ADD COLUMN zalo_oa_access_token TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cms_settings' AND column_name = 'zalo_oa_refresh_token') THEN
+        ALTER TABLE public.cms_settings ADD COLUMN zalo_oa_refresh_token TEXT;
+    END IF;
 END $$;
 
 ALTER TABLE public.cms_settings DISABLE ROW LEVEL SECURITY;

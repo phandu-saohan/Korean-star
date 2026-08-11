@@ -1086,9 +1086,13 @@ export const fetchCmsSettingsFromSupabase = async (forceRefresh = false) => {
         oneSignalAppId: data.one_signal_app_id || "",
         oneSignalApiKey: data.one_signal_api_key || "",
         oneSignalEnabled: data.one_signal_enabled !== false,
-        zaloBotToken: data.zalo_bot_token || "",
+        zaloBotToken: data.zalo_oa_access_token || data.zalo_bot_token || "",
         zaloDefaultChatId: data.zalo_default_chat_id || "",
-        zaloWebhookSecret: data.zalo_webhook_secret || "",
+        zaloWebhookSecret: data.zalo_oa_secret_key || data.zalo_webhook_secret || "",
+        zaloOaAppId: data.zalo_oa_app_id || data.zalo_bot_token || "",
+        zaloOaSecretKey: data.zalo_oa_secret_key || data.zalo_webhook_secret || "",
+        zaloOaAccessToken: data.zalo_oa_access_token || data.zalo_bot_token || "",
+        zaloOaRefreshToken: data.zalo_oa_refresh_token || "",
         ctvTiers: data.ctv_tiers || null
       };
 
@@ -1130,6 +1134,10 @@ export const fetchCmsSettingsFromSupabase = async (forceRefresh = false) => {
       zaloBotToken: "",
       zaloDefaultChatId: "",
       zaloWebhookSecret: "",
+      zaloOaAppId: "",
+      zaloOaSecretKey: "",
+      zaloOaAccessToken: "",
+      zaloOaRefreshToken: "",
       ctvTiers: null
     };
   }
@@ -1152,9 +1160,13 @@ export const saveCmsSettingsToSupabase = async (settings: any) => {
     one_signal_app_id: settings.oneSignalAppId || "",
     one_signal_api_key: settings.oneSignalApiKey || "",
     one_signal_enabled: settings.oneSignalEnabled !== false,
-    zalo_bot_token: settings.zaloBotToken || "",
+    zalo_bot_token: settings.zaloOaAccessToken || settings.zaloBotToken || "",
     zalo_default_chat_id: settings.zaloDefaultChatId || "",
-    zalo_webhook_secret: settings.zaloWebhookSecret || "",
+    zalo_webhook_secret: settings.zaloOaSecretKey || settings.zaloWebhookSecret || "",
+    zalo_oa_app_id: settings.zaloOaAppId || settings.zaloBotToken || "",
+    zalo_oa_secret_key: settings.zaloOaSecretKey || settings.zaloWebhookSecret || "",
+    zalo_oa_access_token: settings.zaloOaAccessToken || settings.zaloBotToken || "",
+    zalo_oa_refresh_token: settings.zaloOaRefreshToken || "",
     updated_at: new Date().toISOString()
   };
 
