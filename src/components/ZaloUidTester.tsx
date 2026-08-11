@@ -10,13 +10,17 @@ interface ZaloUidTesterProps {
 export const ZaloUidTester: React.FC<ZaloUidTesterProps> = ({ accessToken, onToast }) => {
   const [searchUid, setSearchUid] = useState<string>("2715919749071666693");
   const [ctvCodeOrPhone, setCtvCodeOrPhone] = useState<string>("0901888999");
+  const [isFollower, setIsFollower] = useState<string>("true");
+  const [lastInteractionPeriod, setLastInteractionPeriod] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [result, setResult] = useState<{
     ok: boolean;
     description: string;
     profile?: any;
     followers?: Array<{ user_id: string }>;
+    users?: Array<{ user_id: string }>;
     total?: number;
+    apiVersion?: string;
     raw?: any;
   } | null>(null);
   const [showDebug, setShowDebug] = useState<boolean>(true);
@@ -47,13 +51,16 @@ export const ZaloUidTester: React.FC<ZaloUidTesterProps> = ({ accessToken, onToa
     const res = await fetchZaloOaFollowers({
       offset: 0,
       count: 50,
+      isFollower: isFollower,
+      lastInteractionPeriod: lastInteractionPeriod,
       accessTokenInput: accessToken
     });
     setResult(res);
     setLoading(false);
 
-    if (res.ok && res.followers && res.followers.length > 0) {
-      setSearchUid(res.followers[0].user_id);
+    const userList = res.users || res.followers || [];
+    if (res.ok && userList.length > 0) {
+      setSearchUid(userList[0].user_id);
     }
 
     if (res.ok && onToast) {
@@ -160,6 +167,39 @@ export const ZaloUidTester: React.FC<ZaloUidTesterProps> = ({ accessToken, onToa
             />
           </div>
         </div>
+
+        {/* 3. Filter: is_follower (v3.0) */}
+        <div>
+          <label className="block text-slate-700 font-extrabold text-[11px] mb-1.5">
+            3. Trạng Thái Quan Tâm (is_follower - v3.0):
+          </label>
+          <select
+            value={isFollower}
+            onChange={(e) => setIsFollower(e.target.value)}
+            className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-900 focus:outline-none focus:border-blue-500 text-xs shadow-xs"
+          >
+            <option value="true">Đang Quan Tâm (is_follower: true)</option>
+            <option value="false">Chưa Quan Tâm (is_follower: false)</option>
+          </select>
+        </div>
+
+        {/* 4. Filter: last_interaction_period (v3.0) */}
+        <div>
+          <label className="block text-slate-700 font-extrabold text-[11px] mb-1.5">
+            4. Tương Tác Gần Nhất (last_interaction_period - v3.0):
+          </label>
+          <select
+            value={lastInteractionPeriod}
+            onChange={(e) => setLastInteractionPeriod(e.target.value)}
+            className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-900 focus:outline-none focus:border-blue-500 text-xs shadow-xs"
+          >
+            <option value="">Tất cả thời gian</option>
+            <option value="TODAY">Trong ngày hôm nay (TODAY)</option>
+            <option value="YESTERDAY">Trong ngày hôm qua (YESTERDAY)</option>
+            <option value="L7D">Trong 7 ngày qua (L7D)</option>
+            <option value="L30D">Trong 30 ngày qua (L30D)</option>
+          </select>
+        </div>
       </div>
 
       {/* Buttons */}
@@ -175,7 +215,7 @@ export const ZaloUidTester: React.FC<ZaloUidTesterProps> = ({ accessToken, onToa
           ) : (
             <Users className="w-4 h-4" />
           )}
-          <span>📋 Quét Danh Sách Người Quan Tâm (getfollowers)</span>
+          <span>📋 Quét Danh Sách Người Dùng Zalo OA (v3.0 /oa/user/getlist)</span>
         </button>
 
         <button

@@ -446,27 +446,82 @@ app.post("/api/zalo/fetch-user-profile", async (req, res) => {
   }
 });
 
-// API: Proxy Lấy Danh Sách Người Quan Tâm Zalo OA (/v2.0/oa/getfollowers)
+// API: Proxy Lấy Danh Sách Người Dùng Zalo OA (/v3.0/oa/user/getlist)
 app.post("/api/zalo/fetch-followers", async (req, res) => {
   try {
-    const { accessToken, offset = 0, count = 50, tagName } = req.body;
+    const {
+      accessToken,
+      offset = 0,
+      count = 50,
+      tagName,
+      lastInteractionPeriod,
+      isFollower = "true"
+    } = req.body;
 
     if (!accessToken || !String(accessToken).trim()) {
-      return res.status(400).json({ ok: false, description: "Thiếu Zalo OA Access Token để lấy danh sách người quan tâm" });
+      return res.status(400).json({ ok: false, description: "Thiếu Zalo OA Access Token để lấy danh sách người dùng" });
     }
 
     const cleanToken = String(accessToken).replace(/^\//, "").trim();
+    const limitCount = Math.min(Number(count) || 50, 50);
+    const startOffset = Math.min(Number(offset) || 0, 9951);
 
-    const queryData: any = {
-      offset: Number(offset) || 0,
-      count: Math.min(Number(count) || 50, 50),
+    // 1. Zalo OpenAPI v3.0: /v3.0/oa/user/getlist
+    const v3QueryData: any = {
+      offset: startOffset,
+      count: limitCount,
+      is_follower: String(isFollower)
     };
     if (tagName && String(tagName).trim()) {
-      queryData.tag_name = String(tagName).trim();
+      v3QueryData.tag_name = String(tagName).trim();
+    }
+    if (lastInteractionPeriod && String(lastInteractionPeriod).trim()) {
+      v3QueryData.last_interaction_period = String(lastInteractionPeriod).trim();
+    }
+
+    const getListV3Url = `https://openapi.zalo.me/v3.0/oa/user/getlist?data=${encodeURIComponent(
+      JSON.stringify(v3QueryData)
+    )}`;
+
+    try {
+      const v3Res = await fetch(getListV3Url, {
+        method: "GET",
+        headers: { access_token: cleanToken },
+      });
+
+      const contentType = v3Res.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        const data = await v3Res.json();
+        if (data.error === 0) {
+          const userList = data.data?.users || data.data?.followers || [];
+          return res.json({
+            ok: true,
+            description: `Lấy danh sách người dùng Zalo OA v3.0 (${userList.length}/${data.data?.total || userList.length}) thành công!`,
+            total: data.data?.total || userList.length,
+            count: data.data?.count || userList.length,
+            offset: data.data?.offset || startOffset,
+            followers: userList,
+            users: userList,
+            apiVersion: "v3.0",
+            raw: data,
+          });
+        }
+      }
+    } catch (v3Err) {
+      console.warn("[Zalo v3.0 user/getlist Warning]:", v3Err);
+    }
+
+    // 2. Fallback sang v2.0 /v2.0/oa/getfollowers
+    const v2QueryData: any = {
+      offset: startOffset,
+      count: limitCount,
+    };
+    if (tagName && String(tagName).trim()) {
+      v2QueryData.tag_name = String(tagName).trim();
     }
 
     const getFollowersUrl = `https://openapi.zalo.me/v2.0/oa/getfollowers?data=${encodeURIComponent(
-      JSON.stringify(queryData)
+      JSON.stringify(v2QueryData)
     )}`;
 
     const zaloResponse = await fetch(getFollowersUrl, {
@@ -477,12 +532,15 @@ app.post("/api/zalo/fetch-followers", async (req, res) => {
     const contentType = zaloResponse.headers.get("content-type") || "";
     if (contentType.includes("application/json")) {
       const data = await zaloResponse.json();
+      const userList = data.data?.followers || data.data?.users || [];
       if (data.error === 0) {
         return res.json({
           ok: true,
-          description: `Lấy danh sách người quan tâm OA (${data.data?.followers?.length || 0}/${data.data?.total || 0}) thành công!`,
-          total: data.data?.total || 0,
-          followers: data.data?.followers || [],
+          description: `Lấy danh sách người quan tâm OA v2.0 (${userList.length}/${data.data?.total || userList.length}) thành công!`,
+          total: data.data?.total || userList.length,
+          followers: userList,
+          users: userList,
+          apiVersion: "v2.0",
           raw: data,
         });
       } else {
@@ -498,10 +556,10 @@ app.post("/api/zalo/fetch-followers", async (req, res) => {
       return res.json({ ok: false, description: `Zalo API phản hồi lỗi: ${rawText.slice(0, 200)}` });
     }
   } catch (err: any) {
-    console.error("[Zalo Fetch Followers Error]:", err);
+    console.error("[Zalo Fetch Users Error]:", err);
     return res.status(500).json({
       ok: false,
-      description: err.message || "Lỗi server khi lấy danh sách người quan tâm Zalo OA",
+      description: err.message || "Lỗi server khi lấy danh sách người dùng Zalo OA",
     });
   }
 });

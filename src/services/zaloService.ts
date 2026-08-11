@@ -655,14 +655,16 @@ export async function fetchZaloUserProfileByUid(
 }
 
 /**
- * Lấy danh sách người quan tâm Zalo OA qua API /v2.0/oa/getfollowers
+ * Lấy danh sách người dùng Zalo OA qua API v3.0 /v3.0/oa/user/getlist (và v2.0 fallback /v2.0/oa/getfollowers)
  */
 export async function fetchZaloOaFollowers(options?: {
   offset?: number;
   count?: number;
   tagName?: string;
+  lastInteractionPeriod?: string;
+  isFollower?: boolean | string;
   accessTokenInput?: string;
-}): Promise<{ ok: boolean; description: string; total?: number; followers?: Array<{ user_id: string }>; raw?: any }> {
+}): Promise<{ ok: boolean; description: string; total?: number; followers?: Array<{ user_id: string }>; users?: Array<{ user_id: string }>; apiVersion?: string; raw?: any }> {
   let token = options?.accessTokenInput?.trim() || "";
   if (!token) {
     const { botToken } = await getZaloBotConfig();
@@ -670,7 +672,7 @@ export async function fetchZaloOaFollowers(options?: {
   }
 
   if (!token) {
-    return { ok: false, description: "Chưa cấu hình Zalo OA Access Token để quét danh sách người quan tâm!" };
+    return { ok: false, description: "Chưa cấu hình Zalo OA Access Token để quét danh sách người dùng Zalo OA!" };
   }
 
   try {
@@ -681,7 +683,9 @@ export async function fetchZaloOaFollowers(options?: {
         accessToken: token,
         offset: options?.offset || 0,
         count: options?.count || 50,
-        tagName: options?.tagName || ""
+        tagName: options?.tagName || "",
+        lastInteractionPeriod: options?.lastInteractionPeriod || "",
+        isFollower: options?.isFollower !== undefined ? String(options.isFollower) : "true"
       })
     });
     const data = await response.json();
@@ -689,7 +693,7 @@ export async function fetchZaloOaFollowers(options?: {
   } catch (err: any) {
     return {
       ok: false,
-      description: err.message || "Lỗi kết nối khi quét danh sách người quan tâm Zalo OA!"
+      description: err.message || "Lỗi kết nối khi quét danh sách người dùng Zalo OA!"
     };
   }
 }
