@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AuthUserProfile, getUserUid } from "../lib/supabase";
+import { linkZaloUidToCtvProfile } from "../services/zaloService";
 import { CTVUser } from "../types";
 import { VIETNAM_BANKS, getBankLogo } from "../lib/banks";
 import {
@@ -71,8 +72,29 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
   );
 
   const [saving, setSaving] = useState(false);
+  const [syncingZaloUid, setSyncingZaloUid] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+
+  const handleAutoSyncZaloUid = async () => {
+    if (!zaloChatId.trim()) {
+      alert("Vui lòng nhập Zalo User ID (hoặc bấm 'Quan Tâm Zalo OA' để tự động kết nối)!");
+      return;
+    }
+    setSyncingZaloUid(true);
+    const res = await linkZaloUidToCtvProfile({
+      phone: phone || currentUser.phone,
+      ctvCode: currentUser.code,
+      zaloChatId: zaloChatId.trim()
+    });
+    setSyncingZaloUid(false);
+    if (res.ok) {
+      if (onToast) onToast(res.description);
+      else setSuccessMsg(res.description);
+    } else {
+      setErrorMsg(res.description);
+    }
+  };
 
   // Bank Selector Modal State
   const [bankModalOpen, setBankModalOpen] = useState(false);
@@ -491,28 +513,49 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
             </div>
           </div>
 
-          {/* 8. ZALO CHAT ID CÁ NHÂN */}
-          <div className="bg-blue-50/70 p-3.5 rounded-2xl border border-blue-200 space-y-1.5">
-            <label className="block text-blue-950 font-extrabold text-[11px] flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <MessageSquare className="w-4 h-4 text-blue-600" /> 8. Zalo Chat ID Cá Nhân (Tự Động Nhận Tin Zalo):
-              </span>
+          {/* 8. ZALO USER ID CÁ NHÂN & KẾT NỐI TỰ ĐỘNG */}
+          <div className="bg-blue-50/70 p-3.5 rounded-2xl border border-blue-200 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-blue-950 font-extrabold text-[11px] flex items-center gap-1.5">
+                <MessageSquare className="w-4 h-4 text-blue-600" />
+                <span>8. Zalo User ID / Chat ID Cá Nhân (Nhận Thông Báo Realtime):</span>
+              </label>
               <span className="text-[10px] text-blue-700 font-bold bg-white px-2 py-0.5 rounded-md border border-blue-200">
-                REALTIME ZALO
+                REALTIME ZALO OA
               </span>
-            </label>
-            <div className="relative">
-              <input id="input_475" name="input_475"
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input id="input_zalo_chat_id_ctv" name="input_zalo_chat_id_ctv"
                 type="text"
-                placeholder="Ví dụ: 123456789 (Nhập ID cuộc trò chuyện Zalo Bot)"
+                placeholder="Ví dụ: 7540234525828588815 (Zalo User ID)"
                 value={zaloChatId}
                 onChange={(e) => setZaloChatId(e.target.value)}
                 className="w-full bg-white border border-blue-300 rounded-xl px-3 py-2.5 font-mono font-bold text-blue-900 focus:outline-none focus:border-blue-500 text-xs shadow-xs"
               />
+              <button
+                type="button"
+                disabled={syncingZaloUid}
+                onClick={handleAutoSyncZaloUid}
+                className="px-3.5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-extrabold text-xs rounded-xl shadow-xs shrink-0 cursor-pointer flex items-center gap-1 transition"
+              >
+                <span>{syncingZaloUid ? "Đang đồng bộ..." : "Đồng Bộ UID"}</span>
+              </button>
             </div>
-            <p className="text-[10px] text-blue-700 font-medium pt-0.5">
-              💡 Hệ thống sẽ tự động gửi thông báo Lịch hẹn và Hoa hồng đến trực tiếp Chat ID Zalo này của bạn.
-            </p>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-blue-200/60">
+              <p className="text-[10px] text-blue-700 font-medium flex-1 min-w-[200px]">
+                💡 Bấm <b>"Quan Tâm Zalo OA"</b> để kích hoạt tự động cập nhật Zalo UID và nhận thông báo Lịch hẹn & Hoa hồng.
+              </p>
+              <a
+                href="https://zalo.me/7540234525828588815"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-extrabold text-[11px] rounded-lg shadow-xs flex items-center gap-1 cursor-pointer transition shrink-0"
+              >
+                <span>📲 Quan Tâm Zalo OA Ngay</span>
+              </a>
+            </div>
           </div>
 
           {/* Action Buttons */}

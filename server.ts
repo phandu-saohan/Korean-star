@@ -319,6 +319,74 @@ app.post("/api/zalo/test-connection", async (req, res) => {
   }
 });
 
+// API: Proxy Liên kết Zalo User ID (UID) với hồ sơ CTV trong Supabase
+app.post("/api/zalo/link-ctv", async (req, res) => {
+  try {
+    const { phone, ctvCode, zaloChatId } = req.body;
+
+    if (!zaloChatId || !String(zaloChatId).trim()) {
+      return res.status(400).json({ ok: false, description: "Thiếu Zalo User ID (zaloChatId) để liên kết" });
+    }
+
+    const cleanZaloId = String(zaloChatId).trim();
+    const cleanPhone = phone ? String(phone).replace(/\D/g, "") : "";
+    const cleanCtvCode = ctvCode ? String(ctvCode).trim().toUpperCase() : "";
+
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL || "https://burmybxmzighthlusixg.supabase.co";
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.REACT_APP_SUPABASE_ANON_KEY || "";
+
+    if (supabaseUrl && supabaseKey) {
+      let queryFilter = "";
+      if (cleanPhone) {
+        const shortPhone = cleanPhone.slice(-9);
+        queryFilter = `phone=ilike.%25${shortPhone}%25`;
+      } else if (cleanCtvCode) {
+        queryFilter = `ctv_code=eq.${cleanCtvCode}`;
+      }
+
+      if (queryFilter) {
+        const updateRes = await fetch(
+          `${supabaseUrl}/rest/v1/user_profiles?${queryFilter}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Prefer": "return=representation",
+            },
+            body: JSON.stringify({
+              zalo_chat_id: cleanZaloId,
+              updated_at: new Date().toISOString(),
+            }),
+          }
+        );
+
+        if (updateRes.ok) {
+          const updatedUsers = await updateRes.json();
+          return res.json({
+            ok: true,
+            description: `Đã liên kết Zalo User ID (${cleanZaloId}) với hồ sơ CTV thành công!`,
+            updatedUsers,
+          });
+        }
+      }
+    }
+
+    return res.json({
+      ok: true,
+      description: `Đã tiếp nhận Zalo User ID (${cleanZaloId}) để liên kết cho CTV!`,
+      zaloChatId: cleanZaloId,
+    });
+  } catch (err: any) {
+    console.error("[Zalo Link CTV Error]:", err);
+    return res.status(500).json({
+      ok: false,
+      description: err.message || "Lỗi server khi liên kết Zalo User ID cho CTV",
+    });
+  }
+});
+
 // API: Proxy Zalo OA Refresh Access Token từ Refresh Token sau 24h
 app.post("/api/zalo/refresh-token", async (req, res) => {
   try {

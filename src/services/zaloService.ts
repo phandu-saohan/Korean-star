@@ -556,6 +556,65 @@ export async function testZaloOaConnection(
   }
 }
 
+/**
+ * Tự động liên kết Zalo UID của CTV vào Supabase user_profiles & LocalStorage
+ */
+export async function linkZaloUidToCtvProfile(options: {
+  phone?: string;
+  ctvCode?: string;
+  zaloChatId: string;
+}): Promise<{ ok: boolean; description: string }> {
+  if (!options.zaloChatId || !options.zaloChatId.trim()) {
+    return { ok: false, description: "Chưa nhập Zalo User ID (UID)!" };
+  }
+
+  const cleanZaloId = options.zaloChatId.trim();
+
+  // 1. Gọi Proxy API /api/zalo/link-ctv
+  try {
+    const response = await fetch("/api/zalo/link-ctv", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: options.phone,
+        ctvCode: options.ctvCode,
+        zaloChatId: cleanZaloId
+      })
+    });
+    const data = await response.json();
+
+    // 2. Cập nhật LocalStorage profiles cache
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("saohan_all_user_profiles");
+        if (raw) {
+          const profiles = JSON.parse(raw);
+          const idx = profiles.findIndex(
+            (p: any) =>
+              (options.ctvCode && p.ctvCode === options.ctvCode) ||
+              (options.phone && p.phone === options.phone)
+          );
+          if (idx >= 0) {
+            profiles[idx].zaloChatId = cleanZaloId;
+            localStorage.setItem("saohan_all_user_profiles", JSON.stringify(profiles));
+          }
+        }
+      } catch (e) {}
+    }
+
+    return {
+      ok: data.ok !== false,
+      description: data.description || `Đã cập nhật Zalo User ID (${cleanZaloId}) cho CTV!`
+    };
+  } catch (err: any) {
+    return {
+      ok: false,
+      description: err.message || "Lỗi kết nối khi liên kết Zalo User ID!"
+    };
+  }
+}
+
+
 
 
 
