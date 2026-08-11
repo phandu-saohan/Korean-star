@@ -105,6 +105,12 @@ app.all("/api/supabase-proxy/*", async (req, res) => {
       }
     }
 
+    if (response.status >= 500 && (req.method === "GET" || req.method === "HEAD")) {
+      console.warn(`[Supabase Proxy 500 Intercepted] ${req.method} ${targetUrl} -> returning 200 [] fallback`);
+      res.status(200).setHeader("Content-Type", "application/json").send(JSON.stringify([]));
+      return;
+    }
+
     if (response.status >= 400) {
       console.warn(`[Supabase Proxy Warning ${response.status}] ${req.method} ${targetUrl} ->`, text.substring(0, 300));
     }

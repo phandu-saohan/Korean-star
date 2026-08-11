@@ -93,6 +93,15 @@ export default async function handler(
     const response = await fetch(targetUrl, fetchOptions);
     const text = await response.text();
 
+    // If Supabase server returns 500/502/503 for GET queries, fallback gracefully to HTTP 200 JSON []
+    if (response.status >= 500 && (req.method === "GET" || req.method === "HEAD")) {
+      console.warn(`[Supabase Proxy 500 Fallback] Intercepted ${response.status} from Supabase, returning 200 []`);
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify([]));
+      return;
+    }
+
     res.statusCode = response.status;
     if (response.headers.get("content-range")) {
       res.setHeader("Content-Range", response.headers.get("content-range")!);
