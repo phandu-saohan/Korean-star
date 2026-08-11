@@ -617,20 +617,56 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
   const [activatingWebhook, setActivatingWebhook] = useState(false);
 
   const handleRegisterWebhook = async () => {
-    if (!brandConfig.zaloBotToken) {
-      alert("Vui lòng nhập Zalo Bot Token trước khi kích hoạt Webhook!");
+    const token = (brandConfig.zaloOaAccessToken || brandConfig.zaloBotToken || "").trim();
+    if (!token) {
+      alert("Vui lòng nhập Zalo OA Access Token hoặc Zalo Bot Token trước khi kích hoạt Webhook!");
       return;
     }
+
     setActivatingWebhook(true);
-    const targetUrl = `${window.location.origin}/api/zalo/webhook?token=${encodeURIComponent(brandConfig.zaloBotToken)}`;
+
+    // Nếu token là Zalo OA Access Token (dạng token OpenAPI openapi.zalo.me)
+    if (token.length > 30 || !/^\d+:/.test(token)) {
+      const testRes = await testZaloOaConnection(token);
+      setActivatingWebhook(false);
+
+      const webhookUrl = `${window.location.origin}/api/zalo-oa/webhook`;
+      try {
+        await navigator.clipboard.writeText(webhookUrl);
+      } catch (e) {}
+
+      if (testRes.ok) {
+        onToast("🎉 Kiểm tra kết nối Zalo OA Access Token thành công!");
+        alert(
+          `✅ KIỂM TRA KẾT NỐI ZALO OA THÀNH CÔNG!\n\n` +
+          `• Trạng thái Access Token: Hợp lệ\n` +
+          `• Webhook URL Zalo OA đã được sao chép vào bộ nhớ tạm: ${webhookUrl}\n\n` +
+          `👉 Hướng dẫn đăng ký Webhook Zalo OA trên Zalo Developers:\n` +
+          `1. Truy cập https://developers.zalo.me/ ➔ Chọn Ứng dụng OA của bạn.\n` +
+          `2. Vào mục "Official Account" ➔ Chọn "Cấu hình Webhook".\n` +
+          `3. Dán Webhook URL: ${webhookUrl}\n` +
+          `4. Tích chọn sự kiện "user_send_text" và "user_follow_oa" ➔ Bấm Lưu!`
+        );
+      } else {
+        alert(
+          `⚠️ KẾT NỐI ZALO OA:\n\n${testRes.description}\n\n` +
+          `• Webhook URL Zalo OA: ${webhookUrl}\n` +
+          `Vui lòng dán URL này vào mục "Cấu hình Webhook" tại https://developers.zalo.me/`
+        );
+      }
+      return;
+    }
+
+    // Nếu là Zalo Bot API Token (dạng bot.zalo.me)
+    const targetUrl = `${window.location.origin}/api/zalo/webhook?token=${encodeURIComponent(token)}`;
     const res = await registerZaloWebhook(
-      brandConfig.zaloBotToken,
+      token,
       targetUrl,
       brandConfig.zaloWebhookSecret
     );
     setActivatingWebhook(false);
     if (res.ok) {
-      onToast("🎉 Kích hoạt Webhook Zalo Bot API thành công! Bot đã sẵn sàng nhận tin nhắn & phản hồi Chat ID!");
+      onToast("🎉 Kích hoạt Webhook Zalo Bot API thành công!");
     } else {
       const debugInfo = (res as any).debug;
       let errMsg = res.description || "Vui lòng kiểm tra lại Bot Token";
