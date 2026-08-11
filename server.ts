@@ -42,7 +42,7 @@ app.all("/api/supabase-proxy/*", async (req, res) => {
     return val.trim().replace(/^["']|["']$/g, "");
   };
 
-  const rawSupabaseUrl = getCleanEnv("VITE_SUPABASE_URL", "https://burmybxmzighthlusixg.supabase.co");
+  const rawSupabaseUrl = getCleanEnv("VITE_SUPABASE_URL", "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io");
   const supabaseUrl = rawSupabaseUrl.replace(/\/+$/, "");
 
   const anonKey = getCleanEnv(
@@ -336,7 +336,7 @@ app.post("/api/zalo/link-ctv", async (req, res) => {
     const cleanPhone = phone ? String(phone).replace(/\D/g, "") : "";
     const cleanCtvCode = ctvCode ? String(ctvCode).trim().toUpperCase() : "";
 
-    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL || "https://burmybxmzighthlusixg.supabase.co";
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL || "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io";
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.REACT_APP_SUPABASE_ANON_KEY || "";
 
     if (supabaseUrl && supabaseKey) {

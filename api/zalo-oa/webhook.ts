@@ -65,7 +65,7 @@ export default async function handler(
       console.log(`[Zalo OA Webhook] Event "${eventName}" from Zalo User ID: ${zaloUserId}`);
 
       // Handle user_interested_oa (Quan tâm OA) or follow / user_send_text
-      const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL || "https://burmybxmzighthlusixg.supabase.co";
+      const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL || "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io";
       const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.REACT_APP_SUPABASE_ANON_KEY || "";
 
       if (supabaseUrl && supabaseKey) {

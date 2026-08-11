@@ -60,7 +60,7 @@ export default async function handler(
     const cleanCtvCode = ctvCode ? String(ctvCode).trim().toUpperCase() : "";
 
     // Connect to Supabase to update user_profiles
-    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL || "https://burmybxmzighthlusixg.supabase.co";
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL || "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io";
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.REACT_APP_SUPABASE_ANON_KEY || "";
 
     if (supabaseUrl && supabaseKey) {

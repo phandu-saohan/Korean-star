@@ -25,7 +25,7 @@ export default async function handler(
     return val.trim().replace(/^["']|["']$/g, "");
   };
 
-  const rawSupabaseUrl = getCleanEnv("VITE_SUPABASE_URL", "https://burmybxmzighthlusixg.supabase.co");
+  const rawSupabaseUrl = getCleanEnv("VITE_SUPABASE_URL", "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io");
   const supabaseUrl = rawSupabaseUrl.replace(/\/+$/, "");
 
   const anonKey = getCleanEnv(
