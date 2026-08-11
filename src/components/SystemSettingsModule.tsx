@@ -11,7 +11,8 @@ import {
   saveCmsSettingsToSupabase,
   fetchAllUserProfilesFromSupabase,
   saveRegisteredUserToLocalStorage,
-  signUpUser
+  signUpUser,
+  getUserUid
 } from "../lib/supabase";
 import { CTVUser } from "../types";
 import { sendOneSignalNotification, notifySystemSettingsUpdated } from "../lib/onesignal";

@@ -73,6 +73,7 @@ interface CTVHubProps {
   onOpenTeamTransferModal?: () => void;
   subTab?: string;
   onSubTabChange?: (subTab: string) => void;
+  onToast?: (msg: string) => void;
 }
 
 // Lấy danh sách CTV đã đăng ký từ localStorage với chuẩn hóa Họ tên, SĐT, Avatar
@@ -173,7 +174,8 @@ export const CTVHub: React.FC<CTVHubProps> = ({
   onClearAllLeads,
   onOpenTeamTransferModal,
   subTab,
-  onSubTabChange
+  onSubTabChange,
+  onToast
 }) => {
   const PERFORMANCE_DATA = ctvUser.totalRevenue > 0 || ctvUser.successfulReferrals > 0
     ? [

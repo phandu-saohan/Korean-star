@@ -30,6 +30,7 @@ interface ProfileEditModalProps {
   authUser: AuthUserProfile | null;
   ctvUser: CTVUser;
   onSaveProfile: (updates: Partial<AuthUserProfile>) => Promise<void>;
+  onToast?: (msg: string) => void;
 }
 
 export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
@@ -37,9 +38,12 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
   onClose,
   authUser,
   ctvUser,
-  onSaveProfile
+  onSaveProfile,
+  onToast
 }) => {
   if (!isOpen) return null;
+
+  const currentUser = authUser || ctvUser;
 
   // Form states pre-filled with authUser or ctvUser
   const [fullName, setFullName] = useState(authUser?.fullName || ctvUser.name || "");
