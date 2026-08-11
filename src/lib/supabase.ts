@@ -377,12 +377,18 @@ export const fetchUserProfile = async (identifier: string): Promise<AuthUserProf
     const val = identifier.trim();
     let query = supabase.from("user_profiles").select("*");
 
-    if (val.includes("@")) {
+    const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
+
+    if (isUuid) {
+      query = query.eq("id", val);
+    } else if (val.includes("@")) {
       query = query.eq("email", val);
     } else if (val.match(/^0\d{8,10}$/)) {
       query = query.eq("phone", val);
+    } else if (val.toUpperCase().startsWith("CTV") || val.toUpperCase().startsWith("SAOHAN")) {
+      query = query.eq("ctv_code", val);
     } else {
-      query = query.eq("id", val);
+      query = query.eq("zalo_chat_id", val);
     }
 
     const { data } = await query.maybeSingle();
