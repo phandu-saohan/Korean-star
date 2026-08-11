@@ -614,6 +614,47 @@ export async function linkZaloUidToCtvProfile(options: {
   }
 }
 
+/**
+ * Tra cứu thông tin hồ sơ Zalo User ID (UID) từ Zalo OA API
+ */
+export async function fetchZaloUserProfileByUid(
+  zaloUserId: string,
+  accessTokenInput?: string
+): Promise<{ ok: boolean; description: string; profile?: any; raw?: any }> {
+  if (!zaloUserId || !zaloUserId.trim()) {
+    return { ok: false, description: "Chưa nhập Zalo User ID (UID) để tra cứu!" };
+  }
+
+  let token = accessTokenInput?.trim() || "";
+  if (!token) {
+    const { botToken } = await getZaloBotConfig();
+    token = botToken;
+  }
+
+  if (!token) {
+    return { ok: false, description: "Chưa cấu hình Zalo OA Access Token để tra cứu thông tin Zalo UID!" };
+  }
+
+  try {
+    const response = await fetch("/api/zalo/fetch-user-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        accessToken: token,
+        zaloUserId: zaloUserId.trim()
+      })
+    });
+    const data = await response.json();
+    return data;
+  } catch (err: any) {
+    return {
+      ok: false,
+      description: err.message || "Lỗi kết nối khi tra cứu Zalo User ID!"
+    };
+  }
+}
+
+
 
 
 

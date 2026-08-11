@@ -18,6 +18,7 @@ import { CTVUser } from "../types";
 import { sendOneSignalNotification, notifySystemSettingsUpdated } from "../lib/onesignal";
 import { ZaloNotifier } from "./ZaloNotifier";
 import { ZaloStatsReportSender } from "./ZaloStatsReportSender";
+import { ZaloUidTester } from "./ZaloUidTester";
 import { registerZaloWebhook, refreshZaloOaAccessToken, testZaloOaConnection } from "../services/zaloService";
 import { VIETNAM_BANKS, getBankLogo } from "../lib/banks";
 import { formatCurrencyInput, parseCurrencyInput } from "../utils/formatters";
@@ -1579,6 +1580,14 @@ export const SystemSettingsModule: React.FC<SystemSettingsModuleProps> = ({
                 <p className="text-[11px] text-slate-500 font-medium">
                   💡 Bấm <b>"Kích Hoạt Zalo OA Webhook"</b> để đăng ký Webhook tự động gửi nhận tin nhắn Zalo Official Account (OA).
                 </p>
+              </div>
+
+              {/* Công Cụ Kiểm Thử Tra Cứu & Lấy Zalo UID */}
+              <div className="pt-2">
+                <ZaloUidTester
+                  accessToken={brandConfig.zaloOaAccessToken || brandConfig.zaloBotToken}
+                  onToast={onToast}
+                />
               </div>
 
               {/* Form Gửi Thử Nghiệm Qua ZaloNotifier Component */}

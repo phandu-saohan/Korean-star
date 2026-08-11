@@ -387,6 +387,61 @@ app.post("/api/zalo/link-ctv", async (req, res) => {
   }
 });
 
+// API: Proxy Tra Cứu Thông Tin Profile Zalo User ID (UID) từ Zalo OA API
+app.post("/api/zalo/fetch-user-profile", async (req, res) => {
+  try {
+    const { accessToken, zaloUserId } = req.body;
+
+    if (!accessToken || !String(accessToken).trim()) {
+      return res.status(400).json({ ok: false, description: "Thiếu Zalo OA Access Token để tra cứu" });
+    }
+    if (!zaloUserId || !String(zaloUserId).trim()) {
+      return res.status(400).json({ ok: false, description: "Thiếu Zalo User ID (zaloUserId) để tra cứu" });
+    }
+
+    const cleanToken = String(accessToken).replace(/^\//, "").trim();
+    const cleanUserId = String(zaloUserId).trim();
+
+    const getProfileUrl = `https://openapi.zalo.me/v2.0/oa/getprofile?data=${encodeURIComponent(
+      JSON.stringify({ user_id: cleanUserId })
+    )}`;
+
+    const zaloResponse = await fetch(getProfileUrl, {
+      method: "GET",
+      headers: { access_token: cleanToken },
+    });
+
+    const contentType = zaloResponse.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await zaloResponse.json();
+      if (data.error === 0) {
+        return res.json({
+          ok: true,
+          description: `Tra cứu Zalo User ID (${cleanUserId}) thành công!`,
+          profile: data.data || {},
+          raw: data,
+        });
+      } else {
+        return res.json({
+          ok: false,
+          error_code: data.error,
+          description: data.message || `Lỗi Zalo OA (Mã ${data.error})`,
+          raw: data,
+        });
+      }
+    } else {
+      const rawText = await zaloResponse.text();
+      return res.json({ ok: false, description: `Zalo API phản hồi lỗi: ${rawText.slice(0, 200)}` });
+    }
+  } catch (err: any) {
+    console.error("[Zalo Fetch User Profile Error]:", err);
+    return res.status(500).json({
+      ok: false,
+      description: err.message || "Lỗi server khi tra cứu thông tin Zalo UID",
+    });
+  }
+});
+
 // API: Proxy Zalo OA Refresh Access Token từ Refresh Token sau 24h
 app.post("/api/zalo/refresh-token", async (req, res) => {
   try {
