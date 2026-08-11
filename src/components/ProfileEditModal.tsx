@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { AuthUserProfile, getUserUid } from "../lib/supabase";
+import { AuthUserProfile, getUserUid, fetchUserProfile } from "../lib/supabase";
 import { linkZaloUidToCtvProfile, generateZaloLinkCode } from "../services/zaloService";
 import { CTVUser } from "../types";
 import { VIETNAM_BANKS, getBankLogo } from "../lib/banks";
@@ -22,7 +22,8 @@ import {
   Save,
   Loader2,
   ShieldCheck,
-  MessageSquare
+  MessageSquare,
+  RefreshCw
 } from "lucide-react";
 
 interface ProfileEditModalProps {
@@ -114,6 +115,52 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
       setErrorMsg(res.description);
     }
   };
+
+  const [checkingZaloStatus, setCheckingZaloStatus] = useState(false);
+
+  const handleCheckZaloUidStatus = async () => {
+    const targetUid = getUserUid(currentUser);
+    if (!targetUid) return;
+    setCheckingZaloStatus(true);
+    try {
+      const p = await fetchUserProfile(targetUid);
+      setCheckingZaloStatus(false);
+      const uid = p?.zaloChatId || (p as any)?.zalo_chat_id;
+      if (uid) {
+        setZaloChatId(uid);
+        if (onToast) onToast(`🎉 Đã nhận diện Zalo UID (${uid}) thành công!`);
+        else setSuccessMsg(`Đã nhận diện Zalo UID (${uid}) thành công!`);
+      } else {
+        if (onToast) onToast("Chưa nhận được tin nhắn mã liên kết từ Zalo OA. Vui lòng bấm 'Mở Zalo OA & Gửi Mã' và thử lại!");
+      }
+    } catch (e) {
+      setCheckingZaloStatus(false);
+    }
+  };
+
+  // Realtime Polling loop while modal is open
+  useEffect(() => {
+    const targetUid = getUserUid(currentUser);
+    if (!targetUid || !isOpen) return;
+
+    let isSubscribed = true;
+    const interval = setInterval(async () => {
+      try {
+        const p = await fetchUserProfile(targetUid);
+        const uid = p?.zaloChatId || (p as any)?.zalo_chat_id;
+        if (uid && isSubscribed && uid !== zaloChatId) {
+          setZaloChatId(uid);
+          if (onToast) onToast(`🎉 Tự động đồng bộ Zalo UID (${uid}) thành công!`);
+          setGeneratedCode("");
+        }
+      } catch (e) {}
+    }, 2500);
+
+    return () => {
+      isSubscribed = false;
+      clearInterval(interval);
+    };
+  }, [currentUser, isOpen, zaloChatId, onToast]);
 
   // Bank Selector Modal State
   const [bankModalOpen, setBankModalOpen] = useState(false);
@@ -601,24 +648,36 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-blue-200/60">
-              <p className="text-[10px] text-blue-700 font-medium flex-1 min-w-[200px]">
-                💡 Bấm <b>"Mở Zalo OA & Gửi Mã"</b> để mở trang Zalo OA Bệnh viện Korean Star và gắn Zalo UID tự động 100%.
+              <p className="text-[10px] text-blue-700 font-medium flex-1 min-w-[180px]">
+                💡 Bấm <b>"Mở Zalo OA & Gửi Mã"</b> ➔ Gửi tin nhắn ➔ Hệ thống tự động nhận diện Zalo UID trong 1-3 giây!
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  if (generatedCode) {
-                    try {
-                      navigator.clipboard.writeText(generatedCode);
-                      if (onToast) onToast(`📋 Đã copy mã ${generatedCode}! Hãy Dán (Paste) gửi tới Zalo OA.`);
-                    } catch (e) {}
-                  }
-                  window.open("https://zalo.me/2715919749071666693", "_blank", "noopener,noreferrer");
-                }}
-                className="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-extrabold text-[11px] rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer transition shrink-0"
-              >
-                <span>📲 {generatedCode ? `Mở Zalo OA & Gửi ${generatedCode}` : "Quan Tâm Zalo OA Ngay"}</span>
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  disabled={checkingZaloStatus}
+                  onClick={handleCheckZaloUidStatus}
+                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] rounded-xl border border-slate-300 transition flex items-center gap-1 cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${checkingZaloStatus ? 'animate-spin text-blue-600' : 'text-slate-600'}`} />
+                  <span>{checkingZaloStatus ? "Đang check..." : "Kiểm Tra Ngay"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (generatedCode) {
+                      try {
+                        navigator.clipboard.writeText(generatedCode);
+                        if (onToast) onToast(`📋 Đã copy mã ${generatedCode}! Hãy Dán (Paste) gửi tới Zalo OA.`);
+                      } catch (e) {}
+                    }
+                    window.open("https://zalo.me/2715919749071666693", "_blank", "noopener,noreferrer");
+                  }}
+                  className="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-extrabold text-[11px] rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer transition"
+                >
+                  <span>📲 {generatedCode ? `Mở Zalo OA & Gửi ${generatedCode}` : "Quan Tâm Zalo OA Ngay"}</span>
+                </button>
+              </div>
             </div>
           </div>
 
