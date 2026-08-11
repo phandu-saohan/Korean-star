@@ -20,6 +20,7 @@ import {
   Zap
 } from "lucide-react";
 import { signInUser, signUpUser, resetUserPassword, fetchRolePermissionsFromSupabase, AuthUserProfile, saveRegisteredUserToLocalStorage } from "../lib/supabase";
+import { loginWithZalo } from "../services/zaloService";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -39,6 +40,38 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+
+  const [zaloInputModal, setZaloInputModal] = useState("");
+  const [showZaloInputBox, setShowZaloInputBox] = useState(false);
+
+  const handleZaloSocialLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!zaloInputModal.trim()) {
+      setShowZaloInputBox(true);
+      return;
+    }
+    setLoading(true);
+    setErrorMsg("");
+
+    const clean = zaloInputModal.trim();
+    const isPhone = /^\d+$/.test(clean) && clean.length <= 11;
+    const res = await loginWithZalo({
+      zaloUserId: isPhone ? "" : clean,
+      phone: isPhone ? clean : ""
+    });
+
+    setLoading(false);
+    if (res.ok && res.userProfile) {
+      saveRegisteredUserToLocalStorage(res.userProfile);
+      setSuccessMsg(res.description);
+      setTimeout(() => {
+        onAuthSuccess(res.userProfile);
+        onClose();
+      }, 400);
+    } else {
+      setErrorMsg(res.description || "Lỗi đăng nhập bằng Zalo!");
+    }
+  };
 
   // Form states
   const [email, setEmail] = useState("");
@@ -394,7 +427,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             )}
 
-            <div className="pt-2">
+            <div className="pt-2 space-y-2">
               <button
                 type="submit"
                 disabled={loading}
@@ -415,6 +448,44 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </>
                 )}
               </button>
+
+              {/* NÚT ĐĂNG NHẬP BẰNG ZALO */}
+              {mode === "signin" && (
+                <div className="space-y-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleZaloSocialLogin}
+                    className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-black text-xs transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>💙 Đăng Nhập Bằng Zalo (Zalo Social Login)</span>
+                  </button>
+
+                  {showZaloInputBox && (
+                    <div className="bg-blue-50 border border-blue-200 p-3 rounded-2xl space-y-2 animate-fadeIn">
+                      <label className="block text-slate-800 font-extrabold text-[11px]">
+                        Nhập SĐT Zalo hoặc Zalo User ID (UID):
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={zaloInputModal}
+                          onChange={(e) => setZaloInputModal(e.target.value)}
+                          placeholder="SĐT (0901888999) hoặc Zalo UID"
+                          className="w-full bg-white border border-blue-300 rounded-xl px-3 py-2 font-bold text-slate-900 text-xs focus:outline-none focus:border-blue-500"
+                        />
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={handleZaloSocialLogin}
+                          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl shadow-xs shrink-0 cursor-pointer"
+                        >
+                          {loading ? "..." : "Vào Ngay"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </form>
 

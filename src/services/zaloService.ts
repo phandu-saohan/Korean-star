@@ -722,6 +722,33 @@ export async function generateZaloLinkCode(options: {
   }
 }
 
+/**
+ * Đăng nhập bằng Zalo (Zalo Social Login) & tự động tạo tài khoản CTV
+ */
+export async function loginWithZalo(payload: {
+  zaloUserId?: string;
+  phone?: string;
+  name?: string;
+  avatar?: string;
+  accessToken?: string;
+}): Promise<{ ok: boolean; userProfile?: any; isNewUser?: boolean; description: string }> {
+  try {
+    const response = await fetch("/api/zalo/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    return data;
+  } catch (err: any) {
+    return {
+      ok: false,
+      description: err.message || "Lỗi kết nối khi đăng nhập bằng Zalo!"
+    };
+  }
+}
+
+
 
 
 
