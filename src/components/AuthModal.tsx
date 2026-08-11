@@ -41,35 +41,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  const [zaloInputModal, setZaloInputModal] = useState("");
-  const [showZaloInputBox, setShowZaloInputBox] = useState(false);
+  const handleDirectZaloOAuthLogin = () => {
+    const appId = (import.meta as any).env?.VITE_ZALO_APP_ID || "2715919749071666693";
+    const redirectUri = `${window.location.origin}/api/zalo/oauth-callback`;
+    const zaloAuthUrl = `https://oauth.zaloapp.com/v4/permission?app_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=koreanstar`;
 
-  const handleZaloSocialLogin = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!zaloInputModal.trim()) {
-      setShowZaloInputBox(true);
-      return;
-    }
-    setLoading(true);
-    setErrorMsg("");
+    const width = 540;
+    const height = 650;
+    const left = Math.max(0, (window.innerWidth - width) / 2);
+    const top = Math.max(0, (window.innerHeight - height) / 2);
+    const popup = window.open(
+      zaloAuthUrl,
+      "ZaloOAuthPopup",
+      `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,status=yes`
+    );
 
-    const clean = zaloInputModal.trim();
-    const isPhone = /^\d+$/.test(clean) && clean.length <= 11;
-    const res = await loginWithZalo({
-      zaloUserId: isPhone ? "" : clean,
-      phone: isPhone ? clean : ""
-    });
-
-    setLoading(false);
-    if (res.ok && res.userProfile) {
-      saveRegisteredUserToLocalStorage(res.userProfile);
-      setSuccessMsg(res.description);
-      setTimeout(() => {
-        onAuthSuccess(res.userProfile);
-        onClose();
-      }, 400);
-    } else {
-      setErrorMsg(res.description || "Lỗi đăng nhập bằng Zalo!");
+    if (!popup || popup.closed || typeof popup.closed === "undefined") {
+      window.location.href = zaloAuthUrl;
     }
   };
 
@@ -449,41 +437,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 )}
               </button>
 
-              {/* NÚT ĐĂNG NHẬP BẰNG ZALO */}
+              {/* NÚT ĐĂNG NHẬP QUA ZALO */}
               {mode === "signin" && (
                 <div className="space-y-2 pt-1">
                   <button
                     type="button"
-                    onClick={handleZaloSocialLogin}
-                    className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-black text-xs transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                    onClick={handleDirectZaloOAuthLogin}
+                    className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:brightness-110 text-white font-black text-xs transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <span>💙 Đăng Nhập Bằng Zalo (Zalo Social Login)</span>
+                    <span>💙 Đăng Nhập Qua Zalo</span>
                   </button>
-
-                  {showZaloInputBox && (
-                    <div className="bg-blue-50 border border-blue-200 p-3 rounded-2xl space-y-2 animate-fadeIn">
-                      <label className="block text-slate-800 font-extrabold text-[11px]">
-                        Nhập SĐT Zalo hoặc Zalo User ID (UID):
-                      </label>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="text"
-                          value={zaloInputModal}
-                          onChange={(e) => setZaloInputModal(e.target.value)}
-                          placeholder="SĐT (0901888999) hoặc Zalo UID"
-                          className="w-full bg-white border border-blue-300 rounded-xl px-3 py-2 font-bold text-slate-900 text-xs focus:outline-none focus:border-blue-500"
-                        />
-                        <button
-                          type="button"
-                          disabled={loading}
-                          onClick={handleZaloSocialLogin}
-                          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl shadow-xs shrink-0 cursor-pointer"
-                        >
-                          {loading ? "..." : "Vào Ngay"}
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </div>

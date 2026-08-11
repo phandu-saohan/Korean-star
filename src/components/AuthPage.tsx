@@ -52,36 +52,80 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  // Zalo Social Login Modal State
-  const [zaloLoginModalOpen, setZaloLoginModalOpen] = useState(false);
-  const [zaloInput, setZaloInput] = useState("");
+  // Listen for Zalo OAuth Callback (Popup or URL Params)
+  useEffect(() => {
+    const handleOAuthMessage = async (event: MessageEvent) => {
+      if (event.data?.type === "ZALO_OAUTH_SUCCESS") {
+        const { zaloUid, zaloName, zaloAvatar, code } = event.data;
+        setLoading(true);
+        setErrorMsg("");
+        const res = await loginWithZalo({
+          zaloUserId: zaloUid || code,
+          name: zaloName,
+          avatar: zaloAvatar
+        });
+        setLoading(false);
+        if (res.ok && res.userProfile) {
+          saveRegisteredUserToLocalStorage(res.userProfile);
+          setSuccessMsg(res.description);
+          setTimeout(() => {
+            onAuthSuccess(res.userProfile);
+          }, 300);
+        } else {
+          setErrorMsg(res.description || "Lỗi xác thực Zalo!");
+        }
+      }
+    };
 
-  const handleZaloLoginSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!zaloInput.trim()) {
-      setErrorMsg("Vui lòng nhập Số điện thoại hoặc Zalo User ID!");
-      return;
+    window.addEventListener("message", handleOAuthMessage);
+
+    // Also check URL parameters if redirected back directly
+    const urlObj = new URL(window.location.href);
+    const zaloOAuthSuccess = urlObj.searchParams.get("zalo_oauth_success");
+    const zaloUid = urlObj.searchParams.get("zalo_uid");
+    const zaloName = urlObj.searchParams.get("zalo_name");
+
+    if (zaloOAuthSuccess === "true" && zaloUid) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setLoading(true);
+      loginWithZalo({ zaloUserId: zaloUid, name: zaloName || "" }).then((res) => {
+        setLoading(false);
+        if (res.ok && res.userProfile) {
+          saveRegisteredUserToLocalStorage(res.userProfile);
+          setSuccessMsg(res.description);
+          setTimeout(() => {
+            onAuthSuccess(res.userProfile);
+          }, 300);
+        }
+      });
     }
+
+    return () => window.removeEventListener("message", handleOAuthMessage);
+  }, [onAuthSuccess]);
+
+  const handleDirectZaloOAuthLogin = () => {
     setLoading(true);
     setErrorMsg("");
+    setSuccessMsg("");
 
-    const clean = zaloInput.trim();
-    const isPhone = /^\d+$/.test(clean) && clean.length <= 11;
-    const res = await loginWithZalo({
-      zaloUserId: isPhone ? "" : clean,
-      phone: isPhone ? clean : ""
-    });
+    const appId = (import.meta as any).env?.VITE_ZALO_APP_ID || "2715919749071666693";
+    const redirectUri = `${window.location.origin}/api/zalo/oauth-callback`;
+    const zaloAuthUrl = `https://oauth.zaloapp.com/v4/permission?app_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=koreanstar`;
 
-    setLoading(false);
-    if (res.ok && res.userProfile) {
-      saveRegisteredUserToLocalStorage(res.userProfile);
-      setSuccessMsg(res.description);
-      setZaloLoginModalOpen(false);
-      setTimeout(() => {
-        onAuthSuccess(res.userProfile);
-      }, 400);
+    const width = 540;
+    const height = 650;
+    const left = Math.max(0, (window.innerWidth - width) / 2);
+    const top = Math.max(0, (window.innerHeight - height) / 2);
+    const popup = window.open(
+      zaloAuthUrl,
+      "ZaloOAuthPopup",
+      `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,status=yes`
+    );
+
+    if (!popup || popup.closed || typeof popup.closed === "undefined") {
+      window.location.href = zaloAuthUrl;
     } else {
-      setErrorMsg(res.description || "Không thể đăng nhập bằng Zalo. Vui lòng thử lại!");
+      setLoading(false);
     }
   };
 
@@ -646,14 +690,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                     )}
                   </button>
 
-                  {/* NÚT ĐĂNG NHẬP BẰNG ZALO (ZALO SOCIAL LOGIN) */}
+                  {/* NÚT ĐĂNG NHẬP QUA ZALO */}
                   <button
                     type="button"
-                    onClick={() => { setZaloLoginModalOpen(true); setErrorMsg(""); setSuccessMsg(""); }}
+                    onClick={handleDirectZaloOAuthLogin}
                     className="w-full py-3 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:brightness-110 active:scale-98 text-white font-black text-xs transition shadow-md flex items-center justify-center gap-2 cursor-pointer mt-2"
                   >
                     <MessageSquare className="w-4 h-4 text-white" />
-                    <span>💙 Đăng Nhập Bằng Zalo (Zalo Social Login)</span>
+                    <span>💙 Đăng Nhập Qua Zalo</span>
                   </button>
 
                   {/* NÚT TẠO TÀI KHOẢN CTV MỚI DƯỚI NÚT ĐĂNG NHẬP */}
@@ -1415,111 +1459,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
               </button>
             </div>
 
-          </div>
-        </div>
-      )}
-
-      {/* ========================================== */}
-      {/* MODAL 2: ZALO SOCIAL LOGIN DIALOG          */}
-      {/* ========================================== */}
-      {zaloLoginModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-blue-200 text-slate-900 space-y-4 relative">
-            <button
-              type="button"
-              onClick={() => setZaloLoginModalOpen(false)}
-              className="absolute right-4 top-4 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shrink-0">
-                <MessageSquare className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-black text-base text-slate-900 leading-tight">
-                  Đăng Nhập Bằng Zalo (Zalo Social Login)
-                </h3>
-                <p className="text-[11px] text-blue-700 font-bold">
-                  Bệnh viện Thẩm mỹ Quốc tế Korean Star
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={handleZaloLoginSubmit} className="space-y-4">
-              <div>
-                <label className="block text-slate-700 font-extrabold text-xs mb-1.5">
-                  Nhập Số Điện Thoại Zalo hoặc Zalo User ID (UID):
-                </label>
-                <div className="relative">
-                  <Phone className="w-4 h-4 text-blue-600 absolute left-3 top-3.5" />
-                  <input
-                    type="text"
-                    value={zaloInput}
-                    onChange={(e) => setZaloInput(e.target.value)}
-                    placeholder="Ví dụ: 0901888999 hoặc 2715919749071666693"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2.5 font-bold text-slate-900 focus:outline-none focus:border-blue-500 text-xs shadow-xs"
-                    autoFocus
-                  />
-                </div>
-                <p className="text-[10px] text-slate-500 mt-1 font-medium">
-                  💡 Nhập số điện thoại đã đăng ký Zalo hoặc Zalo User ID để đăng nhập 1 chạm. Hệ thống tự động tạo tài khoản CTV mới nếu chưa có!
-                </p>
-              </div>
-
-              {/* Sample Quick Login Chips */}
-              <div className="bg-blue-50/70 p-3 rounded-xl border border-blue-200/80 space-y-2">
-                <span className="text-[11px] font-bold text-blue-950 block">Mẫu Đăng Nhập Nhanh:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => { setZaloInput("0901888999"); }}
-                    className="text-[11px] font-mono font-bold bg-white text-blue-800 border border-blue-300 hover:bg-blue-600 hover:text-white px-2.5 py-1 rounded-lg transition cursor-pointer shadow-2xs"
-                  >
-                    📞 SĐT 0901888999
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setZaloInput("2715919749071666693"); }}
-                    className="text-[11px] font-mono font-bold bg-white text-indigo-800 border border-indigo-300 hover:bg-indigo-600 hover:text-white px-2.5 py-1 rounded-lg transition cursor-pointer shadow-2xs"
-                  >
-                    🆔 OA ID 2715919749071666693
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setZaloInput("7540234525828588815"); }}
-                    className="text-[11px] font-mono font-bold bg-white text-purple-800 border border-purple-300 hover:bg-purple-600 hover:text-white px-2.5 py-1 rounded-lg transition cursor-pointer shadow-2xs"
-                  >
-                    👤 Admin Zalo UID 7540234525828588815
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setZaloLoginModalOpen(false)}
-                  className="w-1/2 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-extrabold text-xs transition cursor-pointer"
-                >
-                  Hủy Bỏ
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-1/2 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 active:scale-98 text-white font-black text-xs transition shadow-md cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  {loading ? (
-                    <span>Đang xác thực...</span>
-                  ) : (
-                    <>
-                      <span>⚡ Đăng Nhập Zalo</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
