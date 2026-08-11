@@ -602,16 +602,23 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 
             <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-blue-200/60">
               <p className="text-[10px] text-blue-700 font-medium flex-1 min-w-[200px]">
-                💡 Hoặc bấm <b>"Quan Tâm Zalo OA"</b> để kích hoạt kết nối tự động.
+                💡 Bấm <b>"Mở Zalo OA & Gửi Mã"</b> để mở trang Zalo OA Bệnh viện Korean Star và gắn Zalo UID tự động 100%.
               </p>
-              <a
-                href={generatedCode ? `https://zalo.me/2715919749071666693` : `https://zalo.me/2715919749071666693`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-extrabold text-[11px] rounded-lg shadow-xs flex items-center gap-1 cursor-pointer transition shrink-0"
+              <button
+                type="button"
+                onClick={() => {
+                  if (generatedCode) {
+                    try {
+                      navigator.clipboard.writeText(generatedCode);
+                      if (onToast) onToast(`📋 Đã copy mã ${generatedCode}! Hãy Dán (Paste) gửi tới Zalo OA.`);
+                    } catch (e) {}
+                  }
+                  window.open("https://zalo.me/2715919749071666693", "_blank", "noopener,noreferrer");
+                }}
+                className="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-extrabold text-[11px] rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer transition shrink-0"
               >
                 <span>📲 {generatedCode ? `Mở Zalo OA & Gửi ${generatedCode}` : "Quan Tâm Zalo OA Ngay"}</span>
-              </a>
+              </button>
             </div>
           </div>
 
