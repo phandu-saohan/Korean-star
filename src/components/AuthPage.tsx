@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import { signInUser, signUpUser, resetUserPassword, fetchRolePermissionsFromSupabase, AuthUserProfile, saveRegisteredUserToLocalStorage } from "../lib/supabase";
 import { notifyUserSignedUp } from "../lib/onesignal";
-import { notifyZaloUserSignedUp, loginWithZalo } from "../services/zaloService";
+import { notifyZaloUserSignedUp, loginWithZalo, getZaloAppId } from "../services/zaloService";
 import { VIETNAM_BANKS, getBankLogo, BankInfo } from "../lib/banks";
 
 interface AuthPageProps {
@@ -103,12 +103,39 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
     return () => window.removeEventListener("message", handleOAuthMessage);
   }, [onAuthSuccess]);
 
-  const handleDirectZaloOAuthLogin = () => {
+  const handleDirectZaloOAuthLogin = async () => {
     setLoading(true);
     setErrorMsg("");
     setSuccessMsg("");
 
-    const appId = (import.meta as any).env?.VITE_ZALO_APP_ID || "2715919749071666693";
+    let appId = await getZaloAppId();
+
+    // Check if App ID is invalid or set to OA ID (2715919749071666693)
+    if (!appId || appId === "2715919749071666693") {
+      setLoading(false);
+      const inputId = prompt(
+        "⚠️ CHƯA CẤU HÌNH ZALO APP ID (MÃ ỨNG DỤNG ZALO)\n\n" +
+        "Mã '2715919749071666693' là ID Trang Zalo Official Account (OA). Để sử dụng Đăng Nhập Qua Zalo (Zalo Social Login), bạn cần nhập 'Zalo App ID' lấy từ trang https://developers.zalo.me/ (Mục 'Ứng dụng của tôi').\n\n" +
+        "Vui lòng nhập Zalo App ID của bạn bên dưới:"
+      );
+
+      if (!inputId || !inputId.trim()) {
+        setErrorMsg("Bạn chưa nhập Zalo App ID hợp lệ. Vui lòng thử lại!");
+        return;
+      }
+
+      appId = inputId.trim();
+      if (typeof window !== "undefined") {
+        try {
+          const saved = localStorage.getItem("saohan_cms_settings");
+          const parsed = saved ? JSON.parse(saved) : {};
+          parsed.zaloOaAppId = appId;
+          localStorage.setItem("saohan_cms_settings", JSON.stringify(parsed));
+        } catch (e) {}
+      }
+      setLoading(true);
+    }
+
     const redirectUri = `${window.location.origin}/api/zalo/oauth-callback`;
     const zaloAuthUrl = `https://oauth.zaloapp.com/v4/permission?app_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=koreanstar`;
 

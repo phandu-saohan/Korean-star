@@ -20,7 +20,7 @@ import {
   Zap
 } from "lucide-react";
 import { signInUser, signUpUser, resetUserPassword, fetchRolePermissionsFromSupabase, AuthUserProfile, saveRegisteredUserToLocalStorage } from "../lib/supabase";
-import { loginWithZalo } from "../services/zaloService";
+import { loginWithZalo, getZaloAppId } from "../services/zaloService";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -41,8 +41,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  const handleDirectZaloOAuthLogin = () => {
-    const appId = (import.meta as any).env?.VITE_ZALO_APP_ID || "2715919749071666693";
+  const handleDirectZaloOAuthLogin = async () => {
+    let appId = await getZaloAppId();
+
+    if (!appId || appId === "2715919749071666693") {
+      const inputId = prompt(
+        "⚠️ CHƯA CẤU HÌNH ZALO APP ID (MÃ ỨNG DỤNG ZALO)\n\n" +
+        "Mã '2715919749071666693' là ID Trang Zalo Official Account (OA). Để sử dụng Đăng Nhập Qua Zalo, bạn cần nhập 'Zalo App ID' từ trang https://developers.zalo.me/ (Mục 'Ứng dụng của tôi').\n\n" +
+        "Vui lòng nhập Zalo App ID của bạn bên dưới:"
+      );
+
+      if (!inputId || !inputId.trim()) {
+        setErrorMsg("Bạn chưa nhập Zalo App ID hợp lệ!");
+        return;
+      }
+
+      appId = inputId.trim();
+      if (typeof window !== "undefined") {
+        try {
+          const saved = localStorage.getItem("saohan_cms_settings");
+          const parsed = saved ? JSON.parse(saved) : {};
+          parsed.zaloOaAppId = appId;
+          localStorage.setItem("saohan_cms_settings", JSON.stringify(parsed));
+        } catch (e) {}
+      }
+    }
+
     const redirectUri = `${window.location.origin}/api/zalo/oauth-callback`;
     const zaloAuthUrl = `https://oauth.zaloapp.com/v4/permission?app_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=koreanstar`;
 

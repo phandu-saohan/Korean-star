@@ -74,6 +74,36 @@ export async function getZaloBotConfig(): Promise<{ botToken: string; defaultCha
 }
 
 /**
+ * Lấy Zalo App ID (Mã Ứng dụng Zalo) dùng cho Zalo Social Login / OAuth
+ */
+export async function getZaloAppId(): Promise<string> {
+  let appId = (import.meta as any).env?.VITE_ZALO_APP_ID || "";
+
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("saohan_cms_settings");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.zaloOaAppId && parsed.zaloOaAppId !== "2715919749071666693") {
+          appId = parsed.zaloOaAppId;
+        }
+      } catch (e) {}
+    }
+  }
+
+  if (!appId || appId === "2715919749071666693") {
+    try {
+      const cms = await fetchCmsSettingsFromSupabase();
+      if (cms?.zaloOaAppId && cms.zaloOaAppId !== "2715919749071666693") {
+        appId = cms.zaloOaAppId;
+      }
+    } catch (e) {}
+  }
+
+  return (appId || "").trim();
+}
+
+/**
  * Gửi tin nhắn Zalo thông qua proxy server (tránh lỗi CORS khi gọi trực tiếp từ trình duyệt)
  */
 export async function sendZaloMessage(
