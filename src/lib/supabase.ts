@@ -276,9 +276,9 @@ export const signInUser = async (emailOrPhone: string, password: string) => {
     }
   }
 
-  // Attempt 2: Direct REST fetch to SUPABASE_REAL_URL fallback (in case proxy URL failed with Failed to fetch)
+  // Attempt 2: REST fetch to SUPABASE_PROXY_URL fallback (in case client SDK encountered temporary error)
   try {
-    const directRes = await fetch(`${SUPABASE_REAL_URL}/auth/v1/token?grant_type=password`, {
+    const directRes = await fetch(`${SUPABASE_PROXY_URL}/auth/v1/token?grant_type=password`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

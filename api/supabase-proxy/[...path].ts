@@ -4,9 +4,15 @@ export default async function handler(
   req: IncomingMessage & { body?: any },
   res: ServerResponse
 ) {
-  // CORS Headers
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  // Dynamic CORS Headers to prevent net::ERR_FAILED browser preflight blocks
+  const reqOrigin = (req.headers.origin as string) || (req.headers.Origin as string) || "";
+  if (reqOrigin) {
+    res.setHeader("Access-Control-Allow-Origin", reqOrigin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  } else {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  }
+
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
   res.setHeader(
     "Access-Control-Allow-Headers",
@@ -53,7 +59,6 @@ export default async function handler(
       "Authorization": authHeader,
     };
 
-    // Chỉ đính kèm Content-Type cho các phương thức có body (POST, PUT, PATCH, DELETE)
     if (req.method !== "GET" && req.method !== "HEAD") {
       headers["Content-Type"] = "application/json";
     }
