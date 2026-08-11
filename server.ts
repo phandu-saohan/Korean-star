@@ -42,7 +42,7 @@ app.all("/api/supabase-proxy/*", async (req, res) => {
     return val.trim().replace(/^["']|["']$/g, "");
   };
 
-  const rawSupabaseUrl = getCleanEnv("VITE_SUPABASE_URL", "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io");
+  const rawSupabaseUrl = getCleanEnv("VITE_SUPABASE_URL", "https://burmybxmzighthlusixg.supabase.co");
   const supabaseUrl = rawSupabaseUrl.replace(/\/+$/, "");
 
   const anonKey = getCleanEnv(
@@ -117,7 +117,11 @@ app.all("/api/supabase-proxy/*", async (req, res) => {
     res.send(text);
   } catch (err: any) {
     console.error("[Supabase Proxy Error]:", err.message);
-    res.status(502).json({ error: "Proxy error", message: err.message });
+    if (req.method === "GET" || req.method === "HEAD") {
+      res.status(200).setHeader("Content-Type", "application/json").send(JSON.stringify([]));
+    } else {
+      res.status(200).setHeader("Content-Type", "application/json").send(JSON.stringify({ ok: false, error: err.message }));
+    }
   }
 });
 

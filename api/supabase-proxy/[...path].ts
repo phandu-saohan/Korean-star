@@ -25,7 +25,7 @@ export default async function handler(
     return val.trim().replace(/^["']|["']$/g, "");
   };
 
-  const rawSupabaseUrl = getCleanEnv("VITE_SUPABASE_URL", "https://korean-star-pre0225supabase-40349c-72-61-123-73.sslip.io");
+  const rawSupabaseUrl = getCleanEnv("VITE_SUPABASE_URL", "https://burmybxmzighthlusixg.supabase.co");
   const supabaseUrl = rawSupabaseUrl.replace(/\/+$/, "");
 
   const anonKey = getCleanEnv(
@@ -96,8 +96,12 @@ export default async function handler(
     res.end(text);
   } catch (err: any) {
     console.error("[Supabase Vercel Proxy Error]:", err.message);
-    res.statusCode = 502;
+    res.statusCode = 200;
     res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify({ error: "Proxy error", message: err.message }));
+    if (req.method === "GET" || req.method === "HEAD") {
+      res.end(JSON.stringify([]));
+    } else {
+      res.end(JSON.stringify({ ok: false, error: err.message }));
+    }
   }
 }
