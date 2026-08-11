@@ -60,7 +60,7 @@ export default async function handler(
     const cleanToken = String(botToken).replace(/^\//, "").trim();
     const isOaAccessToken = cleanToken.length > 50 || cleanToken.includes("ey"); // JWT Access Token format
     const endpoint = isOaAccessToken 
-      ? `https://openapi.zalo.me/v2.0/oa/message`
+      ? `https://openapi.zalo.me/v3.0/oa/message/cs`
       : `https://bot-api.zaloplatforms.com/bot${cleanToken}/sendMessage`;
 
     console.log(`[Zalo sendMessage Proxy] Sending via ${isOaAccessToken ? "Zalo OA OpenAPI" : "Zalo Bot Platform"} to Chat ID: ${chatId}`);

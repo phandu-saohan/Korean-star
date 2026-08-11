@@ -16,7 +16,8 @@ export function useZaloBot(botToken?: string) {
       const savedSettings = localStorage.getItem("saohan_cms_settings");
       if (savedSettings) {
         try {
-          storedToken = JSON.parse(savedSettings).zaloBotToken || "";
+          const parsed = JSON.parse(savedSettings);
+          storedToken = parsed.zaloOaAccessToken || parsed.zaloBotToken || "";
         } catch (e) {}
       }
 

@@ -9,12 +9,16 @@ export interface SendMessagePayload {
 
 export interface ZaloApiResponse {
   ok: boolean;
+  error?: number;
+  message?: string;
   result?: {
     message_id: string;
     date: number;
   };
+  data?: any;
   description?: string;
   error_code?: number;
+  raw?: any;
 }
 
 /**
@@ -30,7 +34,7 @@ export async function getZaloBotConfig(): Promise<{ botToken: string; defaultCha
     if (savedSettings) {
       try {
         const parsed = JSON.parse(savedSettings);
-        botToken = parsed.zaloBotToken || "";
+        botToken = parsed.zaloOaAccessToken || parsed.zaloBotToken || "";
         defaultChatId = parsed.zaloDefaultChatId || "";
       } catch (e) {}
     }
@@ -41,13 +45,23 @@ export async function getZaloBotConfig(): Promise<{ botToken: string; defaultCha
     try {
       const cms = await fetchCmsSettingsFromSupabase();
       if (cms) {
-        if (!botToken && cms.zaloBotToken) botToken = cms.zaloBotToken;
-        if (!defaultChatId && cms.zaloDefaultChatId) defaultChatId = cms.zaloDefaultChatId;
+        if (!botToken) botToken = cms.zalo_oa_access_token || cms.zaloOaAccessToken || cms.zaloBotToken || "";
+        if (!defaultChatId) defaultChatId = cms.zaloDefaultChatId || "";
       }
     } catch (e) {}
   }
 
-  // 3. Fallback sang Environment variables
+  // 3. Nếu vẫn chưa có Token, thử tự động gọi Refresh Token từ Refresh Token Zalo OA
+  if (!botToken) {
+    try {
+      const refreshed = await refreshZaloOaAccessToken();
+      if (refreshed.ok && refreshed.accessToken) {
+        botToken = refreshed.accessToken;
+      }
+    } catch (e) {}
+  }
+
+  // 4. Fallback sang Environment variables
   if (!botToken) {
     botToken =
       (import.meta as any).env?.VITE_ZALO_BOT_TOKEN ||
@@ -82,13 +96,25 @@ export async function sendZaloMessage(
       }),
     });
 
-    const data: ZaloApiResponse = await response.json();
-    return data;
+    const rawData: any = await response.json();
+    const isSuccess = rawData.ok === true || rawData.error === 0;
+    const description = rawData.description || rawData.message || (isSuccess ? "Thành công" : `Lỗi Zalo (Mã: ${rawData.error ?? rawData.error_code})`);
+
+    return {
+      ok: isSuccess,
+      error: rawData.error,
+      error_code: rawData.error_code ?? rawData.error,
+      message: rawData.message,
+      description,
+      data: rawData.data,
+      result: rawData.result,
+      raw: rawData,
+    };
   } catch (err: any) {
     return {
       ok: false,
       error_code: 500,
-      description: err.message || 'Lỗi kết nối đến server proxy khi gọi Zalo Bot API sendMessage'
+      description: err.message || 'Lỗi kết nối đến server proxy khi gọi Zalo API sendMessage'
     };
   }
 }
@@ -476,12 +502,21 @@ export async function sendZaloAdminStatsReport(statsData: {
   }
 
   let sentCount = 0;
+  let lastError = "";
   for (const chatId of recipients) {
     const res = await sendZaloAutoNotification(chatId, msg);
-    if (res.ok) sentCount++;
+    if (res && res.ok) {
+      sentCount++;
+    } else if (res && (res.description || res.error_code)) {
+      lastError = res.description || `Zalo API Error Code: ${res.error_code}`;
+    }
   }
 
-  return { success: sentCount > 0, count: sentCount };
+  return {
+    success: sentCount > 0,
+    count: sentCount,
+    error: sentCount > 0 ? undefined : (lastError || "Chưa nhập Zalo OA Access Token hoặc Zalo Chat ID / Phone không chính xác.")
+  };
 }
 
 

@@ -226,7 +226,7 @@ app.post("/api/zalo/send-message", async (req, res) => {
     const cleanToken = String(botToken).replace(/^\//, "").replace(/^bot/i, "").trim();
     const isOaAccessToken = cleanToken.length > 50 || cleanToken.includes("ey");
     const endpoint = isOaAccessToken
-      ? `https://openapi.zalo.me/v2.0/oa/message`
+      ? `https://openapi.zalo.me/v3.0/oa/message/cs`
       : `https://bot-api.zaloplatforms.com/bot${cleanToken}/sendMessage`;
 
     const headersConfig: Record<string, string> = { "Content-Type": "application/json" };
