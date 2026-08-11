@@ -61,7 +61,7 @@ export const ZaloNotifier: React.FC<ZaloNotifierProps> = ({ defaultChatId = '', 
         </span>
       </div>
 
-      <form onSubmit={handleSend} className="space-y-4 text-xs">
+      <div className="space-y-4 text-xs">
         {/* User ID / Chat ID Field */}
         <div>
           <div className="flex items-center justify-between mb-1">
@@ -90,7 +90,6 @@ export const ZaloNotifier: React.FC<ZaloNotifierProps> = ({ defaultChatId = '', 
           </div>
           <input
             id="zalo_test_uid_input"
-            name="zalo_test_uid_input"
             type="text"
             value={chatId}
             onChange={(e) => setChatId(e.target.value)}
@@ -146,7 +145,6 @@ export const ZaloNotifier: React.FC<ZaloNotifierProps> = ({ defaultChatId = '', 
           </div>
           <textarea
             id="zalo_test_message_textarea"
-            name="zalo_test_message_textarea"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Nhập nội dung tin nhắn tư vấn gửi từ Zalo Official Account (OA)..."
@@ -159,7 +157,8 @@ export const ZaloNotifier: React.FC<ZaloNotifierProps> = ({ defaultChatId = '', 
 
         {/* Submit Button */}
         <button
-          type="submit"
+          type="button"
+          onClick={handleSend}
           disabled={loading || !chatId.trim() || !message.trim()}
           className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-extrabold py-3 px-4 rounded-xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
         >
@@ -175,7 +174,7 @@ export const ZaloNotifier: React.FC<ZaloNotifierProps> = ({ defaultChatId = '', 
             </>
           )}
         </button>
-      </form>
+      </div>
 
       {/* Success Alert */}
       {successMessage && (

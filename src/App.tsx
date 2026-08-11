@@ -229,6 +229,20 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  // Tự động dọn dẹp URL query parameters nếu trước đó bị form HTML GET đính kèm lên URL
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.search) {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.has("zalo_test_uid_input") || searchParams.has("zalo_test_message_textarea")) {
+        searchParams.delete("zalo_test_uid_input");
+        searchParams.delete("zalo_test_message_textarea");
+        const newSearch = searchParams.toString();
+        const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "") + window.location.hash;
+        window.history.replaceState(null, "", newUrl);
+      }
+    }
+  }, []);
+
   const handleUpdateInvoice = (updatedInvoice: AppointmentInvoice) => {
     setInvoices((prev) => {
       const idx = prev.findIndex((i) => i.id === updatedInvoice.id);
